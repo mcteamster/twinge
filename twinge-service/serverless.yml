@@ -2,7 +2,8 @@ service: twinge-service
 frameworkVersion: '3'
 
 custom:
-  tableName: 'gamestate-table-${sls:stage}'
+  connectionTableName: 'connection-table-${sls:stage}'
+  gamestateTableName: 'gamestate-table-${sls:stage}'
 
 provider:
   name: aws
@@ -21,9 +22,11 @@ provider:
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
           Resource:
-            - Fn::GetAtt: [ UsersTable, Arn ]
+            - Fn::GetAtt: [ ConnectionTable, Arn ]
+            - Fn::GetAtt: [ GamestateTable, Arn ]
   environment:
-    USERS_TABLE: ${self:custom.tableName}
+    CONNECTION_TABLE: ${self:custom.connectionTableName}
+    GAMESTATE_TABLE: ${self:custom.gamestateTableName}
   websocketsApiName: twinge-service-websockets
   websocketsApiRouteSelectionExpression: $request.body.action
 
@@ -42,14 +45,25 @@ functions:
 
 resources:
   Resources:
-    UsersTable:
+    ConnectionTable:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
-          - AttributeName: userId
+          - AttributeName: connectionId
             AttributeType: S
         KeySchema:
-          - AttributeName: userId
+          - AttributeName: connectionId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
-        TableName: ${self:custom.tableName}
+        TableName: ${self:custom.connectionTableName}
+    GamestateTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: gamestateId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: gamestateId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.gamestateTableName}

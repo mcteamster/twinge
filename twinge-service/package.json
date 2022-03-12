@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "dependencies": {
-    "express": "^4.17.1",
+    "aws-sdk": "^2.1092.0",
     "serverless-http": "^2.7.0"
   }
 }

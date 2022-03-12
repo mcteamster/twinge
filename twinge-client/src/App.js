@@ -7,7 +7,7 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    this.ws = new WebSocket('wss://rdhwtybprk.execute-api.ap-southeast-2.amazonaws.com/dev')
+    this.ws = new WebSocket('wss://twinge.mcteamster.com')
   }
 
   render(){
