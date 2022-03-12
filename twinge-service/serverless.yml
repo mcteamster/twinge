@@ -24,12 +24,21 @@ provider:
             - Fn::GetAtt: [ UsersTable, Arn ]
   environment:
     USERS_TABLE: ${self:custom.tableName}
+  websocketsApiName: twinge-service-websockets
+  websocketsApiRouteSelectionExpression: $request.body.action
 
 functions:
-  api:
-    handler: handler.handler
+  connections:
+    handler: handlers/connections.handler
     events:
-      - httpApi: '*'
+      - websocket:  
+          route: $connect
+      - websocket:
+          route: $disconnect
+  default:
+    handler: handlers/default.handler
+    events: 
+      - websocket: $default
 
 resources:
   Resources:
