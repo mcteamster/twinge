@@ -4,6 +4,7 @@
   "description": "",
   "dependencies": {
     "aws-sdk": "^2.1092.0",
+    "guid": "^0.0.12",
     "serverless-http": "^2.7.0"
   }
 }

@@ -42,6 +42,12 @@ functions:
     handler: handlers/default.handler
     events: 
       - websocket: $default
+  lobby:
+    handler: handlers/lobby.handler
+    events:
+      - websocket:
+          route: lobby
+          routeResponseSelectionExpression: $default
 
 resources:
   Resources:
@@ -50,6 +56,8 @@ resources:
       Properties:
         AttributeDefinitions:
           - AttributeName: connectionId
+            AttributeType: S
+          - AttributeName: gamestateId
             AttributeType: S
         KeySchema:
           - AttributeName: connectionId
