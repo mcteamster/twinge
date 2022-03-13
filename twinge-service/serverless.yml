@@ -31,8 +31,8 @@ provider:
   websocketsApiRouteSelectionExpression: $request.body.action
 
 functions:
-  connections:
-    handler: handlers/connections.handler
+  connect:
+    handler: handlers/connect.handler
     events:
       - websocket:  
           route: $connect

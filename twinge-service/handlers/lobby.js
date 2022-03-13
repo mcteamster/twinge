@@ -1,68 +1,39 @@
-const AWS = require("aws-sdk");
+const connections = require('../helpers/connections');
+const gamestates = require('../helpers/gamestates');
 const Guid = require('guid');
-const dynamoDbClient = new AWS.DynamoDB.DocumentClient();
-const CONNECTION_TABLE = process.env.CONNECTION_TABLE;
-const GAMESTATE_TABLE = process.env.GAMESTATE_TABLE;
+const Game = require('../model/Game');
+const Player = require('../model/Player');
 
-async function updateConnection(connectionId, gamestateId) {
-  const params = {
-    TableName: CONNECTION_TABLE,
-    Key: {
-      connectionId: connectionId,
-    },
-    UpdateExpression: "set gamestateId = :gamestateId",
-    ExpressionAttributeValues:{
-        ":gamestateId": gamestateId,
-    },
-    ReturnValues:"UPDATED_NEW"
-  };
-
-  try {
-    await dynamoDbClient.update(params).promise();
-    return 200
-  } catch (error) {
-    console.log(error);
-    return 500
-  }
-}
-
-async function updateGamestate(gamestateId, connectionId) {
-  const params = {
-    TableName: GAMESTATE_TABLE,
-    Key: {
-      gamestateId: gamestateId,
-    },
-    UpdateExpression: "set gamestateId = :gamestateId",
-    ExpressionAttributeValues:{
-        ":gamestateId": gamestateId,
-    },
-    ReturnValues:"UPDATED_NEW"
-  };
-
-  try {
-    await dynamoDbClient.update(params).promise();
-    return 200
-  } catch (error) {
-    console.log(error);
-    return 500
-  }
-}
-
-async function createGame({connectionId, gamestateId}) {
+async function createGame(lobbyInfo) {
   // Link gamestate to connection
+  lobbyInfo.gamestateId = String(Guid.create());
+  await connections.updateConnection(lobbyInfo.connectionId, lobbyInfo.gamestateId);
+
   // Create new gamestate
-  gamestateId = String(Guid.create());
-  await updateConnection(connectionId, gamestateId);
+  let gamestate = new Game();
+  await gamestate.addPlayer(new Player(lobbyInfo.connectionId));
+  lobbyInfo.game = await gamestates.createGamestate(lobbyInfo.gamestateId, gamestate);
   return;
 }
 
-async function joinGame({connectionId, gamestateId}) {
-  // Link gamestate to connection
-  // Update gamestate
-
+async function joinGame(lobbyInfo) {
+  // Check for existing gamestate
+  // Join by roomCode (new), or gamestateId (saved) - validate with playerId
+  let gamestate = new Game((await gamestates.readGamestate(lobbyInfo.gamestateId)).gamestate);
+  console.log(gamestate)
+  await gamestate.addPlayer(new Player(lobbyInfo.connectionId));
+  if (gamestate) {
+    // Link gamestate to connection
+    await connections.updateConnection(lobbyInfo.connectionId, lobbyInfo.gamestateId);
+    // Update gamestate
+    lobbyInfo.game = await gamestates.updateGamestate(lobbyInfo.gamestateId, gamestate);
+  } else {
+    lobbyInfo.game = null;
+  }
+  return;
 }
 
-async function leaveGame({connectionId, gamestateId}) {
+async function leaveGame(lobbyInfo) {
   // Unlink gamestate from connection
   // Update gamestate
 
@@ -74,7 +45,7 @@ const actionHandler = {
   leave: leaveGame,
 }
 
-module.exports.handler = async (event, context) => {
+module.exports.handler = async (event) => {
   const body = JSON.parse(event.body);
   const actionType = body.actionType;
   let lobbyInfo = {
@@ -82,6 +53,7 @@ module.exports.handler = async (event, context) => {
     gamestateId: body.gamestateId,
   }
   await actionHandler[actionType](lobbyInfo);
+  // Handle Responses and Errors Here
   return {
     statusCode: 200,
     body: JSON.stringify(lobbyInfo),

@@ -9,9 +9,17 @@ class App extends React.Component {
 
   componentDidMount() {
     this.ws = new WebSocket('wss://twinge.mcteamster.com');
-    this.ws.onopen = () => {};
+    this.ws.onopen = () => {
+      // try to rejoin game
+      let gamestateId = localStorage.getItem("gamestateId");
+      gamestateId = '7b482656-9b62-d538-5ff9-75726b8ad0f4';
+      if (gamestateId) {
+        this.sendMsg({ action: 'lobby', actionType: 'join', gamestateId: gamestateId })
+      }
+    };
     this.ws.onmessage = (msg) => {
-      console.dir(msg.data);
+      console.dir(JSON.parse(msg.data));
+      // Handlers go here
     }
   }
 
@@ -19,9 +27,9 @@ class App extends React.Component {
     this.ws.send(JSON.stringify(msg));
   }
 
-  render(){
+  render() {
     return <div>
-      <button onClick={() => {this.sendMsg({action: 'lobby', actionType: 'create', gamestateId: 'tonz'})}}>Click Here</button>
+      <button onClick={() => { this.sendMsg({ action: 'lobby', actionType: 'create', gamestateId: 'tonz' }) }}>Click Here</button>
     </div>
   }
 }
