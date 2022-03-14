@@ -29,22 +29,22 @@ async function readConnection(connectionId) {
   };
 
   try {
-    return await dynamoDbClient.get(params).promise();
+    return (await dynamoDbClient.get(params).promise()).Item;
   } catch (error) {
     console.log(error);
     return 500
   }
 }
 
-async function updateConnection(connectionId, gamestateId) {
+async function updateConnection(connectionId, gameId) {
   const params = {
     TableName: CONNECTION_TABLE,
     Key: {
       connectionId: connectionId,
     },
-    UpdateExpression: "set gamestateId = :gamestateId",
+    UpdateExpression: "set gameId = :gameId",
     ExpressionAttributeValues: {
-      ":gamestateId": gamestateId,
+      ":gameId": gameId,
     },
     ReturnValues: "ALL_NEW"
   };

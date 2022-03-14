@@ -1,9 +1,9 @@
 service: twinge-service
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 custom:
-  connectionTableName: 'connection-table-${sls:stage}'
-  gamestateTableName: 'gamestate-table-${sls:stage}'
+  connectionTableName: "connection-table-${sls:stage}"
+  gameTableName: "game-table-${sls:stage}"
 
 provider:
   name: aws
@@ -22,11 +22,11 @@ provider:
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
           Resource:
-            - Fn::GetAtt: [ ConnectionTable, Arn ]
-            - Fn::GetAtt: [ GamestateTable, Arn ]
+            - Fn::GetAtt: [ConnectionTable, Arn]
+            - Fn::Join: ["", [Fn::GetAtt: [GameTable, Arn], "*"]]
   environment:
     CONNECTION_TABLE: ${self:custom.connectionTableName}
-    GAMESTATE_TABLE: ${self:custom.gamestateTableName}
+    GAME_TABLE: ${self:custom.gameTableName}
   websocketsApiName: twinge-service-websockets
   websocketsApiRouteSelectionExpression: $request.body.action
 
@@ -34,14 +34,15 @@ functions:
   connect:
     handler: handlers/connect.handler
     events:
-      - websocket:  
+      - websocket:
           route: $connect
       - websocket:
           route: $disconnect
   default:
     handler: handlers/default.handler
-    events: 
-      - websocket: $default
+    events:
+      - websocket:
+          route: $default
   lobby:
     handler: handlers/lobby.handler
     events:
@@ -57,21 +58,28 @@ resources:
         AttributeDefinitions:
           - AttributeName: connectionId
             AttributeType: S
-          - AttributeName: gamestateId
-            AttributeType: S
         KeySchema:
           - AttributeName: connectionId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:custom.connectionTableName}
-    GamestateTable:
+    GameTable:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
-          - AttributeName: gamestateId
+          - AttributeName: gameId
+            AttributeType: S
+          - AttributeName: roomCode
             AttributeType: S
         KeySchema:
-          - AttributeName: gamestateId
+          - AttributeName: gameId
             KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: roomCode
+            KeySchema:
+              - AttributeName: roomCode
+                KeyType: "HASH"
+            Projection:
+              ProjectionType: 'ALL'
         BillingMode: PAY_PER_REQUEST
-        TableName: ${self:custom.gamestateTableName}
+        TableName: ${self:custom.gameTableName}

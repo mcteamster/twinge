@@ -12,9 +12,9 @@ class App extends React.Component {
     this.ws.onopen = () => {
       // try to rejoin game
       let gamestateId = localStorage.getItem("gamestateId");
-      gamestateId = '7b482656-9b62-d538-5ff9-75726b8ad0f4';
+      gamestateId = 'a5d3d0fe-beee-3a8a-ce94-c994822475c1';
       if (gamestateId) {
-        this.sendMsg({ action: 'lobby', actionType: 'join', gamestateId: gamestateId })
+        this.sendMsg({ action: 'lobby', actionType: 'join', gameId: gamestateId })
       }
     };
     this.ws.onmessage = (msg) => {
@@ -29,7 +29,7 @@ class App extends React.Component {
 
   render() {
     return <div>
-      <button onClick={() => { this.sendMsg({ action: 'lobby', actionType: 'create', gamestateId: 'tonz' }) }}>Click Here</button>
+      <button onClick={() => { this.sendMsg({ action: 'lobby', actionType: 'new', gameId: 'tonz' }) }}>Click Here</button>
     </div>
   }
 }
