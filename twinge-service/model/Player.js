@@ -3,10 +3,11 @@ const Guid = require('guid');
 class Player {
   constructor(player) {
     // Default Player
-    if (!player.playerId) {
+    if (!player || !player.playerId) {
       player = {
         playerId: String(Guid.create()),
-        connectionId: player.connectionId,
+        hand: [],
+        handSize: 0,
       };
     }
     

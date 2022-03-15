@@ -9,27 +9,38 @@ class App extends React.Component {
 
   componentDidMount() {
     this.ws = new WebSocket('wss://twinge.mcteamster.com');
-    this.ws.onopen = () => {
-      // try to rejoin game
-      let gamestateId = localStorage.getItem("gamestateId");
-      gamestateId = 'a5d3d0fe-beee-3a8a-ce94-c994822475c1';
-      if (gamestateId) {
-        this.sendMsg({ action: 'lobby', actionType: 'join', gameId: gamestateId })
-      }
+    this.ws.onopen = async () => {
+      localStorage.setItem('gameId', 'c2c858b4-311d-d3b5-19fd-203b4b41aa7d'); // Testing
+      localStorage.setItem('playerId', '3288fc25-2ebb-5bb4-791b-18fc79c4b002'); // Testing
+      let gameId = localStorage.getItem('gameId');
+      let playerId = localStorage.getItem('playerId');
+      this.sendMsg({ action: 'lobby', actionType: 'join', gameId: gameId, playerId: playerId });
     };
     this.ws.onmessage = (msg) => {
-      console.dir(JSON.parse(msg.data));
-      // Handlers go here
+      let data = JSON.parse(msg.data);
+      // Hide Websocket Acknowlegements
+      if (data.message === 'ack') {
+        console.log(new Date().toISOString());
+      }
+      // Handle Errors
+      else if (data.message) {
+        console.error(data.message);
+      } 
+      // Handle Gamestate Changes
+      else {
+        console.dir(data);
+      }
     }
   }
 
-  sendMsg(msg) {
+  async sendMsg(msg) {
     this.ws.send(JSON.stringify(msg));
   }
 
   render() {
     return <div>
-      <button onClick={() => { this.sendMsg({ action: 'lobby', actionType: 'new', gameId: 'tonz' }) }}>Click Here</button>
+      <button onClick={() => { this.sendMsg({ action: 'lobby', actionType: 'new' }) }}>Create Game</button>
+      <button onClick={() => { this.sendMsg({ action: 'lobby', actionType: 'join', roomCode: "ABCD" }) }}>Rejoin Game</button>
     </div>
   }
 }

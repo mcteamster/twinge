@@ -1,54 +1,55 @@
 const connections = require('../helpers/connections');
 const games = require('../helpers/games');
+const messages = require('../helpers/messages');
 const Gamestate = require('../model/Gamestate');
 const Player = require('../model/Player');
 const Guid = require('guid');
 
-async function newGame(lobby) {
-  // Link gamestate to connection
-  lobby.gameId = String(Guid.create());
-  await connections.updateConnection(lobby.connectionId, lobby.gameId);
-
-  // Create new gamestate
+async function newGame(payload) {
+  // Create new game
+  let gameId = String(Guid.create());
   let gamestate = new Gamestate();
-  await gamestate.addPlayer(new Player(lobby.connectionId));
-  lobby.game = await games.createGame(lobby.gameId, gamestate);
-  return;
+  payload.playerId = await gamestate.addPlayer(new Player());
+  payload.game = await games.createGame(gameId, gamestate);
+
+  // Link game and player to connection
+  await connections.updateConnection(payload.connectionId, 'gameId', gameId);
+  await connections.updateConnection(payload.connectionId, 'playerId', payload.playerId);
+
+  // Respond to creator
+  await messages.send(payload.connectionId, payload.game);
 }
 
-async function joinGame(lobby) {
+async function joinGame(payload) {
   // Find game
   let game = null;
-  if (lobby.roomCode) {
-    game = (await games.findGame("roomCode", lobby.roomCode))[0];
-  } else if (lobby.gameId) {
-    game = await games.readGame(lobby.gameId);
+  if (payload.roomCode) {
+    game = (await games.findGames("roomCode", payload.roomCode))[0]; // this should be unique
+  } else if (payload.gameId) {
+    game = await games.readGame(payload.gameId);
   }
 
-  if (game.gamestate) {
+  if (game && game.gamestate) {
+    // Rehydrate gamestate
     let gamestate = new Gamestate(game.gamestate);
-    if (lobby.playerId) {
-      // Rejoin
-      // Check if already in game, update connectionId
-    } else {
-      // Join
-      await gamestate.addPlayer(new Player({connectionId: lobby.connectionId}));
+    // Join or rejoin if already in the game
+    if (!payload.playerId || !gamestate.players.find((player) => { return player.playerId == payload.playerId })) {
+      payload.playerId = await gamestate.addPlayer(new Player());
     }
-
-    // Link gamestate to connection
-    await connections.updateConnection(lobby.connectionId, game.gameId);
+    // Link game and player to connection
+    await connections.updateConnection(payload.connectionId, 'gameId', game.gameId);
+    await connections.updateConnection(payload.connectionId, 'playerId', payload.playerId);
     // Update gamestate
-    lobby.game = await games.updateGame(lobby.gameId, gamestate);
+    game = await games.updateGame(game.gameId, gamestate);
+    // Blast out to every player
+    await messages.broadcastGame(game);
   } else {
-    lobby.game = null;
-    lobby.errors.push('Game not found')
+    // Send Error
+    await messages.send(payload.connectionId, { message: 'Game not found' });
   }
-
-  // Blast out to every player
-  return;
 }
 
-async function leaveGame(lobby) {
+async function leaveGame(payload) {
   // Unlink gamestate from connection
   // Update gamestate
 
@@ -63,16 +64,15 @@ const actionHandler = {
 module.exports.handler = async (event) => {
   const body = JSON.parse(event.body);
   const actionType = body.actionType;
-  let lobby = {
+  let payload = {
     connectionId: event.requestContext.connectionId,
     gameId: body.gameId,
     playerId: body.playerId,
     roomCode: body.roomCode,
-    errors: [],
   }
-  await actionHandler[actionType](lobby);
+  await actionHandler[actionType](payload);
   return {
     statusCode: 200,
-    body: JSON.stringify(lobby),
+    body: JSON.stringify({ message: 'ack' }),
   };
 };

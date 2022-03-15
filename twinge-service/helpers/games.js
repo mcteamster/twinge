@@ -38,7 +38,7 @@ async function readGame(gameId) {
   }
 }
 
-async function findGame(queryKey, queryValue) {
+async function findGames(queryKey, queryValue) {
   const params = {
     TableName: GAME_TABLE,
     IndexName: queryKey,
@@ -73,7 +73,24 @@ async function updateGame(gameId, gamestate) {
   };
 
   try {
-    return await dynamoDbClient.update(params).promise();
+    return (await dynamoDbClient.update(params).promise()).Attributes;
+  } catch (error) {
+    console.log(error);
+    return 500
+  }
+}
+
+async function deleteGame(gameId) {
+  const params = {
+    TableName: GAME_TABLE,
+    Key: {
+      gameId: gameId,
+    },
+  };
+
+  try {
+    await dynamoDbClient.delete(params).promise();
+    return 200
   } catch (error) {
     console.log(error);
     return 500
@@ -83,6 +100,7 @@ async function updateGame(gameId, gamestate) {
 module.exports = {
   createGame,
   readGame,
-  findGame,
+  findGames,
   updateGame,
+  deleteGame,
 }

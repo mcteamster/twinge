@@ -1,6 +1,6 @@
 const connections = require('../helpers/connections');
 
-exports.handler = async (event, context, callback) => {
+exports.handler = async (event, _, callback) => {
   const connectionId = event.requestContext.connectionId;
   const eventType = event.requestContext.eventType;
   let statusCode = 200;

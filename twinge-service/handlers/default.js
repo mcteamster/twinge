@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 const util = require('util');
+const HOSTNAME = process.env.HOSTNAME;
 
 const sendMessageToClient = (url, connectionId, payload) =>
   new Promise((resolve, reject) => {
@@ -22,11 +23,9 @@ const sendMessageToClient = (url, connectionId, payload) =>
     );
   });
 
-module.exports.handler = async (event, context) => {
-  const domain = event.requestContext.domainName;
-  const stage = event.requestContext.stage;
+module.exports.handler = async (event) => {
   const connectionId = event.requestContext.connectionId;
-  const callbackUrlForAWS = util.format(util.format('https://%s/%s', domain, stage)); //construct the needed url
+  const callbackUrlForAWS = util.format(util.format(`https://${HOSTNAME}`)); //construct the needed url
   await sendMessageToClient(callbackUrlForAWS, connectionId, event);
   return {
     statusCode: 200,

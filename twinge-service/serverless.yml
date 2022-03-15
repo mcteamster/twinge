@@ -2,6 +2,7 @@ service: twinge-service
 frameworkVersion: "3"
 
 custom:
+  hostname: "twinge.mcteamster.com"
   connectionTableName: "connection-table-${sls:stage}"
   gameTableName: "game-table-${sls:stage}"
 
@@ -22,11 +23,12 @@ provider:
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
           Resource:
-            - Fn::GetAtt: [ConnectionTable, Arn]
+            - Fn::Join: ["", [Fn::GetAtt: [ConnectionTable, Arn], "*"]]
             - Fn::Join: ["", [Fn::GetAtt: [GameTable, Arn], "*"]]
   environment:
     CONNECTION_TABLE: ${self:custom.connectionTableName}
     GAME_TABLE: ${self:custom.gameTableName}
+    HOSTNAME: ${self:custom.hostname}
   websocketsApiName: twinge-service-websockets
   websocketsApiRouteSelectionExpression: $request.body.action
 
@@ -58,9 +60,18 @@ resources:
         AttributeDefinitions:
           - AttributeName: connectionId
             AttributeType: S
+          - AttributeName: gameId
+            AttributeType: S
         KeySchema:
           - AttributeName: connectionId
             KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: gameId
+            KeySchema:
+              - AttributeName: gameId
+                KeyType: "HASH"
+            Projection:
+              ProjectionType: 'ALL'
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:custom.connectionTableName}
     GameTable:

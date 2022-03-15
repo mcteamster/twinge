@@ -5,22 +5,27 @@ class Gamestate {
     // Default Gamestate
     if (!gamestate) {
       gamestate = {
+        // User customisable
         config: {
           deckSize: 100,
         },
+        // Abstract stuff about the game 
         meta: {
           phase: 'open',
           round: 0
         },
-        players: [],
-        private: {
-          deck: [],
-        },
+        // What's on the table
         public: {
           pile: [],
           lives: 3,
           remaining: 100,
-        }
+        },
+        // Partially Secret
+        players: [],
+        // Secret Information
+        private: {
+          deck: [],
+        },
       };
     }
 
@@ -37,6 +42,7 @@ class Gamestate {
 
   async addPlayer(player) {
     this.players.push(player);
+    return player.playerId;
   }
 
   async setupGame() {
@@ -63,6 +69,7 @@ class Gamestate {
       this.players.forEach((player) => {
         player.hand = this.private.deck.splice(0, this.meta.round);
         player.hand.sort();
+        player.handSize = player.hand.length;
       });
       this.public.remaining = this.private.deck.length;
     } else {
@@ -76,13 +83,14 @@ class Gamestate {
       return player.playerId == playerId;
     })
     let lowestCards = [player.hand.shift()];
-    while (lowestCards[lowestCards.length - 1] == player.hand[0] - 1) {
+    while (player.hand[0] == lowestCards[lowestCards.length - 1] + 1) {
       lowestCards.push(player.hand.shift());
     }
     lowestCards.map((card) => {
       return {card: card, playerId: playerId }
     });
-    this.public.pile.push(...lowestcards)
+    this.public.pile.push(...lowestCards)
+    player.handSize = player.hand.length;
 
     // CHECK FOR MISFIRES HERE
   }

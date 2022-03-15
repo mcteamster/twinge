@@ -36,21 +36,45 @@ async function readConnection(connectionId) {
   }
 }
 
-async function updateConnection(connectionId, gameId) {
+async function findConnections(queryKey, queryValue) {
+  const params = {
+    TableName: CONNECTION_TABLE,
+    IndexName: queryKey,
+    KeyConditionExpression: "#queryKey = :queryValue",
+    ExpressionAttributeNames:{
+      "#queryKey": queryKey,
+    },
+    ExpressionAttributeValues: {
+      ":queryValue": queryValue,
+    }
+  };
+
+  try {
+    return (await dynamoDbClient.query(params).promise()).Items;
+  } catch (error) {
+    console.log(error);
+    return 500
+  }
+}
+
+async function updateConnection(connectionId, updateKey, updateValue) {
   const params = {
     TableName: CONNECTION_TABLE,
     Key: {
       connectionId: connectionId,
     },
-    UpdateExpression: "set gameId = :gameId",
+    UpdateExpression: "set #updateKey = :updateValue",
+    ExpressionAttributeNames:{
+      "#updateKey": updateKey,
+    },
     ExpressionAttributeValues: {
-      ":gameId": gameId,
+      ":updateValue": updateValue,
     },
     ReturnValues: "ALL_NEW"
   };
 
   try {
-    return await dynamoDbClient.update(params).promise();
+    return (await dynamoDbClient.update(params).promise()).Attributes;
   } catch (error) {
     console.log(error);
     return 500
@@ -77,6 +101,7 @@ async function deleteConnection(connectionId) {
 module.exports = {
   createConnection,
   readConnection,
+  findConnections,
   updateConnection,
   deleteConnection,
 }
