@@ -40,11 +40,26 @@ class Gamestate {
     });
   }
 
+  // Player Management
   async addPlayer(player) {
     this.players.push(player);
     return player.playerId;
   }
 
+  async findPlayer(playerId) {
+    return this.players.find((player) => {
+      return player.playerId == playerId;
+    });
+  }
+
+  async kickPlayer(playerId) {
+    let playerIndex = this.players.findIndex((player) => {
+      return player.playerId == playerId;
+    });
+    return this.players.splice(playerIndex);
+  }
+
+  // Game Management
   async setupGame() {
     // Initialise Deck
     this.private.deck = Array.from({
@@ -53,22 +68,22 @@ class Gamestate {
       return ++index;
     });
 
-    // Shuffle Deck
+    // Shuffle
     this.private.deck.forEach((_, i, a) => {
       const j = Math.floor(Math.random() * (i + 1));
       [a[i], a[j]] = [a[j], a[i]];
     });
-
     this.public.remaining = this.private.deck.length;
+    this.meta.phase = 'playing';
   }
 
   async nextRound() {
-    ++round;
+    this.meta.round += 1;
     // Deal cards to players - subtract from the deck
     if (this.private.deck.length > this.meta.round * this.players.length) {
       this.players.forEach((player) => {
         player.hand = this.private.deck.splice(0, this.meta.round);
-        player.hand.sort();
+        player.hand.sort((a, b) => { return a - b });
         player.handSize = player.hand.length;
       });
       this.public.remaining = this.private.deck.length;
@@ -78,21 +93,52 @@ class Gamestate {
   }
 
   async playCard(playerId) {
-    // Find Player
-    let player = this.players.find((player) => {
+    // Find active player
+    let activePlayerIndex = this.players.findIndex((player) => {
       return player.playerId == playerId;
-    })
-    let lowestCards = [player.hand.shift()];
-    while (player.hand[0] == lowestCards[lowestCards.length - 1] + 1) {
-      lowestCards.push(player.hand.shift());
-    }
-    lowestCards.map((card) => {
-      return {card: card, playerId: playerId }
     });
-    this.public.pile.push(...lowestCards)
-    player.handSize = player.hand.length;
+    let activePlayer = this.players[activePlayerIndex];
+    let lowestCards = [{ time: new Date().toISOString(), card: activePlayer.hand.shift(), playerIndex: activePlayerIndex }];
+    while (activePlayer.hand[0] == lowestCards[lowestCards.length - 1] + 1) {
+      lowestCards.push({ time: new Date().toISOString(), card: activePlayer.hand.shift(), playerIndex: activePlayerIndex });
+    }
+    activePlayer.handSize = activePlayer.hand.length;
+    this.public.pile.push(...lowestCards);
 
-    // CHECK FOR MISFIRES HERE
+    // Check for missed cards
+    let missedCards = [];
+    this.players.forEach((player, playerIndex) => {
+      console.log(player)
+      if (player.playerId != activePlayer.playerId) {
+        while (player.hand[0] < lowestCards[0].card) {
+          missedCards.push({ time: new Date().toISOString(), card: player.hand.shift(), playerIndex: playerIndex, missed: true })
+        }
+        player.handSize = player.hand.length;
+      }
+    })
+    if (missedCards.length > 0) {
+      missedCards.sort((a, b) => { return a.card - b.card });
+      this.public.pile.push(...missedCards);
+      this.public.lives -= missedCards.length;
+      if (this.public.lives <= 0) {
+        this.public.lives = 0;
+        this.meta.phase = 'lost';
+      }
+    }
+  }
+
+  async restartGame() {
+    this.meta = {
+      phase: 'open',
+      round: 0,
+    };
+    this.public = {
+      pile: [],
+      lives: 3,
+      remaining: this.config.deckSize,
+    };
+    this.setupGame();
+    this.nextRound();
   }
 }
 

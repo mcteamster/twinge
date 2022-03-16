@@ -45,11 +45,11 @@ functions:
     events:
       - websocket:
           route: $default
-  lobby:
-    handler: handlers/lobby.handler
+  play:
+    handler: handlers/play.handler
     events:
       - websocket:
-          route: lobby
+          route: play
           routeResponseSelectionExpression: $default
 
 resources:

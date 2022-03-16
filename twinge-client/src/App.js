@@ -10,11 +10,11 @@ class App extends React.Component {
   componentDidMount() {
     this.ws = new WebSocket('wss://twinge.mcteamster.com');
     this.ws.onopen = async () => {
-      localStorage.setItem('gameId', 'c2c858b4-311d-d3b5-19fd-203b4b41aa7d'); // Testing
-      localStorage.setItem('playerId', '3288fc25-2ebb-5bb4-791b-18fc79c4b002'); // Testing
-      let gameId = localStorage.getItem('gameId');
-      let playerId = localStorage.getItem('playerId');
-      this.sendMsg({ action: 'lobby', actionType: 'join', gameId: gameId, playerId: playerId });
+      localStorage.setItem('gameId', '7bad0dcc-80c8-3a14-cf5d-37e948f9e9f2'); // Testing
+      localStorage.setItem('playerId', 'beda7610-4a64-fe0b-2db4-0f07910162c4'); // Testing
+      this.gameId = localStorage.getItem('gameId');
+      this.playerId = localStorage.getItem('playerId');
+      this.sendMsg({ action: 'play', actionType: 'join', gameId: this.gameId, playerId: this.playerId });
     };
     this.ws.onmessage = (msg) => {
       let data = JSON.parse(msg.data);
@@ -39,8 +39,11 @@ class App extends React.Component {
 
   render() {
     return <div>
-      <button onClick={() => { this.sendMsg({ action: 'lobby', actionType: 'new' }) }}>Create Game</button>
-      <button onClick={() => { this.sendMsg({ action: 'lobby', actionType: 'join', roomCode: "ABCD" }) }}>Rejoin Game</button>
+      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'new' }) }}>Create Game</button>
+      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'join', roomCode: "ABCD" }) }}>Join Game</button>
+      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'start', gameId: this.gameId, playerId: this.playerId }) }}>Start Game</button>
+      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'twinge', gameId: this.gameId, playerId: this.playerId }) }}>Play Card</button>
+      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'restart', gameId: this.gameId, playerId: this.playerId }) }}>Restart Game</button>
     </div>
   }
 }
