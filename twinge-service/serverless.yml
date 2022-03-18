@@ -40,11 +40,6 @@ functions:
           route: $connect
       - websocket:
           route: $disconnect
-  default:
-    handler: handlers/default.handler
-    events:
-      - websocket:
-          route: $default
   play:
     handler: handlers/play.handler
     events:

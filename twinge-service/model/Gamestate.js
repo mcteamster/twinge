@@ -40,6 +40,9 @@ class Gamestate {
     });
   }
 
+  // Configure Gamestate
+  // TODO DECK SIZE
+
   // Player Management
   async addPlayer(player) {
     this.players.push(player);
@@ -77,10 +80,10 @@ class Gamestate {
     this.meta.phase = 'playing';
   }
 
-  async nextRound() {
-    this.meta.round += 1;
+  async setupRound() {
     // Deal cards to players - subtract from the deck
-    if (this.private.deck.length > this.meta.round * this.players.length) {
+    if (this.private.deck.length > (this.meta.round + 1) * this.players.length) {
+      this.meta.round++;
       this.players.forEach((player) => {
         player.hand = this.private.deck.splice(0, this.meta.round);
         player.hand.sort((a, b) => { return a - b });
@@ -89,6 +92,7 @@ class Gamestate {
       this.public.remaining = this.private.deck.length;
     } else {
       // Not Enough Cards - End The Game Here! You WIN!
+      this.meta.phase = 'won';
     }
   }
 
@@ -99,7 +103,7 @@ class Gamestate {
     });
     let activePlayer = this.players[activePlayerIndex];
     let lowestCards = [{ time: new Date().toISOString(), card: activePlayer.hand.shift(), playerIndex: activePlayerIndex }];
-    while (activePlayer.hand[0] == lowestCards[lowestCards.length - 1] + 1) {
+    while (activePlayer.hand[0] == lowestCards[lowestCards.length - 1].card + 1) {
       lowestCards.push({ time: new Date().toISOString(), card: activePlayer.hand.shift(), playerIndex: activePlayerIndex });
     }
     activePlayer.handSize = activePlayer.hand.length;
@@ -137,8 +141,11 @@ class Gamestate {
       lives: 3,
       remaining: this.config.deckSize,
     };
+    this.players.forEach((player) => {
+      player.hand = [];
+    });
     this.setupGame();
-    this.nextRound();
+    this.setupRound();
   }
 }
 

@@ -3,12 +3,32 @@ const dynamoDbClient = new AWS.DynamoDB.DocumentClient();
 const GAME_TABLE = process.env.GAME_TABLE;
 
 async function createGame(gameId, gamestate) {
+  function makeCode() {
+    let codeChars = [
+      Math.floor((Math.random()*26))+65,
+      Math.floor((Math.random()*26))+65,
+      Math.floor((Math.random()*26))+65,
+      Math.floor((Math.random()*26))+65
+    ]
+    return String.fromCharCode(...codeChars);
+  }
+  let roomCode = makeCode();
+  let regenCount = 0;
+  while(regenCount < 100 && (await findGames("roomCode", roomCode)).length > 0 ) {
+    roomCode = makeCode();
+    retries++;
+  }
+  if (regenCount >= 100 ) {
+    console.log('Too many rooms');
+    return 400
+  }
+
   const params = {
     TableName: GAME_TABLE,
     Item: {
       gameId: gameId,
       createTime: new Date().toISOString(),
-      roomCode: 'ABCD', // TODO: Generate This Randomly
+      roomCode: roomCode,
       gamestate: gamestate,
     },
   };

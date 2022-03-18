@@ -4,17 +4,16 @@ import React from 'react';
 class App extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      gameId: localStorage.getItem('gameId'),
+      playerId: localStorage.getItem('playerId'),
+    };
   }
 
   componentDidMount() {
     this.ws = new WebSocket('wss://twinge.mcteamster.com');
     this.ws.onopen = async () => {
-      localStorage.setItem('gameId', '7bad0dcc-80c8-3a14-cf5d-37e948f9e9f2'); // Testing
-      localStorage.setItem('playerId', 'beda7610-4a64-fe0b-2db4-0f07910162c4'); // Testing
-      this.gameId = localStorage.getItem('gameId');
-      this.playerId = localStorage.getItem('playerId');
-      this.sendMsg({ action: 'play', actionType: 'join', gameId: this.gameId, playerId: this.playerId });
+      this.sendMsg({ action: 'play', actionType: 'join', gameId: this.state.gameId, playerId: this.state.playerId });
     };
     this.ws.onmessage = (msg) => {
       let data = JSON.parse(msg.data);
@@ -28,7 +27,16 @@ class App extends React.Component {
       } 
       // Handle Gamestate Changes
       else {
-        console.dir(data);
+        // Update State
+        this.setState({
+          ...data,
+          playerId: data.gamestate.players.reduce((playerId, player) => { 
+            return `${playerId}${ player.playerId || '' }` 
+          }, ''),
+        });
+        // Store gameId and playerId
+        localStorage.setItem('gameId', this.state.gameId);
+        localStorage.setItem('playerId', this.state.playerId);
       }
     }
   }
@@ -39,11 +47,24 @@ class App extends React.Component {
 
   render() {
     return <div>
+      <div>GAMEID: {this.state.gameId}, PLAYERID: {this.state.playerId}</div>
+
+      <div>ROOMCODE: {this.state.roomCode}</div>
+
       <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'new' }) }}>Create Game</button>
-      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'join', roomCode: "ABCD" }) }}>Join Game</button>
-      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'start', gameId: this.gameId, playerId: this.playerId }) }}>Start Game</button>
-      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'twinge', gameId: this.gameId, playerId: this.playerId }) }}>Play Card</button>
-      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'restart', gameId: this.gameId, playerId: this.playerId }) }}>Restart Game</button>
+
+      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'join', roomCode: document.getElementById('roomCodeBox').value }) }}>Join Game</button>
+      <input id='roomCodeBox' type='text' pattern='[A-Z]'></input>
+
+      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'start', gameId: this.state.gameId, playerId: this.state.playerId }) }}>Start Game</button>
+
+      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'twinge', gameId: this.state.gameId, playerId: this.state.playerId }) }}>Play Card</button>
+
+      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'next', gameId: this.state.gameId, playerId: this.state.playerId }) }}>Next Round</button>
+
+      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'restart', gameId: this.state.gameId, playerId: this.state.playerId }) }}>Restart Game</button>
+
+      <div>GAME: {JSON.stringify(this.state.gamestate)}</div>
     </div>
   }
 }

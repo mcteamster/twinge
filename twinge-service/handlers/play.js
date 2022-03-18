@@ -25,7 +25,7 @@ async function joinGame(payload) {
   // Find game
   let game = null;
   if (payload.roomCode) {
-    game = (await games.findGames("roomCode", payload.roomCode))[0]; // this should be unique
+    game = (await games.findGames("roomCode", payload.roomCode))[0];
   } else if (payload.gameId) {
     game = await games.readGame(payload.gameId);
   }
@@ -43,7 +43,6 @@ async function joinGame(payload) {
       await connections.updateConnection(payload.connectionId, 'playerId', payload.playerId);
       // Update gamestate
       game = await games.updateGame(game.gameId, gamestate);
-      // Blast out to every player
       await messages.broadcastGame(game);
     } else {
       await messages.send(payload.connectionId, { message: 'Player not found' });
@@ -59,7 +58,6 @@ async function leaveGame(payload) {
 }
 
 async function startGame(payload) {
-  // Update gamestate
   let game = null;
   if (payload.gameId) {
     game = await games.readGame(payload.gameId);
@@ -67,7 +65,7 @@ async function startGame(payload) {
       let gamestate = new Gamestate(game.gamestate);
       if (await gamestate.findPlayer(payload.playerId)) {
         gamestate.setupGame();
-        gamestate.nextRound();
+        gamestate.setupRound();
         game = await games.updateGame(game.gameId, gamestate);
         await messages.broadcastGame(game);
       } else {
@@ -83,8 +81,7 @@ async function startGame(payload) {
 
 // In-Game Handlers
 async function twinge(payload) {
-  // Queue Events Somewhere - Debounce? - Filter out noise?
-  // Update gamestate
+  // TODO: Queue Events Somewhere - Debounce? - Filter out noise?
   let game = null;
   if (payload.gameId) {
     game = await games.readGame(payload.gameId);
@@ -92,7 +89,6 @@ async function twinge(payload) {
       let gamestate = new Gamestate(game.gamestate);
       let activePlayer = await gamestate.findPlayer(payload.playerId);
       if (activePlayer) {
-        console.log(activePlayer)
         if (activePlayer.handSize > 0) {
           gamestate.playCard(payload.playerId);
           game = await games.updateGame(game.gameId, gamestate);
@@ -111,8 +107,34 @@ async function twinge(payload) {
   }
 }
 
+async function nextRound(payload) {
+  let game = null;
+  if (payload.gameId) {
+    game = await games.readGame(payload.gameId);
+    if (game && game.gamestate && game.gamestate.meta.phase == 'playing') {
+      let gamestate = new Gamestate(game.gamestate);
+      let activePlayer = await gamestate.findPlayer(payload.playerId);
+      if (activePlayer) {
+        // Check for remaining cards
+        if (gamestate.players.reduce((playerCards, player) => { return playerCards += player.hand.length }, 0) == 0) {
+          gamestate.setupRound();
+          game = await games.updateGame(game.gameId, gamestate);
+          await messages.broadcastGame(game);
+        } else {
+          await messages.send(payload.connectionId, { message: 'Round in progress' });
+        }
+      } else {
+        await messages.send(payload.connectionId, { message: 'Player not found' });
+      }
+    } else {
+      await messages.send(payload.connectionId, { message: 'Game not found' });
+    }
+  } else {
+    await messages.send(payload.connectionId, { message: 'No gameId provided' });
+  }
+}
+
 async function restartGame(payload) {
-  // Update gamestate
   let game = null;
   if (payload.gameId) {
     game = await games.readGame(payload.gameId);
@@ -139,6 +161,7 @@ const actionHandler = {
   leave: leaveGame,
   start: startGame,
   twinge: twinge,
+  next: nextRound,
   restart: restartGame,
 }
 
