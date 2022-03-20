@@ -2,6 +2,7 @@
   width: 100vw;
   height: 100vh;
   text-align: center;
+  background: white;
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 5vh auto 0px;
@@ -16,13 +17,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1em;
+  padding: 0.5em;
   font-weight: bold;
   background-color: lightgrey;
 }
 
 .Header div {
-  min-width: 10em;
+  min-width: 5em;
 }
 
 #title {
@@ -53,7 +54,7 @@
 }
 
 .lobbyButtons {
-  font-size: 2em;
+  font-size: 5vw;
   flex-direction: row;
 }
 
@@ -140,10 +141,6 @@
   justify-content: space-between;
 }
 
-.Status div {
-  min-width: 8em;
-}
-
 .Latest {
   grid-area: table;
 }
@@ -220,4 +217,10 @@
   -moz-user-select: none;    
   -ms-user-select: none;      
   user-select: none;
+}
+
+@media screen and (max-aspect-ratio: 1/1) {
+  .App {
+    height: 88vh;
+  }
 }

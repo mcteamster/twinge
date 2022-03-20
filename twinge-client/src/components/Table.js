@@ -29,7 +29,7 @@ class Status extends React.Component {
     let lives = '';
     lives += '❤️'.repeat(this.props.state?.gamestate?.public?.lives || 0);
     lives += '🤍'.repeat(this.props.state?.gamestate?.config?.maxLives - this.props.state?.gamestate?.public?.lives || 0);
-    let deck = `${this.props.state?.gamestate?.config?.deckSize - this.props.state?.gamestate?.public?.remaining} of ${this.props.state?.gamestate?.config?.deckSize} Dealt`
+    let deck = `${this.props.state?.gamestate?.config?.deckSize - this.props.state?.gamestate?.public?.remaining}/${this.props.state?.gamestate?.config?.deckSize}`
     return <div className='Status'>
       <div>{round}</div>
       <div>{lives}</div>
