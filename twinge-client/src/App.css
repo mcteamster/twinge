@@ -1,38 +1,159 @@
 .App {
+  width: 100vw;
+  height: 100vh;
   text-align: center;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 5vh auto 0px;
+  grid-template-areas: 
+    'header'
+    'screen'
+    'footer';
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.Header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1em;
+  font-weight: bold;
+  background-color: lightgrey;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.Footer {
+  grid-area: footer;
+  display: none;
+  background-color: lightgrey;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.Lobby {
+  grid-area: screen;
+  border: 1pt red solid;
+}
+
+.Play {
+  grid-area: screen;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 5vh 1fr 15vh;
+  grid-template-areas:
+    'status'
+    'table'
+    'hand';
+}
+
+.Button {
+  font-size: 2em;
+}
+
+.Players {
+  grid-area: table;
   display: flex;
   flex-direction: column;
+}
+
+.player {
+  margin: 0.5em;
+  display: flex;
+  align-items: flex-start;
+}
+
+.playerValue {
+  padding: 0.5em;
+  border-radius: 0.5em;
+  border: 0.25em solid black;
+}
+
+.playerName {
+  padding: 0.75em;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.Status {
+  grid-area: status;
+  padding: 0.5em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.Latest {
+  grid-area: table;
+}
+
+.Pile {
+  grid-area: table;
+  padding: 0.5em;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex-direction: column-reverse;
+}
+
+.Hand {
+  grid-area: hand;
+  font-weight: bold;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  background-color: lightgrey;
+  cursor: pointer;
+}
+
+.Card {
+  margin: 0.25em;
+  border: 0.25em solid black;
+  border-radius: 0.5em; 
+  font-weight: bold;
+  background-color: white;
+}
+
+.Latest .Card {
+  height: 30vh;
+  width: 20vh;
+  font-size: 3em;
+}
+
+.Pile .Card {
+  height: 4vh;
+  width: 7vw;
+  font-size: 0.75em;
+}
+
+.Hand .Card {
+  height: 8vh;
+  width: 5vh;
+  font-size: 1em;
+}
+
+.missed {
+  border: 0.25em solid red;
+  color: red;
+}
+
+.stale {
+  opacity: 0.25;
+}
+
+.endgame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+}
+
+.centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.unselectable {
+  -webkit-user-select: none;  
+  -moz-user-select: none;    
+  -ms-user-select: none;      
+  user-select: none;
 }

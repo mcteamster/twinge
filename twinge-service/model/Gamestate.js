@@ -8,6 +8,7 @@ class Gamestate {
         // User customisable
         config: {
           deckSize: 100,
+          maxLives: 5,
         },
         // Abstract stuff about the game 
         meta: {
@@ -102,9 +103,9 @@ class Gamestate {
       return player.playerId == playerId;
     });
     let activePlayer = this.players[activePlayerIndex];
-    let lowestCards = [{ time: new Date().toISOString(), card: activePlayer.hand.shift(), playerIndex: activePlayerIndex }];
+    let lowestCards = [{ time: new Date().toISOString(), card: activePlayer.hand.shift(), round: this.meta.round, playerIndex: activePlayerIndex }];
     while (activePlayer.hand[0] == lowestCards[lowestCards.length - 1].card + 1) {
-      lowestCards.push({ time: new Date().toISOString(), card: activePlayer.hand.shift(), playerIndex: activePlayerIndex });
+      lowestCards.push({ time: new Date().toISOString(), card: activePlayer.hand.shift(), round: this.meta.round, playerIndex: activePlayerIndex });
     }
     activePlayer.handSize = activePlayer.hand.length;
     this.public.pile.push(...lowestCards);
@@ -115,7 +116,7 @@ class Gamestate {
       console.log(player)
       if (player.playerId != activePlayer.playerId) {
         while (player.hand[0] < lowestCards[0].card) {
-          missedCards.push({ time: new Date().toISOString(), card: player.hand.shift(), playerIndex: playerIndex, missed: true })
+          missedCards.push({ time: new Date().toISOString(), card: player.hand.shift(), round: this.meta.round, playerIndex: playerIndex, missed: true })
         }
         player.handSize = player.hand.length;
       }

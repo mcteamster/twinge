@@ -1,4 +1,6 @@
 import './App.css';
+import { Header, Footer } from './components/Banners';
+import { Lobby, Play } from './components/Screens'
 import React from 'react';
 
 class App extends React.Component {
@@ -8,6 +10,7 @@ class App extends React.Component {
       gameId: localStorage.getItem('gameId'),
       playerId: localStorage.getItem('playerId'),
     };
+    this.sendMsg = this.sendMsg.bind(this);
   }
 
   componentDidMount() {
@@ -41,31 +44,43 @@ class App extends React.Component {
     }
   }
 
+  debounce(fn, delay) {
+    let timer
+      return function (...args) {
+        clearTimeout(timer)
+        timer = setTimeout(()=>fn(...args), delay)
+    }
+  }
+
   async sendMsg(msg) {
     this.ws.send(JSON.stringify(msg));
   }
 
   render() {
-    return <div>
-      <div>GAMEID: {this.state.gameId}, PLAYERID: {this.state.playerId}</div>
-
-      <div>ROOMCODE: {this.state.roomCode}</div>
-
-      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'new' }) }}>Create Game</button>
-
-      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'join', roomCode: document.getElementById('roomCodeBox').value }) }}>Join Game</button>
-      <input id='roomCodeBox' type='text' pattern='[A-Z]'></input>
-
-      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'start', gameId: this.state.gameId, playerId: this.state.playerId }) }}>Start Game</button>
-
-      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'twinge', gameId: this.state.gameId, playerId: this.state.playerId }) }}>Play Card</button>
-
-      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'next', gameId: this.state.gameId, playerId: this.state.playerId }) }}>Next Round</button>
-
-      <button onClick={() => { this.sendMsg({ action: 'play', actionType: 'restart', gameId: this.state.gameId, playerId: this.state.playerId }) }}>Restart Game</button>
-
-      <div>GAME: {JSON.stringify(this.state.gamestate)}</div>
-    </div>
+    if (this.state?.gamestate?.meta?.phase == 'closed') {
+      localStorage.setItem('gameId', null);
+      localStorage.setItem('playerId', null);
+      this.setState({
+        gameId: null,
+        playerId: null,
+        roomCode: null,
+        gamestate: null,
+      })
+    } 
+    
+    if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase == 'open') {
+      return <div className='App'>
+        <Header state={this.state}></Header>
+        <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 500)}></Lobby>
+        <Footer state={this.state}></Footer>
+      </div>
+    } else {
+      return <div className='App'>
+        <Header state={this.state}></Header>
+        <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 500)}></Play>
+        <Footer state={this.state}></Footer>
+      </div>
+    }
   }
 }
 

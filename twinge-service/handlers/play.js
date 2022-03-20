@@ -25,7 +25,7 @@ async function joinGame(payload) {
   // Find game
   let game = null;
   if (payload.roomCode) {
-    game = (await games.findGames("roomCode", payload.roomCode))[0];
+    game = (await games.findGames("roomCode", payload.roomCode.toUpperCase()))[0];
   } else if (payload.gameId) {
     game = await games.readGame(payload.gameId);
   }
@@ -49,6 +49,27 @@ async function joinGame(payload) {
     }
   } else {
     await messages.send(payload.connectionId, { message: 'Game not found' });
+  }
+}
+
+async function renamePlayer(payload) {
+  let game = null;
+  if (payload.gameId) {
+    game = await games.readGame(payload.gameId);
+    if (game && game.gamestate) {
+      let gamestate = new Gamestate(game.gamestate);
+      // Rename
+      if (gamestate.meta.phase == 'open' && payload.playerId) {
+        let player = await gamestate.findPlayer(payload.playerId);
+        await player.rename(String(payload.name).toUpperCase());
+        game = await games.updateGame(game.gameId, gamestate);
+        await messages.broadcastGame(game);
+      } else {
+        await messages.send(payload.connectionId, { message: 'Player not found' });
+      }
+    } else {
+      await messages.send(payload.connectionId, { message: 'Game not found' });
+    }
   }
 }
 
@@ -155,14 +176,38 @@ async function restartGame(payload) {
   }
 }
 
+async function endGame(payload) {
+  let game = null;
+  if (payload.gameId) {
+    game = await games.readGame(payload.gameId);
+    if (game && game.gamestate && game.gamestate.meta.phase != 'open') {
+      let gamestate = new Gamestate(game.gamestate);
+      if (await gamestate.findPlayer(payload.playerId)) {
+        await games.deleteGame(game.gameId);
+        // Cleanse Game
+        game.gamestate.meta.phase = 'closed';
+        await messages.broadcastGame(game);
+      } else {
+        await messages.send(payload.connectionId, { message: 'Player not found' });
+      }
+    } else {
+      await messages.send(payload.connectionId, { message: 'Open game not found' });
+    }
+  } else {
+    await messages.send(payload.connectionId, { message: 'No gameId provided' });
+  }
+}
+
 const actionHandler = {
   new: newGame,
   join: joinGame,
+  rename: renamePlayer,
   leave: leaveGame,
   start: startGame,
   twinge: twinge,
   next: nextRound,
   restart: restartGame,
+  end: endGame,
 }
 
 module.exports.handler = async (event) => {
@@ -173,6 +218,7 @@ module.exports.handler = async (event) => {
     gameId: body.gameId,
     playerId: body.playerId,
     roomCode: body.roomCode,
+    name: body.name,
   }
   await actionHandler[actionType](payload);
   return {
