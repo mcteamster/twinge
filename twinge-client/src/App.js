@@ -33,7 +33,7 @@ class App extends React.Component {
         // Update State
         this.setState({
           ...data,
-          playerId: data.gamestate.players.reduce((playerId, player) => { 
+          playerId: data?.gamestate?.players?.reduce((playerId, player) => { 
             return `${playerId}${ player.playerId || '' }` 
           }, ''),
         });
@@ -70,13 +70,13 @@ class App extends React.Component {
     
     if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase == 'open') {
       return <div className='App'>
-        <Header state={this.state}></Header>
+        <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 500)}></Header>
         <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 500)}></Lobby>
         <Footer state={this.state}></Footer>
       </div>
     } else {
       return <div className='App'>
-        <Header state={this.state}></Header>
+        <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 500)}></Header>
         <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 500)}></Play>
         <Footer state={this.state}></Footer>
       </div>

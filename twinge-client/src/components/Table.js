@@ -8,7 +8,7 @@ class Players extends React.Component {
   render() {
     let players = this.props.players.map((player, i) => {
       return <div key={`p${i + 1}`} className='player'>
-        <div className='playerValue'>{this.props.context=='lobby' ? i+1 : `🖐 ${player.handSize}`}</div>
+        <div className='playerValue'>{this.props.context=='lobby' ? `P${i+1}` : `🖐 ${player.handSize}`}</div>
         <div className='playerName'>{player.name}</div>
       </div>
     });

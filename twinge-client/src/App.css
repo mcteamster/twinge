@@ -21,6 +21,23 @@
   background-color: lightgrey;
 }
 
+.Header div {
+  min-width: 10em;
+}
+
+#title {
+  text-align: left;
+}
+
+#roomCode {
+  text-align: center;
+}
+
+#exit {
+  text-align: right;
+  cursor: pointer;
+}
+
 .Footer {
   grid-area: footer;
   display: none;
@@ -29,7 +46,50 @@
 
 .Lobby {
   grid-area: screen;
-  border: 1pt red solid;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: column;
+}
+
+.lobbyButtons {
+  font-size: 2em;
+  flex-direction: row;
+}
+
+.lobbyButtons div {
+  margin: 1em;
+  padding: 0;
+  border-radius: 1em;
+  cursor: pointer;
+}
+
+.Create {
+  color: white;
+  background: goldenrod;
+}
+
+.Join {
+  flex-direction: row;
+}
+
+.Start {
+  color: white;
+  background: goldenrod;
+}
+
+.Rename {
+  flex-direction: row;
+}
+
+#inputBox {
+  height: 2em;
+  width: 10em;
+  font-size: 1em;
+  text-align: center;
+  box-shadow: none;
+  border-radius: 1em;
+  border: 1pt solid lightgrey;
 }
 
 .Play {
@@ -78,6 +138,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.Status div {
+  min-width: 8em;
 }
 
 .Latest {

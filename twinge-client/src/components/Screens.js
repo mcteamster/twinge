@@ -1,5 +1,6 @@
 import React from 'react';
 import { Players, Status, Latest, Pile, Hand } from './Table';
+import { Create, Join, Rename, Start } from './Buttons';
 
 class Lobby extends React.Component {
   constructor(props) {
@@ -7,15 +8,31 @@ class Lobby extends React.Component {
   }
 
   render() {
+    let inputs;
+    if (this.props.state?.roomCode) {
+      inputs = <div className='lobbyButtons centered'>
+        <Start state={this.props.state} sendMsg={this.props.sendMsg}></Start>
+        <Rename state={this.props.state} sendMsg={this.props.sendMsg}></Rename>
+      </div>
+    } else {
+      inputs = <div className='lobbyButtons centered'>
+        <Create sendMsg={this.props.sendMsg}></Create>
+        <Join sendMsg={this.props.sendMsg}></Join>
+      </div>
+    }
+
     return <div className='Lobby'>
-      <h1>Twinge</h1>
-      <p>I've got a twinge</p>
+      <div>
+        <h1>😣 twinge</h1>
+        <p>
+          as a team, try to play your cards in ascending order<br></br>
+          each level, every player will be dealt an additional card<br></br>
+          any skipped cards will cost you a life<br></br>
+          prepare to feel the twinge!
+        </p>
+      </div>
       <Players className='Players centered' context='lobby' players={this.props.state?.gamestate?.players || []}></Players>
-      <button className='Button' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'new' }) }}>Create Game</button>
-      <input id='inputBox' type='text' pattern='[A-Z]'></input>
-      <button className='Button' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'join', roomCode: document.getElementById('inputBox').value }) }}>Join Game</button>
-      <button className='Button' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'rename', name: document.getElementById('inputBox').value, gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}>Rename Player</button>
-      <button className='Button' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'start', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}>Start Game</button>
+      {inputs}
     </div>
   }
 }

@@ -60,7 +60,7 @@ class Gamestate {
     let playerIndex = this.players.findIndex((player) => {
       return player.playerId == playerId;
     });
-    return this.players.splice(playerIndex);
+    return this.players.splice(playerIndex, 1);
   }
 
   // Game Management

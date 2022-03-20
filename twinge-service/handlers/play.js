@@ -74,8 +74,40 @@ async function renamePlayer(payload) {
 }
 
 async function leaveGame(payload) {
-  // Unlink gamestate from connection
-  // Update gamestate
+  let game = null;
+  if (payload.gameId) {
+    game = await games.readGame(payload.gameId);
+    if (game && game.gamestate) {
+      let gamestate = new Gamestate(game.gamestate);
+      if (await gamestate.findPlayer(payload.playerId)) {
+        await gamestate.kickPlayer(payload.playerId);
+        if (gamestate.players.length > 0) {
+          game = await games.updateGame(game.gameId, gamestate);
+          await messages.broadcastGame(game);
+        } else {
+          await games.deleteGame(game.gameId);
+        }
+        // Cleanse Connection of Game
+        await connections.updateConnection(payload.connectionId, 'gameId', null);
+        await connections.updateConnection(payload.connectionId, 'playerId', null);
+        await messages.send(payload.connectionId, {
+          gameId: null,
+          gamestate: {
+            meta: {
+              phase: 'closed',
+            },
+            players: [],
+          },
+        });
+      } else {
+        await messages.send(payload.connectionId, { message: 'Player not found' });
+      }
+    } else {
+      await messages.send(payload.connectionId, { message: 'Open game not found' });
+    }
+  } else {
+    await messages.send(payload.connectionId, { message: 'No gameId provided' });
+  }
 }
 
 async function startGame(payload) {
