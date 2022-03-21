@@ -4,7 +4,10 @@
   "description": "",
   "dependencies": {
     "aws-sdk": "^2.1092.0",
-    "guid": "^0.0.12",
-    "serverless-http": "^2.7.0"
+    "guid": "^0.0.12"
+  },
+  "devDependencies": {
+    "serverless-http": "^2.7.0",
+    "serverless-apigateway-service-proxy": "^2.1.0"
   }
 }

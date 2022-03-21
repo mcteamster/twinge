@@ -3,10 +3,6 @@ import { Players, Status, Latest, Pile, Hand } from './Table';
 import { Create, Join, Rename, Start } from './Buttons';
 
 class Lobby extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
   render() {
     let inputs;
     if (this.props.state?.roomCode) {
@@ -38,10 +34,6 @@ class Lobby extends React.Component {
 }
 
 class Play extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
   render() {
     return <div className='Play'>
       <Status state={this.props.state}></Status>

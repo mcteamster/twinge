@@ -2,12 +2,37 @@ service: twinge-service
 frameworkVersion: "3"
 
 custom:
-  hostname: "twinge.mcteamster.com"
+  hostname: "twinge-service.mcteamster.com"
   connectionTableName: "connection-table-${sls:stage}"
   gameTableName: "game-table-${sls:stage}"
+  apiGatewayServiceProxies:
+    - s3:
+        path: /
+        method: get
+        action: GetObject
+        bucket:
+          Ref: S3Bucket
+        key: index.html
+        cors: true 
+
+    - s3:
+        path: /{myPath+}
+        method: get
+        action: GetObject
+        pathOverride: '{myPath}'
+        bucket:
+          Ref: S3Bucket
+        cors: true       
+
+        requestParameters:
+          # if requestParameters has a 'integration.request.path.object' property you should remove the key setting
+          'integration.request.path.myPath': 'method.request.path.myPath'
+          'integration.request.path.object': 'context.requestId'
+          'integration.request.header.cache-control': "'public, max-age=31536000, immutable'"
 
 provider:
   name: aws
+  endpointType: regional
   stage: dev
   region: ap-southeast-2
   runtime: nodejs14.x
@@ -89,3 +114,8 @@ resources:
               ProjectionType: 'ALL'
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:custom.gameTableName}
+    S3Bucket:
+      Type: 'AWS::S3::Bucket'
+
+plugins:
+  - serverless-apigateway-service-proxy

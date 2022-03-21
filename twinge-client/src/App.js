@@ -14,7 +14,7 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    this.ws = new WebSocket('wss://twinge.mcteamster.com');
+    this.ws = new WebSocket('wss://twinge-service.mcteamster.com');
     this.ws.onopen = async () => {
       this.sendMsg({ action: 'play', actionType: 'join', gameId: this.state.gameId, playerId: this.state.playerId });
     };
@@ -57,7 +57,7 @@ class App extends React.Component {
   }
 
   render() {
-    if (this.state?.gamestate?.meta?.phase == 'closed') {
+    if (this.state?.gamestate?.meta?.phase === 'closed') {
       localStorage.setItem('gameId', null);
       localStorage.setItem('playerId', null);
       this.setState({
@@ -68,7 +68,7 @@ class App extends React.Component {
       })
     } 
     
-    if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase == 'open') {
+    if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open') {
       return <div className='App'>
         <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 500)}></Header>
         <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 500)}></Lobby>
