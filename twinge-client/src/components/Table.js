@@ -111,8 +111,8 @@ class Hand extends React.Component {
             if (card === a[0]+i) {
               wrapperClass = 'nextCard';
             }
-            return <div className={`cardWrapper ${wrapperClass}`} style={{ 'zIndex': a.length - i }}>
-              <Card key={`h${i + 1}`} value={card}></Card> 
+            return <div key={`h${i + 1}`} className={`cardWrapper ${wrapperClass}`} style={{ 'zIndex': a.length - i }}>
+              <Card value={card}></Card> 
             </div>
           });
           if (hand.length > 0) {

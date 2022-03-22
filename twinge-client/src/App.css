@@ -1,6 +1,8 @@
 .App {
   width: 100vw;
-  height: 100vh;
+  height: 90vh;
+  position: absolute;
+  bottom: 0;
   text-align: center;
   background: white;
   display: grid;
@@ -22,6 +24,7 @@
   justify-content: space-between;
   font-weight: bold;
   background-color: lightgrey;
+  z-index: 2;
 }
 
 .Header div {
@@ -97,14 +100,14 @@ h1 {
   text-align: center;
   box-shadow: none;
   border-radius: 1em;
-  border: 1pt solid lightgrey;
+  border: 0.1em solid lightgrey;
 }
 
 .Play {
   grid-area: screen;
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: 1fr 20vh;
+  grid-template-rows: 1fr calc(15vh + 4em);
   grid-template-areas:
     'table'
     'hand';
@@ -171,7 +174,7 @@ h1 {
   align-items: center;
   justify-content: flex-start;
   overflow: hidden;
-  background-image: linear-gradient(to bottom, white 70%, grey 70%);
+  background-image: linear-gradient(to bottom, white 67%, white 67%);
   cursor: pointer;
 }
 
@@ -205,7 +208,7 @@ h1 {
 .handWrapper {
   height: 100%;
   width: 100%;
-  padding-left: calc(50vw - 3em);
+  padding-left: calc(50vw - 4vh - 0.875em);
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -264,12 +267,8 @@ h1 {
   user-select: none;
 }
 
-
-
 @media screen and (max-aspect-ratio: 1/1) {
   .App {
     height: 85vh;
-    position: absolute;
-    bottom: 0;
   }
 }
