@@ -3,10 +3,17 @@ import React from 'react';
 class Players extends React.Component {
   render() {
     let players = this.props.players.map((player, i) => {
-      return <div key={`p${i + 1}`} className='player'>
-        <div className='playerValue'>{this.props.context === 'lobby' ? `P${i+1}` : `🖐 ${player.handSize}`}</div>
-        <div className='playerName'>{player.name}</div>
-      </div>
+      if(this.props.context === 'lobby') {
+        return <div key={`p${i + 1}`} className='player'>
+          <div className='playerValue'>{`P${i+1}`}</div>
+          <div className='playerName'>{player.name}</div>
+        </div>
+      } else if (!player.playerId) {
+        return <div key={`p${i + 1}`} className='player'>
+          <div className='playerValue'>{`🖐 ${player.handSize}`}</div>
+          <div className='playerName'>{player.name}</div>
+        </div>
+      }
     });
 
     return <div className='Players'>
@@ -38,14 +45,14 @@ class Latest extends React.Component {
       if (event.round === this.props.round) {
         card = <Card value={event?.card} missed={event?.missed}></Card>
       } else {
-        card = <Card value='lowest plays first' stale={true}></Card>
+        card = <Card value='0' stale={true}></Card>
       }
       return <div className='Latest centered'>
         {card}
       </div>
     } else {
       return <div className='Latest centered'>
-        <Card value='lowest plays first' stale={true}></Card>
+        <Card value='0' stale={true}></Card>
       </div>
     }
   }
@@ -81,12 +88,11 @@ class Hand extends React.Component {
   render() {
     if (this.props.state.gamestate) {
       if (this.props.state.gamestate.meta.phase === 'won' || this.props.state.gamestate.meta.phase === 'lost') {
-        return <div className='Hand unselectable'>
+        return <div className='Hand centered unselectable'>
           <div className='Button endgame' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'restart', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}>
             Replay?
           </div>
           <div className='Button endgame' onClick={() => {
-            
             this.props.sendMsg({ action: 'play', actionType: 'end', gameId: this.props.state.gameId, playerId: this.props.state.playerId });
           }}>
             End Game
@@ -99,12 +105,21 @@ class Hand extends React.Component {
             <div className='Button'>Next Round</div>
           </div>
         } else {
-          let hand = this.props.state.gamestate.players.find((player) => { return player.playerId === this.props.state.playerId }).hand.map((card, i) => {
-            return <Card key={`h${i + 1}`} value={card}></Card>
+          let hand = this.props.state.gamestate.players.find((player) => { return player.playerId === this.props.state.playerId }).hand.map((card, i, a) => {
+            // Check for consecutive next cards to be played together
+            let wrapperClass = '';
+            if (card === a[0]+i) {
+              wrapperClass = 'nextCard';
+            }
+            return <div className={`cardWrapper ${wrapperClass}`} style={{ 'zIndex': a.length - i }}>
+              <Card key={`h${i + 1}`} value={card}></Card> 
+            </div>
           });
           if (hand.length > 0) {
-            return <div className='Hand centered unselectable' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'twinge', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}>
-              {hand}
+            return <div className='Hand unselectable' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'twinge', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}>
+              <div className='handWrapper'>
+                {hand.reverse()}
+              </div>
             </div>
           } else {
             return <div className='Hand centered unselectable'>

@@ -5,25 +5,27 @@
   background: white;
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: 5vh auto 0px;
-  grid-template-areas: 
-    'header'
+  grid-template-rows: auto 0px;
+  grid-template-areas:
     'screen'
     'footer';
 }
 
 .Header {
-  grid-area: header;
+  width: calc(100vw - 1em);
+  height: 2em;
+  padding: 0.5em;
+  position: fixed;
+  top: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5em;
   font-weight: bold;
   background-color: lightgrey;
 }
 
 .Header div {
-  min-width: 5em;
+  min-width: 6em;
 }
 
 #title {
@@ -53,13 +55,18 @@
   flex-direction: column;
 }
 
+h1 {
+  font-size: 4em;
+}
+
 .lobbyButtons {
-  font-size: 5vw;
+  font-weight: bold;
+  font-size: calc(min(5vw, 4vh));
   flex-direction: row;
 }
 
 .lobbyButtons div {
-  margin: 1em;
+  margin: 0.75em;
   padding: 0;
   border-radius: 1em;
   cursor: pointer;
@@ -84,7 +91,7 @@
 }
 
 #inputBox {
-  height: 2em;
+  height: 2.5em;
   width: 10em;
   font-size: 1em;
   text-align: center;
@@ -97,9 +104,8 @@
   grid-area: screen;
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: 5vh 1fr 15vh;
+  grid-template-rows: 1fr 20vh;
   grid-template-areas:
-    'status'
     'table'
     'hand';
 }
@@ -135,7 +141,9 @@
 }
 
 .Status {
-  grid-area: status;
+  width: calc(100vw - 1em);
+  position: fixed;
+  top: 3em;
   padding: 0.5em;
   display: flex;
   align-items: center;
@@ -157,11 +165,13 @@
 
 .Hand {
   grid-area: hand;
+  padding: 0;
   font-weight: bold;
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  background-color: lightgrey;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  background-image: linear-gradient(to bottom, white 70%, grey 70%);
   cursor: pointer;
 }
 
@@ -186,9 +196,43 @@
 }
 
 .Hand .Card {
-  height: 8vh;
-  width: 5vh;
-  font-size: 1em;
+  min-height: 10vh;
+  min-width: 7vh;
+  margin: 0;
+  font-size: 1.5em;
+}
+
+.handWrapper {
+  height: 100%;
+  width: 100%;
+  padding-left: calc(50vw - 3em);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-direction: row-reverse;
+  overflow-x: visible;
+}
+
+.cardWrapper {
+  margin: 0 -1em 0 0;
+}
+
+.cardWrapper:last-child {
+  overflow: visible;
+  position: relative;
+  bottom: 1.5em;
+  border-radius: 1.25em;
+}
+
+.nextCard {
+  border: 0.25em solid greenyellow;
+  border-radius: 1.125em;
+}
+
+.cardWrapper:last-child .Card {
+  min-height: 12vh;
+  min-width: 8vh;
+  font-size: 2em;
 }
 
 .missed {
@@ -220,8 +264,12 @@
   user-select: none;
 }
 
+
+
 @media screen and (max-aspect-ratio: 1/1) {
   .App {
-    height: 88vh;
+    height: 85vh;
+    position: absolute;
+    bottom: 0;
   }
 }

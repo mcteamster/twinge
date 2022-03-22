@@ -18,15 +18,14 @@ class Lobby extends React.Component {
     }
 
     return <div className='Lobby'>
-      <div>
-        <h1>😣 twinge</h1>
-        <p>
-          as a team, try to play your cards in ascending order<br></br>
-          each level, every player will be dealt an additional card<br></br>
-          any skipped cards will cost you a life<br></br>
-          prepare to feel the twinge!
-        </p>
-      </div>
+      <h1>😣 twinge</h1>
+      <p>
+        🙌 This is a team game...<br></br>
+        ⬆️ Try to play your cards in ascending order<br></br>
+        💔 Skipping cards will each cost a life <br></br>
+        ➕ Every level, all players will be dealt one additional card<br></br>
+        😬 Prepare to feel the twinge!
+      </p>
       <Players className='Players centered' context='lobby' players={this.props.state?.gamestate?.players || []}></Players>
       {inputs}
     </div>

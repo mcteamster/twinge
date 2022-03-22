@@ -70,14 +70,14 @@ class App extends React.Component {
     
     if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open') {
       return <div className='App'>
-        <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 500)}></Header>
-        <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 500)}></Lobby>
+        <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Header>
+        <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Lobby>
         <Footer state={this.state}></Footer>
       </div>
     } else {
       return <div className='App'>
-        <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 500)}></Header>
-        <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 500)}></Play>
+        <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Header>
+        <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Play>
         <Footer state={this.state}></Footer>
       </div>
     }
