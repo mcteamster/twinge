@@ -27,6 +27,7 @@ class App extends React.Component {
       // Handle Errors
       else if (data.message) {
         console.error(data.message);
+        this.errorHandler(data.message);
       } 
       // Handle Gamestate Changes
       else {
@@ -44,6 +45,22 @@ class App extends React.Component {
     }
   }
 
+  errorHandler(error) {
+    let errorHandlers = {
+      'Game not found': () =>{
+        localStorage.setItem('gameId', null);
+        localStorage.setItem('playerId', null);
+        this.setState({
+          gameId: null,
+          playerId: null,
+          roomCode: null,
+          gamestate: null,
+        })
+      },
+    };
+    errorHandlers[error] && errorHandlers[error]();
+  }
+
   debounce(fn, delay) {
     let timer
       return function (...args) {
@@ -53,22 +70,14 @@ class App extends React.Component {
   }
 
   async sendMsg(msg) {
+    if (!this.ws) {
+      this.ws = new WebSocket('wss://twinge-service.mcteamster.com');
+    }
     this.ws.send(JSON.stringify(msg));
   }
 
-  render() {
-    if (this.state?.gamestate?.meta?.phase === 'closed') {
-      localStorage.setItem('gameId', null);
-      localStorage.setItem('playerId', null);
-      this.setState({
-        gameId: null,
-        playerId: null,
-        roomCode: null,
-        gamestate: null,
-      })
-    } 
-    
-    if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open') {
+  render() {   
+    if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed') {
       return <div className='App'>
         <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Header>
         <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Lobby>

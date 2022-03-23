@@ -6,6 +6,7 @@ class Player {
     if (!player || !player.playerId) {
       player = {
         playerId: String(Guid.create()),
+        connected: true,
         name: 'ANON',
         hand: [],
         handSize: 0,
@@ -19,8 +20,8 @@ class Player {
   }
 
   async rename(name) {
-    if (name.length > 20) {
-      name = name.substring(0, 20);
+    if (name.length > 8) {
+      name = name.substring(0, 8);
     }
     this.name = name;
   }

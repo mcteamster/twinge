@@ -5,8 +5,7 @@ class Players extends React.Component {
     let players = this.props.players.map((player, i) => {
       if(this.props.context === 'lobby') {
         return <div key={`p${i + 1}`} className='player'>
-          <div className='playerValue'>{`P${i+1}`}</div>
-          <div className='playerName'>{player.name}</div>
+          <div className='playerValue'>{`${player.name}`}</div>
         </div>
       } else if (!player.playerId) {
         return <div key={`p${i + 1}`} className='player'>
@@ -89,10 +88,10 @@ class Hand extends React.Component {
     if (this.props.state.gamestate) {
       if (this.props.state.gamestate.meta.phase === 'won' || this.props.state.gamestate.meta.phase === 'lost') {
         return <div className='Hand centered unselectable'>
-          <div className='Button endgame' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'restart', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}>
+          <div className='Button centered replay' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'restart', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}>
             Replay?
           </div>
-          <div className='Button endgame' onClick={() => {
+          <div className='Button centered endgame' onClick={() => {
             this.props.sendMsg({ action: 'play', actionType: 'end', gameId: this.props.state.gameId, playerId: this.props.state.playerId });
           }}>
             End Game

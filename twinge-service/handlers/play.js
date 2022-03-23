@@ -92,6 +92,7 @@ async function leaveGame(payload) {
         await connections.updateConnection(payload.connectionId, 'playerId', null);
         await messages.send(payload.connectionId, {
           gameId: null,
+          roomCode: null,
           gamestate: {
             meta: {
               phase: 'closed',

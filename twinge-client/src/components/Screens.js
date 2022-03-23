@@ -5,7 +5,7 @@ import { Create, Join, Rename, Start } from './Buttons';
 class Lobby extends React.Component {
   render() {
     let inputs;
-    if (this.props.state?.roomCode) {
+    if (this.props.state?.gameId && this.props.state?.roomCode) {
       inputs = <div className='lobbyButtons centered'>
         <Start state={this.props.state} sendMsg={this.props.sendMsg}></Start>
         <Rename state={this.props.state} sendMsg={this.props.sendMsg}></Rename>
@@ -22,7 +22,7 @@ class Lobby extends React.Component {
       <p>
         🙌 This is a team game...<br></br>
         ⬆️ Try to play your cards in ascending order<br></br>
-        💔 Skipping cards will each cost a life <br></br>
+        💔 Skipping cards will each cost a life each<br></br>
         ➕ Every level, all players will be dealt one additional card<br></br>
         😬 Prepare to feel the twinge!
       </p>

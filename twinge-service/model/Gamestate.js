@@ -128,7 +128,20 @@ class Gamestate {
       if (this.public.lives <= 0) {
         this.public.lives = 0;
         this.meta.phase = 'lost';
+        return;
       }
+    }
+
+    // Autocomplete round if 1 remaining player
+    if (this.players.filter((player) => { return player.handSize > 0 }).length == 1 ) {
+      this.players.forEach((player, playerIndex) => {
+        if (player.handSize > 0) {
+          this.public.pile.push(...player.hand.splice(0).map((card) => {
+            return { time: new Date().toISOString(), card: card, round: this.meta.round, playerIndex: playerIndex }
+          }));
+          player.handSize = 0;
+        }
+      });
     }
   }
 
