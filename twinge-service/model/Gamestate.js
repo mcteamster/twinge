@@ -3,7 +3,7 @@ const Player = require('../model/Player');
 class Gamestate {
   constructor(gamestate) {
     // Default Gamestate
-    if (!gamestate) {
+    if (!gamestate.config) {
       gamestate = {
         // User customisable
         config: {
@@ -20,6 +20,30 @@ class Gamestate {
           pile: [],
           lives: 3,
           remaining: 100,
+        },
+        // Partially Secret
+        players: [],
+        // Secret Information
+        private: {
+          deck: [],
+        },
+      };
+    } else if(gamestate.config && !gamestate.meta) {
+      gamestate = {
+        config: {
+          deckSize: (gamestate.config.deckSize <= 1000 && gamestate.config.deckSize >= 10) ? Math.ceil(gamestate.config.deckSize) : 100,
+          maxLives: (gamestate.config.maxLives <= 100 && gamestate.config.maxLives > 0) ? Math.ceil(gamestate.config.maxLives) : 5,
+        },
+        // Abstract stuff about the game 
+        meta: {
+          phase: 'open',
+          round: 0
+        },
+        // What's on the table
+        public: {
+          pile: [],
+          lives: (gamestate.config.maxLives <= 100 && gamestate.config.maxLives > 0) ? Math.ceil(gamestate.config.maxLives) : 5,
+          remaining: (gamestate.config.deckSize <= 1000 && gamestate.config.deckSize >= 10) ? Math.ceil(gamestate.config.deckSize) : 100,
         },
         // Partially Secret
         players: [],
@@ -83,7 +107,10 @@ class Gamestate {
 
   async setupRound() {
     // Deal cards to players - subtract from the deck
-    if (this.private.deck.length > (this.meta.round + 1) * this.players.length) {
+    if (this.private.deck.length == 0 ) {
+      // Not Enough Cards - End The Game Here! You WIN!
+      this.meta.phase = 'won';
+    } else if (this.private.deck.length >= (this.meta.round + 1) * this.players.length) {
       this.meta.round++;
       this.players.forEach((player) => {
         player.hand = this.private.deck.splice(0, this.meta.round);
@@ -92,8 +119,17 @@ class Gamestate {
       });
       this.public.remaining = this.private.deck.length;
     } else {
-      // Not Enough Cards - End The Game Here! You WIN!
-      this.meta.phase = 'won';
+      // Partial distrbution for final round
+      this.meta.round++;
+      let quotient = this.private.deck.length / this.players.length;
+      let remainder = this.private.deck.length % this.players.length;
+      this.players.forEach((player, i) => {
+        let bonus = (i < remainder) ? 1 : 0;
+        player.hand = this.private.deck.splice(0, quotient + bonus);
+        player.hand.sort((a, b) => { return a - b });
+        player.handSize = player.hand.length;
+      });
+      this.public.remaining = this.private.deck.length;
     }
   }
 

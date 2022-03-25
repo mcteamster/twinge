@@ -3,17 +3,45 @@ import { Players, Status, Latest, Pile, Hand } from './Table';
 import { Create, Join, Rename, Start } from './Buttons';
 
 class Lobby extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      deckSize: 100,
+      maxLives: 5,
+    }
+  }
+
   render() {
     let inputs;
+    let info;
     if (this.props.state?.gameId && this.props.state?.roomCode) {
       inputs = <div className='lobbyButtons centered'>
         <Start state={this.props.state} sendMsg={this.props.sendMsg}></Start>
         <Rename state={this.props.state} sendMsg={this.props.sendMsg}></Rename>
       </div>
+      info = <Players className='Players centered' context='lobby' players={this.props.state?.gamestate?.players || []}></Players>
     } else {
       inputs = <div className='lobbyButtons centered'>
         <Create sendMsg={this.props.sendMsg}></Create>
         <Join sendMsg={this.props.sendMsg}></Join>
+      </div>
+      info = <div>
+        <div>
+          <div>{this.state.deckSize} {this.state.deckSize != 1 ? 'Cards' : 'Card'}</div>
+          <input className='slider' id='deckSize' type="range" min="10" max="1000" defaultValue="100" onChange={(e) => {
+            this.setState({
+              deckSize: e.target.value,
+            })
+          }}></input>
+        </div>
+        <div>
+          <div>{this.state.maxLives} {this.state.maxLives != 1 ? 'Lives' : 'Life'}</div>
+          <input className='slider' id='maxLives' type="range" min="1" max="100" defaultValue="5" onChange={(e) => {
+            this.setState({
+              maxLives: e.target.value,
+            })
+          }}></input>
+        </div>
       </div>
     }
 
@@ -23,10 +51,10 @@ class Lobby extends React.Component {
         🙌 This is a team game...<br></br>
         ⬆️ Try to play your cards in ascending order<br></br>
         💔 Skipping cards will each cost a life each<br></br>
-        ➕ Every level, all players will be dealt one additional card<br></br>
-        😬 Prepare to feel the twinge!
+        📈 Every level, all players will be dealt one additional card<br></br>
+        😬 Can you feel the 'twinge' and make it to the end?
       </p>
-      <Players className='Players centered' context='lobby' players={this.props.state?.gamestate?.players || []}></Players>
+      {info}
       {inputs}
     </div>
   }

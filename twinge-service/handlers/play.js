@@ -9,7 +9,7 @@ const Guid = require('guid');
 async function newGame(payload) {
   // Create new game
   let gameId = String(Guid.create());
-  let gamestate = new Gamestate();
+  let gamestate = new Gamestate({config: payload.config});
   payload.playerId = await gamestate.addPlayer(new Player());
   payload.game = await games.createGame(gameId, gamestate);
 
@@ -81,15 +81,14 @@ async function leaveGame(payload) {
       let gamestate = new Gamestate(game.gamestate);
       if (await gamestate.findPlayer(payload.playerId)) {
         await gamestate.kickPlayer(payload.playerId);
+        await connections.updateConnection(payload.connectionId, 'gameId', '-1');
+        await connections.updateConnection(payload.connectionId, 'playerId', '-1');
         if (gamestate.players.length > 0) {
           game = await games.updateGame(game.gameId, gamestate);
           await messages.broadcastGame(game);
         } else {
           await games.deleteGame(game.gameId);
         }
-        // Cleanse Connection of Game
-        await connections.updateConnection(payload.connectionId, 'gameId', null);
-        await connections.updateConnection(payload.connectionId, 'playerId', null);
         await messages.send(payload.connectionId, {
           gameId: null,
           roomCode: null,
@@ -135,7 +134,7 @@ async function startGame(payload) {
 
 // In-Game Handlers
 async function twinge(payload) {
-  // TODO: Queue Events Somewhere - Debounce? - Filter out noise?
+  // TODO: State Hash to prevent collisions
   let game = null;
   if (payload.gameId) {
     game = await games.readGame(payload.gameId);
@@ -218,7 +217,16 @@ async function endGame(payload) {
       if (await gamestate.findPlayer(payload.playerId)) {
         await games.deleteGame(game.gameId);
         // Cleanse Game
-        game.gamestate.meta.phase = 'closed';
+        game = {
+          gameId: payload.gameId,
+          roomCode: null,
+          gamestate: {
+            meta: {
+              phase: 'closed',
+            },
+            players: [],
+          }
+        }
         await messages.broadcastGame(game);
       } else {
         await messages.send(payload.connectionId, { message: 'Player not found' });
@@ -252,6 +260,7 @@ module.exports.handler = async (event) => {
     playerId: body.playerId,
     roomCode: body.roomCode,
     name: body.name,
+    config: body.config,
   }
   await actionHandler[actionType](payload);
   return {
