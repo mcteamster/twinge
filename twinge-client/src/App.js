@@ -24,7 +24,7 @@ class App extends React.Component {
   }
 
   autoJoin = async () => {
-    this.setState({ overlay: { message: 'Rejoining...' } });
+    this.setState({ overlay: { message: 'Connecting...' } });
     this.sendMsg({ action: 'play', actionType: 'join', gameId: this.state.gameId, playerId: this.state.playerId });
   };
 
@@ -125,7 +125,7 @@ class App extends React.Component {
 
   sendMsg = async (msg) => {
     if (!this.ws || this.ws.readyState !== 1) {
-      this.setState({ overlay: { message: 'Reconnecting...' } });
+      this.setState({ overlay: { message: 'Disconnected...' } });
       this.ws = new WebSocket('wss://twinge-service.mcteamster.com');
       this.ws.onopen = this.autoJoin;
       this.ws.onmessage = this.messageHandler;

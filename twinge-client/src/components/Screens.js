@@ -16,8 +16,8 @@ class Lobby extends React.Component {
     let info;
     if (this.props.state?.gameId && this.props.state?.roomCode) {
       inputs = <div className='lobbyButtons centered'>
-        <Start state={this.props.state} sendMsg={this.props.sendMsg}></Start>
         <Rename state={this.props.state} sendMsg={this.props.sendMsg}></Rename>
+        <Start state={this.props.state} sendMsg={this.props.sendMsg}></Start>
       </div>
       info = <Players className='Players centered' context='lobby' players={this.props.state?.gamestate?.players || []}></Players>
     } else {
@@ -47,13 +47,14 @@ class Lobby extends React.Component {
 
     return <div className='Lobby'>
       <h1>😣 twinge</h1>
-      <p>
-        🙌 This is a team game...<br></br>
-        ⬆️ Try to play your cards in ascending order<br></br>
-        💔 Skipping cards will each cost a life each<br></br>
-        📈 Every level, all players will be dealt one additional card<br></br>
-        😬 Can you feel the 'twinge' and make it to the end?
-      </p>
+      <div id='instructions'>
+        🙌 this is a team game...<br></br>
+        ⬆️ where we play our cards in ascending order<br></br>
+        👆 tap-hold-release to play your lowest card(s)<br></br>
+        💔 each skipped card will cost us a life<br></br>
+        📈 we get dealt one more card every level<br></br>
+        😬 can you feel the 'twinge' and make it to the end?
+      </div>
       {info}
       {inputs}
     </div>

@@ -75,6 +75,10 @@ h1 {
   font-size: 4em;
 }
 
+#instructions {
+  padding: 0.25em;
+}
+
 .lobbyButtons {
   font-weight: bold;
   font-size: calc(min(5vw, 4vh));
@@ -139,13 +143,32 @@ h1 {
   z-index: 1;
 }
 
-.player {
+.Player {
   border: 0.25em solid rgba(0,0,0,0);
   border-radius: 0.75em;
   margin: 0.25em;
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
+}
+
+.playerHighlight {
+  animation: highlightPlayer 0.5s 1;
+}
+
+@keyframes highlightPlayer {
+  0% {
+    position: relative;
+    left: 0vw;
+  }
+  50% {
+    position: relative;
+    left: 2vw;
+  }
+  100% {
+    position: relative;
+    left: 0vh;
+  }
 }
 
 .playerValue {

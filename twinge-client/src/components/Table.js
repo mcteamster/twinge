@@ -4,22 +4,51 @@ class Players extends React.Component {
   render() {
     let players = this.props.players.map((player, i) => {
       if(this.props.context === 'lobby') {
-        return <div key={`p${i + 1}`} className='player' style={player.playerId && { border: '0.25em solid greenyellow' }}>
-          <div className='playerValue'>{`${player.name}`}</div>
-        </div>
+        return <Player key={`p${i + 1}`} context='lobby' number={i+1} name={player.name} style={player.playerId && { border: '0.25em solid greenyellow' }}></Player>
       } else if (!player.playerId) {
-        return <div key={`p${i + 1}`} className='player'>
-          <div className='playerValue'>
-            <div className='playerName'>{player.name}</div>
-            {`🖐 ${player.handSize}`}
-          </div>
-        </div>
+        return <Player key={`p${i + 1}`} number={i+1} name={player.name} handSize={player.handSize}></Player>
       }
     });
-
     return <div className='Players'>
       {players}
     </div>
+  }
+}
+
+class Player extends React.PureComponent {
+  constructor(props) {
+    super(props);
+    this.state = {
+      id: `p${this.props.number}`,
+    }
+  }
+
+  componentDidUpdate() {
+    this.hightlight();
+  }
+
+  hightlight = () => {
+    if (this.props?.context !== 'lobby') {
+      document.getElementById(this.state.id).classList.add('playerHighlight');
+      setTimeout(() => {
+        document.getElementById(this.state.id).classList.remove('playerHighlight');
+      }, 500)
+    }
+  }
+
+  render() {
+    if(this.props.context === 'lobby') {
+      return <div key={`p${this.state.id}`} id={this.state.id} className='Player' style={this.props.style}>
+        <div className='playerValue'>{`${this.props.name}`}</div>
+      </div>
+    } else {
+      return <div key={`p${this.state.id}`} id={this.state.id} className='Player'>
+        <div className='playerValue'>
+          <div className='playerName'>{this.props.name}</div>
+          {`🖐 ${this.props.handSize}`}
+        </div>
+      </div>
+    }
   }
 }
 
@@ -91,21 +120,22 @@ class Hand extends React.Component {
       this.props.sendMsg(msg)
     }
     this.state = {
-      buffer: 0
+      cardBuffer: 0,
+      nextBuffer: 0,
     }
   }
   
-  startBuffer = (period) => {
+  startBuffer = (buffer) => {
     this.cancelBuffer();
     this.interval = setInterval(() => {
-      this.setState({
-        buffer: this.state.buffer + 1,
-      })
-    }, period)
+      let state = {};
+      state[buffer] = this.state[buffer] + 1;
+      this.setState(state)
+    }, 20)
   }
 
-  triggerBuffer = (msg) => {
-    if (this.state.buffer > 25) {
+  triggerBuffer = (buffer, msg) => {
+    if (this.state[buffer] > 25) {
       this.sendMsg(msg);
     }
     this.cancelBuffer();
@@ -114,7 +144,8 @@ class Hand extends React.Component {
   cancelBuffer = () => {
     clearInterval(this.interval);
     this.setState({
-      buffer: 0,
+      cardBuffer: 0,
+      nextBuffer: 0,
     })
   }
 
@@ -137,12 +168,12 @@ class Hand extends React.Component {
         let unplayedCards = this.props.state.gamestate.players.reduce((playerCards, player) => { return playerCards += player.handSize }, 0);
         if (unplayedCards === 0) {
           return <div className='Hand centered unselectable' 
-            style={{ background: `radial-gradient(circle, greenyellow , greenyellow ${4*this.state.buffer}%, white ${4*this.state.buffer}%, white)`}} 
-            onMouseDown={() => { this.startBuffer(20) }}
-            onMouseUp={() => { this.triggerBuffer({ action: 'play', actionType: 'next', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}
+            style={{ background: `radial-gradient(circle, greenyellow , greenyellow ${4*this.state.nextBuffer}%, white ${4*this.state.nextBuffer}%, white)`}} 
+            onMouseDown={() => { this.startBuffer('nextBuffer') }}
+            onMouseUp={() => { this.triggerBuffer('nextBuffer', { action: 'play', actionType: 'next', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}
             onMouseLeave={() => { this.cancelBuffer() }}
-            onTouchStart={() => { this.startBuffer(20) }}
-            onTouchEnd={() => { this.triggerBuffer({ action: 'play', actionType: 'next', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}
+            onTouchStart={() => { this.startBuffer('nextBuffer') }}
+            onTouchEnd={() => { this.triggerBuffer('nextBuffer', { action: 'play', actionType: 'next', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}
           >
             <div className='Button'>Next Level</div>
           </div>
@@ -153,10 +184,10 @@ class Hand extends React.Component {
             let bufferStyle = {};
             if (a.length === unplayedCards) {
               wrapperClass = 'autoCard';
-              bufferStyle = { background: `radial-gradient(circle, yellow , yellow ${4*this.state.buffer}%, white ${4*this.state.buffer}%, white)`} 
+              bufferStyle = { background: `radial-gradient(circle, yellow , yellow ${4*this.state.cardBuffer}%, white ${4*this.state.cardBuffer}%, white)`} 
             } else if (card === a[0]+i) {
               wrapperClass = 'nextCard';
-              bufferStyle = { background: `radial-gradient(circle, greenyellow , greenyellow ${4*this.state.buffer}%, white ${4*this.state.buffer}%, white)`} 
+              bufferStyle = { background: `radial-gradient(circle, greenyellow , greenyellow ${4*this.state.cardBuffer}%, white ${4*this.state.cardBuffer}%, white)`} 
             }
             return <div key={`h${i + 1}`} className={`cardWrapper ${wrapperClass}`} style={{ 'zIndex': a.length - i }}>
               <Card value={card} style={bufferStyle}></Card> 
@@ -164,11 +195,11 @@ class Hand extends React.Component {
           });
           if (hand.length > 0) {
             return <div className='Hand unselectable' 
-              onMouseDown={() => { this.startBuffer(20) }}
-              onMouseUp={() => { this.triggerBuffer({ action: 'play', actionType: 'twinge', gameId: this.props.state.gameId, playerId: this.props.state.playerId })}}
+              onMouseDown={() => { this.startBuffer('cardBuffer') }}
+              onMouseUp={() => { this.triggerBuffer('cardBuffer', { action: 'play', actionType: 'twinge', gameId: this.props.state.gameId, playerId: this.props.state.playerId })}}
               onMouseLeave={() => { this.cancelBuffer() }}
-              onTouchStart={() => { this.startBuffer(20) }}
-              onTouchEnd={() => { this.triggerBuffer({ action: 'play', actionType: 'twinge', gameId: this.props.state.gameId, playerId: this.props.state.playerId })}}
+              onTouchStart={() => { this.startBuffer('cardBuffer') }}
+              onTouchEnd={() => { this.triggerBuffer('cardBuffer', { action: 'play', actionType: 'twinge', gameId: this.props.state.gameId, playerId: this.props.state.playerId })}}
             >
               <div className='handWrapper'>
                 {hand.reverse()}
