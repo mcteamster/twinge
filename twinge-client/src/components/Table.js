@@ -8,6 +8,7 @@ class Players extends React.Component {
       } else if (!player.playerId) {
         return <Player key={`p${i + 1}`} number={i+1} name={player.name} handSize={player.handSize}></Player>
       }
+      return null;
     });
     return <div className='Players'>
       {players}

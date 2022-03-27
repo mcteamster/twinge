@@ -5,30 +5,7 @@ custom:
   hostname: "twinge-service.mcteamster.com"
   connectionTableName: "connection-table-${sls:stage}"
   gameTableName: "game-table-${sls:stage}"
-  apiGatewayServiceProxies:
-    - s3:
-        path: /
-        method: get
-        action: GetObject
-        bucket:
-          Ref: S3Bucket
-        key: index.html
-        cors: true 
-
-    - s3:
-        path: /{myPath+}
-        method: get
-        action: GetObject
-        pathOverride: '{myPath}'
-        bucket:
-          Ref: S3Bucket
-        cors: true       
-
-        requestParameters:
-          # if requestParameters has a 'integration.request.path.object' property you should remove the key setting
-          'integration.request.path.myPath': 'method.request.path.myPath'
-          'integration.request.path.object': 'context.requestId'
-          'integration.request.header.cache-control': "'public, max-age=31536000, immutable'"
+  s3Bucket: "twinge-client"
 
 provider:
   name: aws
@@ -114,8 +91,58 @@ resources:
               ProjectionType: 'ALL'
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:custom.gameTableName}
-    S3Bucket:
-      Type: 'AWS::S3::Bucket'
-
-plugins:
-  - serverless-apigateway-service-proxy
+    WebAppS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.s3Bucket}
+        AccessControl: PublicRead
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+    WebAppS3BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: WebAppS3Bucket
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: "*"
+              Action:
+              - s3:GetObject
+              Resource: arn:aws:s3:::${self:custom.s3Bucket}/*
+    WebAppCloudFrontDistribution:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Origins:
+            - DomainName: ${self:custom.s3Bucket}.s3.amazonaws.com
+              Id: WebApp
+              CustomOriginConfig:
+                HTTPPort: 80
+                HTTPSPort: 443
+                OriginProtocolPolicy: https-only
+          Enabled: 'true'
+          ## Uncomment the following section in case you are using a custom domain
+          Aliases:
+           - twinge.mcteamster.com
+          DefaultRootObject: index.html
+          CustomErrorResponses:
+            - ErrorCode: 404
+              ResponseCode: 200
+              ResponsePagePath: /index.html
+          DefaultCacheBehavior:
+            AllowedMethods:
+              - HEAD
+              - GET
+            TargetOriginId: WebApp
+            ForwardedValues:
+              QueryString: 'false'
+              Cookies:
+                Forward: none
+            ViewerProtocolPolicy: redirect-to-https
+          PriceClass: PriceClass_100
+          ViewerCertificate:
+            AcmCertificateArn: 'arn:aws:acm:us-east-1:922236493844:certificate/4d4b5f6a-4387-4f85-8610-124026c44fb7'
+            SslSupportMethod: sni-only

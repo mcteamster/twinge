@@ -47,7 +47,7 @@ class App extends React.Component {
   }
 
   gamestateHandler = (data) => {
-    if (data?.gamestate?.public?.pile && !this.cursor || (data?.gamestate?.public?.pile[this?.cursor-1]?.round !== data?.gamestate?.meta?.round)) {
+    if ((data?.gamestate?.public?.pile && !this.cursor) || (data?.gamestate?.public?.pile[this?.cursor-1]?.round !== data?.gamestate?.meta?.round)) {
       this.cursor = 1 + data.gamestate.public.pile.map((card) => { return card.round }).lastIndexOf(data.gamestate.meta.round - 1);
       if (this.cursor < 0) {
         this.cursor = 0;
