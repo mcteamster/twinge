@@ -117,12 +117,19 @@ class Pile extends React.Component {
 class Hand extends React.Component {
   constructor(props) {
     super(props);
-    this.sendMsg = (msg) => {
-      this.props.sendMsg(msg)
+    this.sendMsg = (type) => {
+      this.props.sendMsg({
+        action: 'play', 
+        gameId: this.props.state.gameId, 
+        playerId: this.props.state.playerId,
+        actionType: type, 
+      });
     }
     this.state = {
       cardBuffer: 0,
       nextBuffer: 0,
+      replayBuffer: 0,
+      endBuffer: 0,
     }
   }
   
@@ -147,6 +154,8 @@ class Hand extends React.Component {
     this.setState({
       cardBuffer: 0,
       nextBuffer: 0,
+      replayBuffer: 0,
+      endBuffer: 0,
     })
   }
 
@@ -154,27 +163,37 @@ class Hand extends React.Component {
     if (this.props.state.gamestate) {
       if (this.props.state.gamestate.meta.phase === 'won' || this.props.state.gamestate.meta.phase === 'lost') {
         return <div className='Hand centered unselectable'>
-          <div className='Button centered replay' onClick={() => { 
-            this.sendMsg({ action: 'play', actionType: 'restart', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) 
-          }}>
+          <div className='Button centered replay'           
+            style={{ background: `radial-gradient(circle, greenyellow, greenyellow ${4*this.state.replayBuffer}%, white ${4*this.state.replayBuffer}%, white)`}} 
+            onMouseDown={() => { this.startBuffer('replayBuffer') }}
+            onMouseUp={() => { this.triggerBuffer('replayBuffer', 'restart') }}
+            onMouseLeave={() => { this.cancelBuffer() }}
+            onTouchStart={() => { this.startBuffer('replayBuffer') }}
+            onTouchEnd={() => { this.triggerBuffer('replayBuffer', 'restart') }}
+          >
             Replay
           </div>
-          <div className='Button centered endgame' onClick={() => {
-            this.sendMsg({ action: 'play', actionType: 'end', gameId: this.props.state.gameId, playerId: this.props.state.playerId });
-          }}>
-            End Game
+          <div className='Button centered endgame' 
+            style={{ background: `radial-gradient(circle, red, red ${4*this.state.endBuffer}%, white ${4*this.state.endBuffer}%, white)`}} 
+            onMouseDown={() => { this.startBuffer('endBuffer') }}
+            onMouseUp={() => { this.triggerBuffer('endBuffer', 'end') }}
+            onMouseLeave={() => { this.cancelBuffer() }}
+            onTouchStart={() => { this.startBuffer('endBuffer') }}
+            onTouchEnd={() => { this.triggerBuffer('endBuffer', 'end') }}
+          >
+            Finish
           </div>
         </div>
       } else {
         let unplayedCards = this.props.state.gamestate.players.reduce((playerCards, player) => { return playerCards += player.handSize }, 0);
         if (unplayedCards === 0) {
           return <div className='Hand centered unselectable' 
-            style={{ background: `radial-gradient(circle, greenyellow , greenyellow ${4*this.state.nextBuffer}%, white ${4*this.state.nextBuffer}%, white)`}} 
+            style={{ background: `radial-gradient(circle, greenyellow, greenyellow ${4*this.state.nextBuffer}%, white ${4*this.state.nextBuffer}%, white)`}} 
             onMouseDown={() => { this.startBuffer('nextBuffer') }}
-            onMouseUp={() => { this.triggerBuffer('nextBuffer', { action: 'play', actionType: 'next', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}
+            onMouseUp={() => { this.triggerBuffer('nextBuffer', 'next') }}
             onMouseLeave={() => { this.cancelBuffer() }}
             onTouchStart={() => { this.startBuffer('nextBuffer') }}
-            onTouchEnd={() => { this.triggerBuffer('nextBuffer', { action: 'play', actionType: 'next', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}
+            onTouchEnd={() => { this.triggerBuffer('nextBuffer', 'next') }}
           >
             <div className='Button'>Next Level</div>
           </div>
@@ -185,10 +204,10 @@ class Hand extends React.Component {
             let bufferStyle = {};
             if (a.length === unplayedCards) {
               wrapperClass = 'autoCard';
-              bufferStyle = { background: `radial-gradient(circle, yellow , yellow ${4*this.state.cardBuffer}%, white ${4*this.state.cardBuffer}%, white)`} 
+              bufferStyle = { background: `radial-gradient(circle, yellow, yellow ${4*this.state.cardBuffer}%, white ${4*this.state.cardBuffer}%, white)`} 
             } else if (card === a[0]+i) {
               wrapperClass = 'nextCard';
-              bufferStyle = { background: `radial-gradient(circle, greenyellow , greenyellow ${4*this.state.cardBuffer}%, white ${4*this.state.cardBuffer}%, white)`} 
+              bufferStyle = { background: `radial-gradient(circle, greenyellow, greenyellow ${4*this.state.cardBuffer}%, white ${4*this.state.cardBuffer}%, white)`} 
             }
             return <div key={`h${i + 1}`} className={`cardWrapper ${wrapperClass}`} style={{ 'zIndex': a.length - i }}>
               <Card value={card} style={bufferStyle}></Card> 
@@ -197,10 +216,10 @@ class Hand extends React.Component {
           if (hand.length > 0) {
             return <div className='Hand unselectable' 
               onMouseDown={() => { this.startBuffer('cardBuffer') }}
-              onMouseUp={() => { this.triggerBuffer('cardBuffer', { action: 'play', actionType: 'twinge', gameId: this.props.state.gameId, playerId: this.props.state.playerId })}}
+              onMouseUp={() => { this.triggerBuffer('cardBuffer', 'twinge')}}
               onMouseLeave={() => { this.cancelBuffer() }}
               onTouchStart={() => { this.startBuffer('cardBuffer') }}
-              onTouchEnd={() => { this.triggerBuffer('cardBuffer', { action: 'play', actionType: 'twinge', gameId: this.props.state.gameId, playerId: this.props.state.playerId })}}
+              onTouchEnd={() => { this.triggerBuffer('cardBuffer', 'twinge')}}
             >
               <div className='handWrapper'>
                 {hand.reverse()}

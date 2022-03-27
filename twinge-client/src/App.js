@@ -9,6 +9,7 @@ class App extends React.Component {
     this.state = {
       gameId: localStorage.getItem('gameId'),
       playerId: localStorage.getItem('playerId'),
+      createTime: localStorage.getItem('createTime'),
       overlay: {
         message: '',
       }
@@ -18,14 +19,19 @@ class App extends React.Component {
   }
 
   componentDidMount() {
+    this.setState({ overlay: { message: '' } });
     this.ws = new WebSocket('wss://twinge-service.mcteamster.com');
     this.ws.onopen = this.autoJoin;
     this.ws.onmessage = this.messageHandler;
   }
 
   autoJoin = async () => {
-    this.setState({ overlay: { message: 'Connecting...' } });
-    this.sendMsg({ action: 'play', actionType: 'join', gameId: this.state.gameId, playerId: this.state.playerId });
+    let createTime = new Date(localStorage.getItem('createTime'));
+    let currentTime = new Date();
+    if (createTime > currentTime.setHours(currentTime.getHours() - 1)) {
+      this.setState({ overlay: { message: 'Connecting...' } });
+      this.sendMsg({ action: 'play', actionType: 'join', gameId: this.state.gameId, playerId: this.state.playerId });
+    }
   };
 
   messageHandler = (msg) => {
@@ -61,10 +67,8 @@ class App extends React.Component {
         let tempHand = [];
         data.gamestate.public.pile.slice(i+1).forEach((card) => {
           let player = game.gamestate.players[card.playerIndex];
-          player.handSize++;
-          if(player?.playerId === this.state.playerId) {
-            tempHand.push(card.card);
-          }
+          player && player.handSize++;
+          player?.playerId === this.state.playerId && tempHand.push(card.card);
         })
         game.gamestate.players.find((player) => { return player.playerId === this.state.playerId}).hand.unshift(...tempHand);
         if(i !== (data?.gamestate?.public?.pile.length - 1) && (data.gamestate.meta.phase === 'won' || data.gamestate.meta.phase === 'lost')) {
@@ -97,6 +101,7 @@ class App extends React.Component {
     // Store gameId and playerId
     localStorage.setItem('gameId', this.state.gameId);
     localStorage.setItem('playerId', this.state.playerId);
+    localStorage.setItem('createTime', this.state.createTime);
   }
 
   errorHandler = (error) => {
@@ -104,9 +109,11 @@ class App extends React.Component {
       'Game not found': () => {
         localStorage.setItem('gameId', null);
         localStorage.setItem('playerId', null);
+        localStorage.setItem('createTime', null);
         this.setState({
           gameId: null,
           playerId: null,
+          createTime: null,
           roomCode: null,
           gamestate: null,
         });

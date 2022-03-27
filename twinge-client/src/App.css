@@ -38,6 +38,7 @@
 
 #roomCode {
   text-align: center;
+  text-decoration: underline;
 }
 
 #exit {
@@ -95,6 +96,11 @@ h1 {
 .Create {
   color: white;
   background: yellowgreen;
+}
+
+.slider {
+  max-width: 80vw;
+  width: 25em;
 }
 
 .Join {
@@ -323,12 +329,13 @@ h1 {
 }
 
 .replay {
-  flex-grow: 1;
+  height: 100%;
+  width: 50%;
 }
 
 .endgame {
-  flex-grow: 1;
-  color: red;
+  height: 100%;
+  width: 50%;
 }
 
 .centered {

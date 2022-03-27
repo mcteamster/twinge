@@ -27,7 +27,7 @@ class Lobby extends React.Component {
       </div>
       info = <div>
         <div>
-          <div>{this.state.deckSize} {this.state.deckSize !== 1 ? 'Cards' : 'Card'}</div>
+          <div>{this.state.deckSize} Cards</div>
           <input className='slider' id='deckSize' type="range" min="10" max="1000" defaultValue="100" onChange={(e) => {
             this.setState({
               deckSize: e.target.value,
@@ -35,7 +35,7 @@ class Lobby extends React.Component {
           }}></input>
         </div>
         <div>
-          <div>{this.state.maxLives} {this.state.maxLives !== 1 ? 'Lives' : 'Life'}</div>
+          <div>{this.state.maxLives} {this.state.maxLives !== '1' ? 'Lives' : 'Life'}</div>
           <input className='slider' id='maxLives' type="range" min="1" max="100" defaultValue="5" onChange={(e) => {
             this.setState({
               maxLives: e.target.value,

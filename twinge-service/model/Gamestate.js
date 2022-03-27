@@ -109,6 +109,7 @@ class Gamestate {
     // Deal cards to players - subtract from the deck
     if (this.private.deck.length == 0 ) {
       // Not Enough Cards - End The Game Here! You WIN!
+      this.public.pile.push({ time: new Date().toISOString(), card: 'You Win! 🥳', round: this.meta.round, playerIndex: -1 });
       this.meta.phase = 'won';
     } else if (this.private.deck.length >= (this.meta.round + 1) * this.players.length) {
       this.meta.round++;
@@ -188,7 +189,7 @@ class Gamestate {
     };
     this.public = {
       pile: [],
-      lives: 3,
+      lives: this.config.maxLives,
       remaining: this.config.deckSize,
     };
     this.players.forEach((player) => {
