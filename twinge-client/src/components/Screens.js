@@ -19,7 +19,11 @@ class Lobby extends React.Component {
         <Rename state={this.props.state} sendMsg={this.props.sendMsg}></Rename>
         <Start state={this.props.state} sendMsg={this.props.sendMsg}></Start>
       </div>
-      info = <Players className='Players centered' context='lobby' players={this.props.state?.gamestate?.players || []}></Players>
+      info = <div>
+          <div className='lobbyInfo'>{this.props.state?.gamestate?.config?.deckSize} Cards</div>
+          <div className='lobbyInfo'>{this.props.state?.gamestate?.config?.maxLives} {this.props.state?.gamestate?.config?.maxLives !== '1' ? 'Lives' : 'Life'}</div>
+          <Players className='Players centered' context='lobby' players={this.props.state?.gamestate?.players || []}></Players>
+        </div>
     } else {
       inputs = <div className='lobbyButtons centered'>
         <Create sendMsg={this.props.sendMsg}></Create>
@@ -27,15 +31,16 @@ class Lobby extends React.Component {
       </div>
       info = <div>
         <div>
-          <div>{this.state.deckSize} Cards</div>
+          <div className='lobbyInfo'>{this.state.deckSize} Cards</div>
           <input className='slider' id='deckSize' type="range" min="10" max="1000" defaultValue="100" onChange={(e) => {
+            e.target.value = e.target.value - (e.target.value % 5);
             this.setState({
               deckSize: e.target.value,
             })
           }}></input>
         </div>
         <div>
-          <div>{this.state.maxLives} {this.state.maxLives !== '1' ? 'Lives' : 'Life'}</div>
+          <div className='lobbyInfo'>{this.state.maxLives} {this.state.maxLives !== '1' ? 'Lives' : 'Life'}</div>
           <input className='slider' id='maxLives' type="range" min="1" max="100" defaultValue="5" onChange={(e) => {
             this.setState({
               maxLives: e.target.value,
@@ -46,8 +51,8 @@ class Lobby extends React.Component {
     }
 
     return <div className='Lobby'>
-      <h1>😣 twinge</h1>
       <div id='instructions'>
+        <h1>😣 twinge</h1>
         🙌 this is a team game...<br></br>
         ⬆️ where we play our cards in ascending order<br></br>
         👆 tap-hold-release to play your lowest card(s)<br></br>

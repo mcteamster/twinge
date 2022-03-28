@@ -15,7 +15,7 @@
 
 .Header {
   width: calc(100vw - 1em);
-  height: 2em;
+  height: 2.25em;
   padding: 0.5em 0.5em 0;
   position: fixed;
   top: 0;
@@ -25,7 +25,7 @@
   font-weight: bold;
   background-color: white;
   border-bottom: 0.25em solid lightgrey;
-  z-index: 2;
+  z-index: 950;
 }
 
 .Header div {
@@ -91,6 +91,11 @@ h1 {
   padding: 0;
   border-radius: 1em;
   cursor: pointer;
+}
+
+.lobbyInfo {
+  padding: 0.25em;
+  font-weight: bold;
 }
 
 .Create {
