@@ -45,10 +45,10 @@ async function joinGame(payload) {
       game = await games.updateGame(game.gameId, gamestate);
       await messages.broadcastGame(game);
     } else {
-      await messages.send(payload.connectionId, { message: 'Player not found' });
+      await messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
     }
   } else {
-    await messages.send(payload.connectionId, { message: 'Game not found' });
+    await messages.send(payload.connectionId, { code: 2, message: 'Game not found' });
   }
 }
 
@@ -65,10 +65,10 @@ async function renamePlayer(payload) {
         game = await games.updateGame(game.gameId, gamestate);
         await messages.broadcastGame(game);
       } else {
-        await messages.send(payload.connectionId, { message: 'Player not found' });
+        await messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
     } else {
-      await messages.send(payload.connectionId, { message: 'Game not found' });
+      await messages.send(payload.connectionId, { code: 2, message: 'Game not found' });
     }
   }
 }
@@ -100,13 +100,13 @@ async function leaveGame(payload) {
           },
         });
       } else {
-        await messages.send(payload.connectionId, { message: 'Player not found' });
+        await messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
     } else {
-      await messages.send(payload.connectionId, { message: 'Open game not found' });
+      await messages.send(payload.connectionId, { code: 2, message: 'Open game not found' });
     }
   } else {
-    await messages.send(payload.connectionId, { message: 'No gameId provided' });
+    await messages.send(payload.connectionId, { code: 1, message: 'No gameId provided' });
   }
 }
 
@@ -122,41 +122,46 @@ async function startGame(payload) {
         game = await games.updateGame(game.gameId, gamestate);
         await messages.broadcastGame(game);
       } else {
-        await messages.send(payload.connectionId, { message: 'Player not found' });
+        await messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
     } else {
-      await messages.send(payload.connectionId, { message: 'Open game not found' });
+      await messages.send(payload.connectionId, { code: 2, message: 'Open game not found' });
     }
   } else {
-    await messages.send(payload.connectionId, { message: 'No gameId provided' });
+    await messages.send(payload.connectionId, { code: 1, message: 'No gameId provided' });
   }
 }
 
 // In-Game Handlers
 async function twinge(payload) {
-  // TODO: State Hash to prevent collisions
   let game = null;
   if (payload.gameId) {
     game = await games.readGame(payload.gameId);
-    if (game && game.gamestate && game.gamestate.meta.phase == 'playing') {
+    if (game && game.gamestate && ((game.gamestate.meta.phase == 'playing') || (game.gamestate.meta.phase == 'lost') || (game.gamestate.meta.phase == 'won'))) {
       let gamestate = new Gamestate(game.gamestate);
       let activePlayer = await gamestate.findPlayer(payload.playerId);
       if (activePlayer) {
         if (activePlayer.handSize > 0) {
           gamestate.playCard(payload.playerId);
-          game = await games.updateGame(game.gameId, gamestate);
+          // Read game to check stateHash matches before writing
+          game = await games.readGame(payload.gameId); 
+          if (game.stateHash === payload.stateHash) {
+            game = await games.updateGame(game.gameId, gamestate);
+          } else {
+            await messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
+          }
           await messages.broadcastGame(game);
         } else {
-          await messages.send(payload.connectionId, { message: 'Hand is empty' });
+          await messages.send(payload.connectionId, { code: 4, message: 'Hand is empty' });
         }
       } else {
-        await messages.send(payload.connectionId, { message: 'Player not found' });
-      }
+        await messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
+      }   
     } else {
-      await messages.send(payload.connectionId, { message: 'Game not found' });
+      await messages.send(payload.connectionId, { code: 2, message: 'Game not found' });
     }
   } else {
-    await messages.send(payload.connectionId, { message: 'No gameId provided' });
+    await messages.send(payload.connectionId, { code: 1, message: 'No gameId provided' });
   }
 }
 
@@ -174,16 +179,16 @@ async function nextRound(payload) {
           game = await games.updateGame(game.gameId, gamestate);
           await messages.broadcastGame(game);
         } else {
-          await messages.send(payload.connectionId, { message: 'Round in progress' });
+          await messages.send(payload.connectionId, { code: 6, message: 'Round in progress' });
         }
       } else {
-        await messages.send(payload.connectionId, { message: 'Player not found' });
+        await messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
     } else {
-      await messages.send(payload.connectionId, { message: 'Game not found' });
+      await messages.send(payload.connectionId, { code: 2, message: 'Game not found' });
     }
   } else {
-    await messages.send(payload.connectionId, { message: 'No gameId provided' });
+    await messages.send(payload.connectionId, { code: 1, message: 'No gameId provided' });
   }
 }
 
@@ -198,13 +203,13 @@ async function restartGame(payload) {
         game = await games.updateGame(game.gameId, gamestate);
         await messages.broadcastGame(game);
       } else {
-        await messages.send(payload.connectionId, { message: 'Player not found' });
+        await messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
     } else {
-      await messages.send(payload.connectionId, { message: 'Open game not found' });
+      await messages.send(payload.connectionId, { code: 2, message: 'Open game not found' });
     }
   } else {
-    await messages.send(payload.connectionId, { message: 'No gameId provided' });
+    await messages.send(payload.connectionId, { code: 1, message: 'No gameId provided' });
   }
 }
 
@@ -229,13 +234,13 @@ async function endGame(payload) {
         }
         await messages.broadcastGame(game);
       } else {
-        await messages.send(payload.connectionId, { message: 'Player not found' });
+        await messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
     } else {
-      await messages.send(payload.connectionId, { message: 'Open game not found' });
+      await messages.send(payload.connectionId, { code: 2, message: 'Open game not found' });
     }
   } else {
-    await messages.send(payload.connectionId, { message: 'No gameId provided' });
+    await messages.send(payload.connectionId, { code: 1, message: 'No gameId provided' });
   }
 }
 
@@ -259,12 +264,13 @@ module.exports.handler = async (event) => {
     gameId: body.gameId,
     playerId: body.playerId,
     roomCode: body.roomCode,
+    stateHash: body.stateHash,
     name: body.name,
     config: body.config,
   }
   await actionHandler[actionType](payload);
   return {
     statusCode: 200,
-    body: JSON.stringify({ message: 'ack' }),
+    body: JSON.stringify({ code: 0, message: 'ack' }),
   };
 };

@@ -29,11 +29,15 @@ class Player extends React.PureComponent {
   }
 
   hightlight = () => {
-    if (this.props?.context !== 'lobby') {
-      document.getElementById(this.state.id).classList.add('playerHighlight');
-      setTimeout(() => {
-        document.getElementById(this.state.id).classList.remove('playerHighlight');
-      }, 500)
+    try {
+      if (this.props?.context !== 'lobby') {
+        document.getElementById(this.state.id).classList.add('playerHighlight');
+        setTimeout(() => {
+          document.getElementById(this.state.id).classList.remove('playerHighlight');
+        }, 500)
+      }
+    } catch (err) {
+      console.error(err);
     }
   }
 
@@ -123,6 +127,7 @@ class Hand extends React.Component {
         gameId: this.props.state.gameId, 
         playerId: this.props.state.playerId,
         actionType: type, 
+        stateHash: this.stateHash,
       });
     }
     this.state = {
@@ -131,14 +136,19 @@ class Hand extends React.Component {
       replayBuffer: 0,
       endBuffer: 0,
     }
+    this.stateHash = this.props.state.stateHash;
   }
   
   startBuffer = (buffer) => {
     this.cancelBuffer();
     this.interval = setInterval(() => {
-      let state = {};
-      state[buffer] = this.state[buffer] + 1;
-      this.setState(state)
+      if (buffer === 'cardBuffer' && this.stateHash !== this.props.state.stateHash) {
+        this.cancelBuffer();
+      } else {
+        let state = {};
+        state[buffer] = this.state[buffer] + 1;
+        this.setState(state)
+      }
     }, 20)
   }
 
@@ -150,6 +160,7 @@ class Hand extends React.Component {
   }
 
   cancelBuffer = () => {
+    this.stateHash = this.props.state.stateHash;
     clearInterval(this.interval);
     this.setState({
       cardBuffer: 0,

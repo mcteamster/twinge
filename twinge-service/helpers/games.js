@@ -1,3 +1,4 @@
+const hash = require('object-hash');
 const AWS = require("aws-sdk");
 const dynamoDbClient = new AWS.DynamoDB.DocumentClient();
 const GAME_TABLE = process.env.GAME_TABLE;
@@ -23,13 +24,17 @@ async function createGame(gameId, gamestate) {
     return 400
   }
 
+  let currentTime = new Date();
+  let expiryTimeEpoch = new Date().setHours(currentTime.getHours() + 12)/1000;
   const params = {
     TableName: GAME_TABLE,
     Item: {
       gameId: gameId,
-      createTime: new Date().toISOString(),
+      createTime: currentTime.toISOString(),
+      expiryTimeEpoch: expiryTimeEpoch,
       roomCode: roomCode,
       gamestate: gamestate,
+      stateHash: hash.MD5(JSON.stringify(gamestate)),
     },
   };
 
@@ -85,9 +90,10 @@ async function updateGame(gameId, gamestate) {
     Key: {
       gameId: gameId,
     },
-    UpdateExpression: "set gamestate = :gamestate",
+    UpdateExpression: "set gamestate = :gamestate, stateHash = :stateHash",
     ExpressionAttributeValues: {
       ":gamestate": gamestate,
+      ":stateHash": hash.MD5(JSON.stringify(gamestate)),
     },
     ReturnValues: "ALL_NEW",
   };

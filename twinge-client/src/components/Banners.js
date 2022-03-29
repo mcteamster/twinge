@@ -23,7 +23,7 @@ class Footer extends React.Component {
 class Overlay extends React.Component {
   render() {
     return <div className='Overlay centered' style={this.props.message !== '' ? { display: 'flex' } : { display: 'none' }}>
-      <div>{this.props.message}</div>  
+      <div>{this.props.message || <div>&#8635;</div>}</div>  
     </div>
   }
 }

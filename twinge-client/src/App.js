@@ -36,15 +36,15 @@ class App extends React.Component {
 
   messageHandler = (msg) => {
     let data = JSON.parse(msg.data);
-    // Hide Websocket Acknowlegements
-    if (data.message === 'ack') {
+    // Websocket Acknowlegements
+    if (data.code === 0 && data.message === 'ack') {
       console.log(new Date().toISOString());
     }
     // Handle Errors
-    else if (data.message) {
+    else if (data.code) {
       this.setState({ overlay: { message: '' } });
       console.error(data.message);
-      this.errorHandler(data.message);
+      this.errorHandler(data.code);
     }
     // Handle Gamestate Changes
     else {
@@ -98,7 +98,7 @@ class App extends React.Component {
       });
     }
 
-    // Store gameId and playerId
+    // Store game metadata
     localStorage.setItem('gameId', this.state.gameId);
     localStorage.setItem('playerId', this.state.playerId);
     localStorage.setItem('createTime', this.state.createTime);
@@ -106,7 +106,17 @@ class App extends React.Component {
 
   errorHandler = (error) => {
     let errorHandlers = {
-      'Game not found': () => {
+      2: () => {
+        try {
+          let input = document.getElementById('inputBox');
+          input.style.borderColor = 'red';
+          setTimeout(() => {
+            input.value = '';
+            input.style.borderColor = 'lightgrey';
+          }, 250);
+        } catch(err) {
+          console.error(err);
+        }
         localStorage.setItem('gameId', null);
         localStorage.setItem('playerId', null);
         localStorage.setItem('createTime', null);
@@ -116,6 +126,7 @@ class App extends React.Component {
           createTime: null,
           roomCode: null,
           gamestate: null,
+          stateHash: null,
         });
       },
     };

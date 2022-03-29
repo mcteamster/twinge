@@ -131,6 +131,10 @@ h1 {
   border: 0.1em solid lightgrey;
 }
 
+#inputBox:focus {
+  outline: none;
+}
+
 .Play {
   grid-area: screen;
   display: grid;
@@ -359,5 +363,17 @@ h1 {
 @media screen and (max-aspect-ratio: 1/1) {
   .App {
     height: 85vh;
+  }
+}
+
+@media only screen and (max-height: 540px) and (min-aspect-ratio: 3/2) {
+  body {
+      overflow-x: hidden;
+      overflow-y: hidden;
+  }
+
+  .Overlay {
+    display: flex !important;
+    background-color: white;
   }
 }
