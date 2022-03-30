@@ -22,7 +22,7 @@ class Lobby extends React.Component {
       info = <div>
           <div className='lobbyInfo'>{this.props.state?.gamestate?.config?.deckSize} Cards</div>
           <div className='lobbyInfo'>{this.props.state?.gamestate?.config?.maxLives} {this.props.state?.gamestate?.config?.maxLives !== '1' ? 'Lives' : 'Life'}</div>
-          <Players className='Players centered' context='lobby' players={this.props.state?.gamestate?.players || []}></Players>
+          <Players context='lobby' players={this.props.state?.gamestate?.players || []}></Players>
         </div>
     } else {
       inputs = <div className='lobbyButtons centered'>

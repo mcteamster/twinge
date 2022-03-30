@@ -37,6 +37,7 @@
 }
 
 #roomCode {
+  cursor: pointer;
   text-align: center;
   text-decoration: underline;
 }
@@ -139,8 +140,9 @@ h1 {
   grid-area: screen;
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: 1fr calc(15vh + 4em);
+  grid-template-rows: auto 1fr calc(15vh + 4em);
   grid-template-areas:
+    'header'
     'table'
     'hand';
 }
@@ -154,21 +156,55 @@ h1 {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  flex-direction: column;
-  z-index: 1;
+  flex-direction: column-reverse;
+  z-index: 925;
 }
 
 .Player {
   border: 0.25em solid rgba(0,0,0,0);
   border-radius: 0.75em;
-  margin: 0.25em;
+  margin: 0 0.25em;
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
 }
 
+.playerLobby {
+  padding: 1em;
+  width: 90vw;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  flex-wrap: wrap;
+  overflow-y: visible;
+}
+
+.playerTable {
+  display: flex;
+  padding-top: 3em;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+  min-height: 20em;
+  max-height: 20em;
+  min-width: 10em;
+  overflow: hidden;
+}
+
+.Player:nth-child(1),
+.Player:nth-child(2),
+.Player:nth-child(3),
+.Player:nth-child(4) {
+  display: flex; 
+}
+
 .playerHighlight {
+  display: flex !important;
   animation: highlightPlayer 0.5s 1;
+}
+
+.hiddenPlayer {
+  display: none;
 }
 
 @keyframes highlightPlayer {
@@ -188,6 +224,7 @@ h1 {
 
 .playerValue {
   font-weight: bold;
+  font-size: 0.76em;
   padding: 0.5em;
   border-radius: 0.5em;
   border: 0.25em solid black;

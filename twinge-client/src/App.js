@@ -26,9 +26,16 @@ class App extends React.Component {
   }
 
   autoJoin = async () => {
+    // Join from path if supplied, otherwise join from memory
     let createTime = new Date(localStorage.getItem('createTime'));
     let currentTime = new Date();
-    if (createTime > currentTime.setHours(currentTime.getHours() - 1)) {
+    let path = window.location.pathname.slice(1);
+
+    if (path.match(/^[A-Z]{4}$/i)) {
+      this.setState({ overlay: { message: 'Connecting...' } });
+      this.sendMsg({ action: 'play', actionType: 'join', roomCode: path });
+      window.history.replaceState({}, document.title, "/");
+    } else if (createTime > currentTime.setHours(currentTime.getHours() - 1)) {
       this.setState({ overlay: { message: 'Connecting...' } });
       this.sendMsg({ action: 'play', actionType: 'join', gameId: this.state.gameId, playerId: this.state.playerId });
     }
@@ -53,7 +60,7 @@ class App extends React.Component {
   }
 
   gamestateHandler = (data) => {
-    if ((data?.gamestate?.public?.pile && !this.cursor) || (data?.gamestate?.public?.pile[this?.cursor-1]?.round !== data?.gamestate?.meta?.round)) {
+    if ((data?.gamestate?.public?.pile && !this.cursor) || (data?.gamestate?.public?.pile[this?.cursor - 1]?.round !== data?.gamestate?.meta?.round)) {
       this.cursor = 1 + data.gamestate.public.pile.map((card) => { return card.round }).lastIndexOf(data.gamestate.meta.round - 1);
       if (this.cursor < 0) {
         this.cursor = 0;
@@ -63,15 +70,15 @@ class App extends React.Component {
     if ((data?.gamestate?.public?.pile.length > this.cursor)) {
       for (let i = this.cursor; i < (data?.gamestate?.public?.pile.length); i++) {
         let game = JSON.parse(JSON.stringify(data));
-        game.gamestate.public.pile = data.gamestate.public.pile.slice(0, i+1);
+        game.gamestate.public.pile = data.gamestate.public.pile.slice(0, i + 1);
         let tempHand = [];
-        data.gamestate.public.pile.slice(i+1).forEach((card) => {
+        data.gamestate.public.pile.slice(i + 1).forEach((card) => {
           let player = game.gamestate.players[card.playerIndex];
           player && player.handSize++;
           player?.playerId === this.state.playerId && tempHand.push(card.card);
         })
-        game.gamestate.players.find((player) => { return player.playerId === this.state.playerId}).hand.unshift(...tempHand);
-        if(i !== (data?.gamestate?.public?.pile.length - 1) && (data.gamestate.meta.phase === 'won' || data.gamestate.meta.phase === 'lost')) {
+        game.gamestate.players.find((player) => { return player.playerId === this.state.playerId }).hand.unshift(...tempHand);
+        if (i !== (data?.gamestate?.public?.pile.length - 1) && (data.gamestate.meta.phase === 'won' || data.gamestate.meta.phase === 'lost')) {
           game.gamestate.meta.phase = 'playing';
         }
         this.animations.push(setTimeout(() => {
@@ -82,7 +89,7 @@ class App extends React.Component {
               return `${playerId}${player.playerId || ''}`
             }, ''),
           });
-        }, 1000*(i-this.cursor)));
+        }, 1000 * (i - this.cursor)));
       }
       this.cursor = data?.gamestate?.public?.pile.length;
     } else {
@@ -104,7 +111,7 @@ class App extends React.Component {
     localStorage.setItem('createTime', this.state.createTime);
   }
 
-  errorHandler = (error) => {
+  errorHandler = async (error) => {
     let errorHandlers = {
       2: () => {
         try {
@@ -114,7 +121,7 @@ class App extends React.Component {
             input.value = '';
             input.style.borderColor = 'lightgrey';
           }, 250);
-        } catch(err) {
+        } catch (err) {
           console.error(err);
         }
         localStorage.setItem('gameId', null);

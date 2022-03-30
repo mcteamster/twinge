@@ -6,12 +6,25 @@ class Players extends React.Component {
       if(this.props.context === 'lobby') {
         return <Player key={`p${i + 1}`} context='lobby' number={i+1} name={player.name} style={player.playerId && { border: '0.25em solid greenyellow' }}></Player>
       } else if (!player.playerId) {
-        return <Player key={`p${i + 1}`} number={i+1} name={player.name} handSize={player.handSize}></Player>
+        return <Player key={`p${i + 1}`} number={i+1} name={player.name} handSize={player.handSize} hidden={true}></Player>
       }
       return null;
     });
-    return <div className='Players'>
-      {players}
+    let featuredPlayers = players.sort((a, b) => {
+      if (a) {
+        if (b) {
+          return b.props?.handSize - a.props.handSize
+        } else {
+          return -1
+        }
+      } else {
+        return 1
+      }
+    })    
+    return <div className={`Players`} >
+      <div className={`${this.props.context === 'lobby' ? 'playerLobby' : 'playerTable'}`}>
+        {featuredPlayers}
+      </div>
     </div>
   }
 }
@@ -47,7 +60,7 @@ class Player extends React.PureComponent {
         <div className='playerValue'>{`${this.props.name}`}</div>
       </div>
     } else {
-      return <div key={`p${this.state.id}`} id={this.state.id} className='Player'>
+      return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.hidden && 'hiddenPlayer'}`}>
         <div className='playerValue'>
           <div className='playerName'>{this.props.name}</div>
           {`🖐 ${this.props.handSize}`}
