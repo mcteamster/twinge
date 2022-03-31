@@ -1,6 +1,6 @@
 import './App.css';
 import { Header, Footer, Overlay } from './components/Banners';
-import { Lobby, Play } from './components/Screens'
+import { About, Lobby, Play } from './components/Screens'
 import React from 'react';
 
 class App extends React.Component {
@@ -160,19 +160,23 @@ class App extends React.Component {
   }
 
   render() {
-    if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed') {
+    if (window.location.pathname.match('/about')) {
+      return <div className='App'>
+        <About></About>
+      </div>
+    } else if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed') {
       return <div className='App'>
         <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Header>
         <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Lobby>
         <Footer state={this.state}></Footer>
-        <Overlay message={this.state.overlay.message}></Overlay>
+        <Overlay overlay={this.state.overlay}></Overlay>
       </div>
     } else {
       return <div className='App'>
         <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Header>
         <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Play>
         <Footer state={this.state}></Footer>
-        <Overlay message={this.state.overlay.message}></Overlay>
+        <Overlay overlay={this.state.overlay}></Overlay>
       </div>
     }
   }

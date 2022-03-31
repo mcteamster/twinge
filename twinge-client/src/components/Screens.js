@@ -58,7 +58,7 @@ class Lobby extends React.Component {
         👆 tap-hold-release to play your lowest card(s)<br></br>
         💔 each skipped card will cost us a life<br></br>
         📈 we get dealt one more card every level<br></br>
-        😬 can you feel the 'twinge' and make it to the end?
+        😬 can you feel the <b>twinge</b> and make it to the end?
       </div>
       {info}
       {inputs}
@@ -78,4 +78,22 @@ class Play extends React.Component {
   }
 }
 
-export { Lobby, Play }
+class About extends React.Component {
+  render() {
+    return <div className='About'>
+        <div className='aboutParagraph'>
+          <b>twinge</b> by <a href='https://mcteamster.com' target='_blank' rel="noreferrer">mcteamster</a>
+        </div>
+        <div className='aboutParagraph'>
+          This is a co-operative card game based off <a href='https://boardgamegeek.com/boardgame/244992/mind' target='_blank' rel="noreferrer">The Mind</a> by Wolfgang Warsch.
+          Players work together to get through a deck of 10-1000 cards in ascending order. Hands are dealt with increasing size, and cards are played at any time; without replacement.
+          Difficulty may be adjusted by granting up to 100 extra lives to compensate for missing cards out of order.
+        </div>
+        <div className='back' onClick={() => {
+          window.location.pathname = '';
+        }}>🔙</div>
+      </div>
+  }
+}
+
+export { About, Lobby, Play }
