@@ -16,6 +16,10 @@ class App extends React.Component {
     };
     this.cursor = 0;
     this.animations = [];
+    this.audio = {
+      ring: new Audio("/audio/ring.mp3"),
+      buzz: new Audio("/audio/buzz.mp3"),
+    }
   }
 
   componentDidMount() {
@@ -174,7 +178,7 @@ class App extends React.Component {
     } else {
       return <div className='App'>
         <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Header>
-        <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Play>
+        <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} audio={this.audio}></Play>
         <Footer state={this.state}></Footer>
         <Overlay overlay={this.state.overlay}></Overlay>
       </div>

@@ -101,6 +101,11 @@ class Latest extends React.Component {
       } else {
         card = <Card value='0' stale={true}></Card>
       }
+      if (event?.missed) {
+        this.props.audio.buzz.play(); // MISS SOUND
+      } else {
+        this.props.audio.ring.play(); // HIT SOUND
+      }
       return <div className='Latest centered'>
         {card}
       </div>
