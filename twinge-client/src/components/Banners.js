@@ -8,14 +8,15 @@ class Header extends React.Component {
       </div>
       <div id='roomCode' onClick={() => {
         let code = document.getElementById('roomCode');
-        code.classList.remove('clickLink');
-        code.classList.add('clickLink');
+        code.classList.remove('clickedLink');
+        code.classList.add('clickedLink');
         setTimeout(() => {
-          code.classList.remove('clickLink');
+          code.classList.remove('clickedLink');
         }, 250);
         try {
           window.navigator.clipboard.writeText(`https://twinge.mcteamster.com/${this.props.state.roomCode}`);
         } catch (err) {
+          console.err("Fallback Copy Method")
           code.select();
           code.value = `https://twinge.mcteamster.com/${this.props.state.roomCode}`;
           code.setSelectionRange(0, 99999);

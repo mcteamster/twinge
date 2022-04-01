@@ -2,7 +2,13 @@ import React from 'react';
 
 class Create extends React.Component {
   render() {
-    return <div className='Create' onClick={() => {
+    return <div className='Create centered' onClick={() => {
+      let create = document.querySelector('.Create');
+      create.classList.remove('clickedButton');
+      create.classList.add('clickedButton');
+      setTimeout(() => {
+        create.classList.remove('clickedButton');
+      }, 250);
       let deckSize = document.getElementById('deckSize').value;
       let maxLives = document.getElementById('maxLives').value;
       this.props.sendMsg({ action: 'play', actionType: 'new', config: { deckSize: deckSize, maxLives: maxLives }}) 
@@ -46,7 +52,15 @@ class Rename extends React.Component {
 
 class Start extends React.Component {
   render() {
-    return <div className='Start' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'start', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}>
+    return <div className='Start centered' onClick={() => { 
+      let start = document.querySelector('.Start');
+      start.classList.remove('clickedButton');
+      start.classList.add('clickedButton');
+      setTimeout(() => {
+        start.classList.remove('clickedButton');
+      }, 250);
+      this.props.sendMsg({ action: 'play', actionType: 'start', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) 
+    }}>
       <div>Start</div>
     </div>
   }

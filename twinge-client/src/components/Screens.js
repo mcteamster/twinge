@@ -20,8 +20,7 @@ class Lobby extends React.Component {
         <Start state={this.props.state} sendMsg={this.props.sendMsg}></Start>
       </div>
       info = <div>
-          <div className='lobbyInfo'>{this.props.state?.gamestate?.config?.deckSize} Cards</div>
-          <div className='lobbyInfo'>{this.props.state?.gamestate?.config?.maxLives} {this.props.state?.gamestate?.config?.maxLives !== '1' ? 'Lives' : 'Life'}</div>
+          <div className='lobbyInfo'>{this.props.state?.gamestate?.config?.deckSize} Cards / {this.props.state?.gamestate?.config?.maxLives} {this.props.state?.gamestate?.config?.maxLives !== '1' ? 'Lives' : 'Life'}</div>
           <Players context='lobby' players={this.props.state?.gamestate?.players || []}></Players>
         </div>
     } else {
