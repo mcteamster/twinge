@@ -28,7 +28,7 @@ class Gamestate {
           deck: [],
         },
       };
-    } else if(gamestate.config && !gamestate.meta) {
+    } else if (gamestate.config && !gamestate.meta) {
       gamestate = {
         config: {
           deckSize: (gamestate.config.deckSize <= 1000 && gamestate.config.deckSize >= 10) ? Math.ceil(gamestate.config.deckSize) : 100,
@@ -64,9 +64,6 @@ class Gamestate {
       return new Player(player);
     });
   }
-
-  // Configure Gamestate
-  // TODO DECK SIZE
 
   // Player Management
   async addPlayer(player) {
@@ -107,7 +104,7 @@ class Gamestate {
 
   async setupRound() {
     // Deal cards to players - subtract from the deck
-    if (this.private.deck.length == 0 ) {
+    if (this.private.deck.length == 0) {
       // Not Enough Cards - End The Game Here! You WIN!
       this.public.pile.push({ time: new Date().toISOString(), card: 'You Win! 🥳', round: this.meta.round, playerIndex: -1 });
       this.meta.phase = 'won';
@@ -117,6 +114,7 @@ class Gamestate {
         player.hand = this.private.deck.splice(0, this.meta.round);
         player.hand.sort((a, b) => { return a - b });
         player.handSize = player.hand.length;
+        player.strikes = 0;
       });
       this.public.remaining = this.private.deck.length;
     } else {
@@ -129,6 +127,7 @@ class Gamestate {
         player.hand = this.private.deck.splice(0, quotient + bonus);
         player.hand.sort((a, b) => { return a - b });
         player.handSize = player.hand.length;
+        player.strikes = 0;
       });
       this.public.remaining = this.private.deck.length;
     }
@@ -150,7 +149,6 @@ class Gamestate {
     // Check for missed cards
     let missedCards = [];
     this.players.forEach((player, playerIndex) => {
-      console.log(player)
       if (player.playerId != activePlayer.playerId) {
         while (player.hand[0] < lowestCards[0].card) {
           missedCards.push({ time: new Date().toISOString(), card: player.hand.shift(), round: this.meta.round, playerIndex: playerIndex, missed: true })
@@ -170,7 +168,7 @@ class Gamestate {
     }
 
     // Autocomplete round if 1 remaining player
-    if (this.players.filter((player) => { return player.handSize > 0 }).length == 1 ) {
+    if (this.players.filter((player) => { return player.handSize > 0 }).length == 1) {
       this.players.forEach((player, playerIndex) => {
         if (player.handSize > 0) {
           this.public.pile.push(...player.hand.splice(0).map((card) => {
@@ -180,6 +178,16 @@ class Gamestate {
         }
       });
     }
+  }
+
+  async checkConnections(connections) {
+    this.players.forEach((player) => {
+      if (connections.findIndex((connection) => { return connection.playerId == player.playerId }) > -1) {
+        player.connected = true;
+      } else {
+        player.connected = false;
+      }
+    })
   }
 
   async restartGame() {

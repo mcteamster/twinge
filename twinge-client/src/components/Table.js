@@ -1,15 +1,22 @@
 import React from 'react';
 
 class Players extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      page: 0,
+    }
+  }
+
   render() {
     let players = this.props.players.map((player, i) => {
       if(this.props.context === 'lobby') {
-        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} context='lobby' number={i+1} name={player.name} style={player.playerId && { border: '0.25em solid greenyellow' }}></Player>
+        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} context='lobby' number={i+1} name={player.name} strikes={player.strikes} connected={player.connected} style={player.playerId && { border: '0.25em solid greenyellow' }}></Player>
       } else if (!player.playerId) {
-        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} number={i+1} name={player.name} handSize={player.handSize} hidden={true}></Player>
+        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} number={i+1} name={player.name} handSize={player.handSize} hidden={true} strikes={player.strikes} connected={player.connected}></Player>
       }
       return null;
-    });
+    }); 
     let featuredPlayers = players.sort((a, b) => {
       if (a) {
         if (b) {
@@ -20,9 +27,28 @@ class Players extends React.Component {
       } else {
         return 1
       }
-    })    
+    })
+    featuredPlayers.push(...featuredPlayers.splice(0, 4*this.state.page));
     return <div className={`Players`} >
       <div className={`${this.props.context === 'lobby' ? 'playerLobby' : 'playerTable'}`}>
+        <div className={`pageHolder ${(this.props.context === 'lobby' || (this.props.players.length) < 6) && 'hidden'}`}>
+          <div className='page' onClick={() => {
+            let maxPage = Math.floor((this.props.players.length - 1)/4);
+            this.setState({
+              page: (this.state.page - 1) < 0 ? maxPage : (this.state.page - 1),
+            })
+          }}>
+            ◀️
+          </div>
+          <div className='page' onClick={() => {
+            let maxPage = Math.floor((this.props.players.length - 1)/4);
+            this.setState({
+              page: (this.state.page + 1) > maxPage ? 0 : (this.state.page + 1),
+            })
+          }}>
+            ▶️
+          </div>
+        </div>
         {featuredPlayers}
       </div>
     </div>
@@ -37,6 +63,7 @@ class Player extends React.PureComponent {
       kickBuffer: 0,
     };
     this.handSize = this.props.handSize;
+    this.stateHash = this.props.state.stateHash;
   }
 
   componentDidUpdate() {
@@ -62,7 +89,9 @@ class Player extends React.PureComponent {
   startBuffer = (buffer) => {
     this.cancelBuffer();
     this.interval = setInterval(() => {
-      if(this.state[buffer] < 100) {
+      if (this.stateHash !== this.props.state.stateHash) {
+        this.cancelBuffer();
+      } else if(this.state[buffer] < 100) {
         let state = {};
         state[buffer] = this.state[buffer] + 1;
         this.setState(state)
@@ -78,12 +107,14 @@ class Player extends React.PureComponent {
         playerId: this.props.state.playerId,
         actionType: 'kick',
         target: (this.props.number-1),
+        stateHash: this.props.state.stateHash,
       });
     }
     this.cancelBuffer();
   }
 
   cancelBuffer = () => {
+    this.stateHash = this.props.state.stateHash;
     clearInterval(this.interval);
     this.setState({
       kickBuffer: 0,
@@ -92,7 +123,7 @@ class Player extends React.PureComponent {
 
   render() {
     if(this.props.context === 'lobby') {
-      return <div key={`p${this.state.id}`} id={this.state.id} className='Player' 
+      return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.strikes && 'strikes'}`}
         style={{ ...this.props.style, background: `radial-gradient(circle, orange, orange ${1*this.state.kickBuffer}%, white ${1*this.state.kickBuffer}%, white)`}} 
         onMouseDown={() => { this.startBuffer('kickBuffer') }}
         onMouseUp={() => { this.triggerBuffer('kickBuffer') }}
@@ -100,10 +131,10 @@ class Player extends React.PureComponent {
         onTouchStart={() => { this.startBuffer('kickBuffer') }}
         onTouchEnd={() => { this.triggerBuffer('kickBuffer') }}
       >
-        <div className='playerValue'>{`${this.props.name}`}</div>
+        <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`} >{`${this.props.name}`}</div>
       </div>
     } else {
-      return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.hidden && 'hiddenPlayer'}`}
+      return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.hidden && 'hidden'} ${this.props.strikes && 'strikes'} ${this.props.handSize === 0 && 'stale'}`}
         style={{ background: `radial-gradient(circle, orange, orange ${1*this.state.kickBuffer}%, white ${1*this.state.kickBuffer}%, white)`}} 
         onMouseDown={() => { this.startBuffer('kickBuffer') }}
         onMouseUp={() => { this.triggerBuffer('kickBuffer') }}
@@ -111,7 +142,7 @@ class Player extends React.PureComponent {
         onTouchStart={() => { this.startBuffer('kickBuffer') }}
         onTouchEnd={() => { this.triggerBuffer('kickBuffer') }}
       >
-        <div className='playerValue'>
+        <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`}>
           <div className='playerName'>{this.props.name}</div>
           {`🖐 ${this.props.handSize}`}
         </div>
@@ -277,7 +308,8 @@ class Hand extends React.Component {
             <div className='Button'>Next Level</div>
           </div>
         } else {
-          let hand = this.props.state.gamestate.players.find((player) => { return player.playerId === this.props.state.playerId }).hand.map((card, i, a) => {
+          let activePlayer = this.props.state.gamestate.players.find((player) => { return player.playerId === this.props.state.playerId });
+          let hand = activePlayer.hand.map((card, i, a) => {
             // Check for consecutive next cards to be played together
             let wrapperClass = '';
             let bufferStyle = {};

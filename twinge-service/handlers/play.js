@@ -34,7 +34,7 @@ async function joinGame(payload) {
     // Rehydrate gamestate
     let gamestate = new Gamestate(game.gamestate);
     // Join
-    if (gamestate.meta.phase == 'open' && (!payload.playerId || !(await gamestate.findPlayer(payload.playerId)))) {
+    if ((gamestate.meta.phase == 'open' || gamestate.meta.phase == 'playing') && (!payload.playerId || !(await gamestate.findPlayer(payload.playerId)))) {
       payload.playerId = await gamestate.addPlayer(new Player());
     }
     if (await gamestate.findPlayer(payload.playerId)) {
@@ -81,20 +81,29 @@ async function kickPlayer(payload) {
       let gamestate = new Gamestate(game.gamestate);
       // Kick
       if (payload.playerId) {
-        let targetId = gamestate.players[payload.target].playerId;
-        if (targetId) {
-          if (targetId !== payload.playerId) {
-            // TODO: Kick Strikes
-            let newPayload = { ...payload };
-            newPayload.playerId = targetId;
-            let connectedPlayers = await connections.findConnections('gameId', payload.gameId)
-            console.log(connectedPlayers)
-            newPayload.connectionId = connectedPlayers.find((connectedPlayer) => {
-              if (connectedPlayer.playerId == targetId) {
-                return true
+        let targetPlayer = gamestate.players[payload.target];
+        if (targetPlayer.playerId) {
+          if (targetPlayer.playerId !== payload.playerId) {
+            // Two Strike Kick
+            if (targetPlayer.strikes == 0) {
+              targetPlayer.strikes++;
+              if (game.stateHash === payload.stateHash) {
+                game = await games.updateGame(game.gameId, gamestate);
+              } else {
+                await messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
               }
-            }).connectionId;
-            await leaveGame(newPayload);
+              await messages.broadcastGame(game);
+            } else {
+              let newPayload = { ...payload };
+              newPayload.playerId = targetPlayer.playerId;
+              let connectedPlayers = await connections.findConnections('gameId', payload.gameId)
+              newPayload.connectionId = connectedPlayers.find((connectedPlayer) => {
+                if (connectedPlayer.playerId == targetPlayer.playerId) {
+                  return true
+                }
+              })?.connectionId;
+              await leaveGame(newPayload);
+            }
           } else {
             await leaveGame(payload);
           }
@@ -118,10 +127,16 @@ async function leaveGame(payload) {
       let gamestate = new Gamestate(game.gamestate);
       if (await gamestate.findPlayer(payload.playerId)) {
         await gamestate.kickPlayer(payload.playerId);
-        await connections.updateConnection(payload.connectionId, 'gameId', '-1');
-        await connections.updateConnection(payload.connectionId, 'playerId', '-1');
+        if (payload.connectionId) {
+          await connections.updateConnection(payload.connectionId, 'gameId', '-1');
+          await connections.updateConnection(payload.connectionId, 'playerId', '-1');
+        }
         if (gamestate.players.length > 0) {
-          game = await games.updateGame(game.gameId, gamestate);
+          if (game.stateHash === payload.stateHash) {
+            game = await games.updateGame(game.gameId, gamestate);
+          } else {
+            await messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
+          }
           await messages.broadcastGame(game);
         } else {
           await games.deleteGame(game.gameId);
@@ -169,6 +184,27 @@ async function startGame(payload) {
   }
 }
 
+async function refreshGame(payload) {
+  let game = null;
+  if (payload.gameId) {
+    game = await games.readGame(payload.gameId);
+    if (game && game.gamestate) {
+      let gamestate = new Gamestate(game.gamestate);
+      if (await gamestate.findPlayer(payload.playerId)) {
+        // No-Op
+        game = await games.updateGame(game.gameId, gamestate);
+        await messages.broadcastGame(game);
+      } else {
+        await messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
+      }
+    } else {
+      await messages.send(payload.connectionId, { code: 2, message: 'Open game not found' });
+    }
+  } else {
+    await messages.send(payload.connectionId, { code: 1, message: 'No gameId provided' });
+  }
+}
+
 // In-Game Handlers
 async function twinge(payload) {
   let game = null;
@@ -180,6 +216,7 @@ async function twinge(payload) {
       if (activePlayer) {
         if (activePlayer.handSize > 0) {
           gamestate.playCard(payload.playerId);
+          gamestate.checkConnections(await connections.findConnections('gameId', payload.gameId));
           // Read game to check stateHash matches before writing
           game = await games.readGame(payload.gameId); 
           if (game.stateHash === payload.stateHash) {
@@ -288,6 +325,7 @@ const actionHandler = {
   kick: kickPlayer,
   leave: leaveGame,
   start: startGame,
+  refresh: refreshGame,
   twinge: twinge,
   next: nextRound,
   restart: restartGame,

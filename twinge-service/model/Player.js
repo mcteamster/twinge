@@ -1,4 +1,5 @@
 const Guid = require('guid');
+const { uniqueNamesGenerator, animals } = require('unique-names-generator');
 
 class Player {
   constructor(player) {
@@ -8,7 +9,11 @@ class Player {
         playerId: String(Guid.create()),
         connected: true,
         strikes: 0,
-        name: 'ANON',
+        name: uniqueNamesGenerator({ 
+          dictionaries: [animals],
+          style: 'upperCase',
+          separator: ' ',
+        }),
         hand: [],
         handSize: 0,
       };
@@ -21,8 +26,8 @@ class Player {
   }
 
   async rename(name) {
-    if (name.length > 8) {
-      name = name.substring(0, 8);
+    if (name.length > 10) {
+      name = name.substring(0, 10);
     }
     this.name = name;
   }

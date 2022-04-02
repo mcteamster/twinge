@@ -27,6 +27,12 @@ class App extends React.Component {
     this.ws = new WebSocket('wss://twinge-service.mcteamster.com');
     this.ws.onopen = this.autoJoin;
     this.ws.onmessage = this.messageHandler;
+
+    setInterval(() => {
+      if (this.state.gameId && this.state.playerId) {
+        this.sendMsg({ action: 'play', actionType: 'refresh', gameId: this.state.gameId, playerId: this.state.playerId })
+      }
+    }, 60000);
   }
 
   autoJoin = async () => {
@@ -81,7 +87,10 @@ class App extends React.Component {
           player && player.handSize++;
           player?.playerId === this.state.playerId && tempHand.push(card.card);
         })
-        game.gamestate.players.find((player) => { return player.playerId === this.state.playerId }).hand.unshift(...tempHand);
+        let activePlayer = game.gamestate.players.find((player) => { return player.playerId === this.state.playerId });
+        if (activePlayer) {
+          activePlayer.hand.unshift(...tempHand);
+        }
         if (i !== (data?.gamestate?.public?.pile.length - 1) && (data.gamestate.meta.phase === 'won' || data.gamestate.meta.phase === 'lost')) {
           game.gamestate.meta.phase = 'playing';
         }
@@ -169,7 +178,7 @@ class App extends React.Component {
         <About></About>
       </div>
     } else if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed') {
-      return <div className='App'>
+      return <div className='App unselectable'>
         <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Header>
         <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Lobby>
         <Footer state={this.state}></Footer>

@@ -6,7 +6,9 @@ const apigatewaymanagementapi = new AWS.ApiGatewayManagementApi({
 });
 
 async function send(connectionId, payload) {
-  await apigatewaymanagementapi.postToConnection({ ConnectionId: connectionId, Data: JSON.stringify(payload) }).promise();
+  if (connectionId) {
+    await apigatewaymanagementapi.postToConnection({ ConnectionId: connectionId, Data: JSON.stringify(payload) }).promise();
+  }
 };
 
 async function broadcastGame(game) {

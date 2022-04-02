@@ -14,11 +14,11 @@ class Header extends React.Component {
           code.classList.remove('clickedLink');
         }, 250);
         try {
-          window.navigator.clipboard.writeText(`https://twinge.mcteamster.com/${this.props.state.roomCode}`);
+          window.navigator.clipboard.writeText(`${window.location}${this.props.state.roomCode}`);
         } catch (err) {
           console.err("Fallback Copy Method")
           code.select();
-          code.value = `https://twinge.mcteamster.com/${this.props.state.roomCode}`;
+          code.value = `${window.location}${this.props.state.roomCode}`;
           code.setSelectionRange(0, 99999);
           document.execCommand("copy");
           code.value = this.props.state.roomCode;
@@ -26,7 +26,7 @@ class Header extends React.Component {
       }}>
         {this.props.state.roomCode ? `${this.props.state.roomCode}` : ''}
       </div>
-      <div id='exit' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'leave', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) }}>
+      <div id='exit' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'leave', gameId: this.props.state.gameId, playerId: this.props.state.playerId, stateHash: this.props.state.stateHash }) }}>
         {this.props.state?.gameId && '❌'}
       </div>
     </div>

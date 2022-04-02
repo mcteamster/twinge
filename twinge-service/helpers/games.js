@@ -20,7 +20,6 @@ async function createGame(gameId, gamestate) {
     retries++;
   }
   if (regenCount >= 100 ) {
-    console.log('Too many rooms');
     return 400
   }
 
