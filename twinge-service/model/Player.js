@@ -7,6 +7,7 @@ class Player {
       player = {
         playerId: String(Guid.create()),
         connected: true,
+        strikes: 0,
         name: 'ANON',
         hand: [],
         handSize: 0,

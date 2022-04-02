@@ -73,6 +73,43 @@ async function renamePlayer(payload) {
   }
 }
 
+async function kickPlayer(payload) {
+  let game = null;
+  if (payload.gameId) {
+    game = await games.readGame(payload.gameId);
+    if (game && game.gamestate) {
+      let gamestate = new Gamestate(game.gamestate);
+      // Kick
+      if (payload.playerId) {
+        let targetId = gamestate.players[payload.target].playerId;
+        if (targetId) {
+          if (targetId !== payload.playerId) {
+            // TODO: Kick Strikes
+            let newPayload = { ...payload };
+            newPayload.playerId = targetId;
+            let connectedPlayers = await connections.findConnections('gameId', payload.gameId)
+            console.log(connectedPlayers)
+            newPayload.connectionId = connectedPlayers.find((connectedPlayer) => {
+              if (connectedPlayer.playerId == targetId) {
+                return true
+              }
+            }).connectionId;
+            await leaveGame(newPayload);
+          } else {
+            await leaveGame(payload);
+          }
+        } else {
+          await messages.send(payload.connectionId, { code: 7, message: 'Target not found' });
+        }
+      } else {
+        await messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
+      }
+    } else {
+      await messages.send(payload.connectionId, { code: 2, message: 'Game not found' });
+    }
+  }
+}
+
 async function leaveGame(payload) {
   let game = null;
   if (payload.gameId) {
@@ -248,6 +285,7 @@ const actionHandler = {
   new: newGame,
   join: joinGame,
   rename: renamePlayer,
+  kick: kickPlayer,
   leave: leaveGame,
   start: startGame,
   twinge: twinge,
@@ -267,6 +305,7 @@ module.exports.handler = async (event) => {
     stateHash: body.stateHash,
     name: body.name,
     config: body.config,
+    target: body.target,
   }
   await actionHandler[actionType](payload);
   return {

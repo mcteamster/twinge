@@ -4,9 +4,9 @@ class Players extends React.Component {
   render() {
     let players = this.props.players.map((player, i) => {
       if(this.props.context === 'lobby') {
-        return <Player key={`p${i + 1}`} context='lobby' number={i+1} name={player.name} style={player.playerId && { border: '0.25em solid greenyellow' }}></Player>
+        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} context='lobby' number={i+1} name={player.name} style={player.playerId && { border: '0.25em solid greenyellow' }}></Player>
       } else if (!player.playerId) {
-        return <Player key={`p${i + 1}`} number={i+1} name={player.name} handSize={player.handSize} hidden={true}></Player>
+        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} number={i+1} name={player.name} handSize={player.handSize} hidden={true}></Player>
       }
       return null;
     });
@@ -34,14 +34,19 @@ class Player extends React.PureComponent {
     super(props);
     this.state = {
       id: `p${this.props.number}`,
-    }
+      kickBuffer: 0,
+    };
+    this.handSize = this.props.handSize;
   }
 
   componentDidUpdate() {
-    this.hightlight();
+    if ((this.handSize !== this.props.handSize) && (this.state.kickBuffer === 0)) {
+      this.highlight();
+    }
+    this.handSize = this.props.handSize;
   }
 
-  hightlight = () => {
+  highlight = () => {
     try {
       if (this.props?.context !== 'lobby') {
         document.getElementById(this.state.id).classList.add('playerHighlight');
@@ -54,13 +59,58 @@ class Player extends React.PureComponent {
     }
   }
 
+  startBuffer = (buffer) => {
+    this.cancelBuffer();
+    this.interval = setInterval(() => {
+      if(this.state[buffer] < 100) {
+        let state = {};
+        state[buffer] = this.state[buffer] + 1;
+        this.setState(state)
+      }
+    }, 20)
+  }
+
+  triggerBuffer = (buffer) => {
+    if (this.state[buffer] >= 100) {
+      this.props.sendMsg({
+        action: 'play', 
+        gameId: this.props.state.gameId, 
+        playerId: this.props.state.playerId,
+        actionType: 'kick',
+        target: (this.props.number-1),
+      });
+    }
+    this.cancelBuffer();
+  }
+
+  cancelBuffer = () => {
+    clearInterval(this.interval);
+    this.setState({
+      kickBuffer: 0,
+    })
+  }
+
   render() {
     if(this.props.context === 'lobby') {
-      return <div key={`p${this.state.id}`} id={this.state.id} className='Player' style={this.props.style}>
+      return <div key={`p${this.state.id}`} id={this.state.id} className='Player' 
+        style={{ ...this.props.style, background: `radial-gradient(circle, orange, orange ${1*this.state.kickBuffer}%, white ${1*this.state.kickBuffer}%, white)`}} 
+        onMouseDown={() => { this.startBuffer('kickBuffer') }}
+        onMouseUp={() => { this.triggerBuffer('kickBuffer') }}
+        onMouseLeave={() => { this.cancelBuffer() }}
+        onTouchStart={() => { this.startBuffer('kickBuffer') }}
+        onTouchEnd={() => { this.triggerBuffer('kickBuffer') }}
+      >
         <div className='playerValue'>{`${this.props.name}`}</div>
       </div>
     } else {
-      return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.hidden && 'hiddenPlayer'}`}>
+      return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.hidden && 'hiddenPlayer'}`}
+        style={{ background: `radial-gradient(circle, orange, orange ${1*this.state.kickBuffer}%, white ${1*this.state.kickBuffer}%, white)`}} 
+        onMouseDown={() => { this.startBuffer('kickBuffer') }}
+        onMouseUp={() => { this.triggerBuffer('kickBuffer') }}
+        onMouseLeave={() => { this.cancelBuffer() }}
+        onTouchStart={() => { this.startBuffer('kickBuffer') }}
+        onTouchEnd={() => { this.triggerBuffer('kickBuffer') }}
+      >
         <div className='playerValue'>
           <div className='playerName'>{this.props.name}</div>
           {`🖐 ${this.props.handSize}`}
@@ -101,7 +151,7 @@ class Latest extends React.Component {
       } else {
         card = <Card value='0' stale={true}></Card>
       }
-      if (event?.missed) {
+      if (event?.missed && (event.round === this.props.round)) {
         this.props.audio.buzz.play(); // MISS SOUND
       } else {
         this.props.audio.ring.play(); // HIT SOUND

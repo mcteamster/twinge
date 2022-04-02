@@ -21,7 +21,7 @@ class Lobby extends React.Component {
       </div>
       info = <div>
           <div className='lobbyInfo'>{this.props.state?.gamestate?.config?.deckSize} Cards / {this.props.state?.gamestate?.config?.maxLives} {this.props.state?.gamestate?.config?.maxLives !== '1' ? 'Lives' : 'Life'}</div>
-          <Players context='lobby' players={this.props.state?.gamestate?.players || []}></Players>
+          <Players context='lobby' state={this.props.state} sendMsg={this.props.sendMsg} players={this.props.state?.gamestate?.players || []}></Players>
         </div>
     } else {
       inputs = <div className='lobbyButtons centered'>
@@ -69,7 +69,7 @@ class Play extends React.Component {
   render() {
     return <div className='Play'>
       <Status state={this.props.state}></Status>
-      <Players className='Players centered' context='play' players={this.props.state?.gamestate?.players || []}></Players>
+      <Players className='Players centered' state={this.props.state} sendMsg={this.props.sendMsg} context='play' players={this.props.state?.gamestate?.players || []}></Players>
       <Latest className='Latest centered' event={this.props.state?.gamestate?.public?.pile?.slice(-1) || []} round={this.props.state?.gamestate?.meta?.round || 0} audio={this.props.audio}></Latest>
       <Pile pile={this.props.state?.gamestate?.public?.pile} round={this.props.state?.gamestate?.meta?.round || 0}></Pile>
       <Hand state={this.props?.state} sendMsg={this.props.sendMsg} audio={this.props.audio}></Hand>

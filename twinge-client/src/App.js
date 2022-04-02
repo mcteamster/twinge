@@ -176,7 +176,7 @@ class App extends React.Component {
         <Overlay overlay={this.state.overlay}></Overlay>
       </div>
     } else {
-      return <div className='App'>
+      return <div className='App unselectable'>
         <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Header>
         <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} audio={this.audio}></Play>
         <Footer state={this.state}></Footer>
