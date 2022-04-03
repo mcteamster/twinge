@@ -173,6 +173,11 @@ class Status extends React.Component {
 }
 
 class Latest extends React.Component {
+  constructor(props) {
+    super(props);
+    this.lastCard = 0;
+  }
+
   render() {
     if(this.props.event[0]) {
       let event = this.props.event[0];
@@ -182,11 +187,14 @@ class Latest extends React.Component {
       } else {
         card = <Card value='0' stale={true}></Card>
       }
-      if (event?.missed && (event.round === this.props.round)) {
-        this.props.audio.buzz.play(); // MISS SOUND
-      } else {
-        this.props.audio.ring.play(); // HIT SOUND
+      if (event?.card !== this.lastCard) {
+        if (event?.missed && (event.round === this.props.round)) {
+          this.props.audio.buzz.play(); // MISS SOUND
+        } else {
+          this.props.audio.ring.play(); // HIT SOUND
+        }
       }
+      this.lastCard = event?.card || 0;
       return <div className='Latest centered'>
         {card}
       </div>
