@@ -32,7 +32,7 @@ class Join extends React.Component {
 
 class Rename extends React.Component {
   render() {
-    return <input id='inputBox' type='text' pattern='[A-Z]' maxLength="10" placeholder='Set name or' className='Rename centered' onKeyUp={(event) => { 
+    return <input id='inputBox' type='text' pattern='[A-Z]' maxLength="10" placeholder='Set Name' className='Rename centered' onKeyUp={(event) => { 
       if (event.key !== 'Enter') {
         this.props.sendMsg({ 
           action: 'play', 

@@ -17,7 +17,7 @@ class Lobby extends React.Component {
     if (this.props.state?.gameId && this.props.state?.roomCode) {
       inputs = <div className='lobbyButtons centered'>
         <Rename state={this.props.state} sendMsg={this.props.sendMsg}></Rename>
-        <Start state={this.props.state} sendMsg={this.props.sendMsg}></Start>
+        {this.props.state?.gamestate?.players[0]?.playerId ? <Start state={this.props.state} sendMsg={this.props.sendMsg}></Start> : ""}
       </div>
       info = <div>
           <div className='lobbyInfo'>{this.props.state?.gamestate?.config?.deckSize} Cards / {this.props.state?.gamestate?.config?.maxLives} {this.props.state?.gamestate?.config?.maxLives !== '1' ? 'Lives' : 'Life'}</div>
@@ -52,12 +52,10 @@ class Lobby extends React.Component {
     return <div className='Lobby'>
       <div id='instructions'>
         <h1>😣 twinge</h1>
-        🙌 this is a team game...<br></br>
-        ⬆️ where we play our cards in ascending order<br></br>
-        👆 tap-hold-release to play your lowest card(s)<br></br>
-        💔 each skipped card will cost us a life<br></br>
-        📈 we get dealt one more card every level<br></br>
-        😬 can you feel the <b>twinge</b> and make it to the end?
+        1. Play in ascending order<br></br>
+        2. Anyone can play at any time<br></br>
+        3. Missing a number costs the team a life<br></br>
+        4. Can you make it through the whole deck?
       </div>
       {info}
       {inputs}
