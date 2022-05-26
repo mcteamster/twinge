@@ -32,7 +32,7 @@ class App extends React.Component {
       if (this.state.gameId && this.state.playerId) {
         this.sendMsg({ action: 'play', actionType: 'refresh', gameId: this.state.gameId, playerId: this.state.playerId })
       }
-    }, 60000);
+    }, 360000);
   }
 
   autoJoin = async () => {
