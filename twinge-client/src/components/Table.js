@@ -158,7 +158,7 @@ class Player extends React.PureComponent {
 class Status extends React.Component {
   calculateMaxRounds(currentRound, numPlayers, remainingCards) {
     let remainingRounds = 0;
-    while(remainingCards >= 0) {
+    while(remainingCards > 0) {
       remainingRounds += 1;
       remainingCards = remainingCards -numPlayers*(currentRound + remainingRounds);
     }
