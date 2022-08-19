@@ -15,26 +15,22 @@
 
 .Header {
   width: calc(100vw - 1em);
-  height: 2.25em;
+  height: 2em;
   padding: 0.5em 0.5em 0;
   position: fixed;
   top: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   font-weight: bold;
-  background-color: white;
-  border-bottom: 0.15em solid lightgrey;
+  background-color: lightyellow;
   z-index: 950;
-}
-
-.Header div {
-  min-width: 6em;
 }
 
 #title {
   text-align: left;
   cursor: pointer;
+  width: 4em;
 }
 
 #roomCode {
@@ -64,9 +60,17 @@
   }
 }
 
-#exit {
+#functions {
+  width: 4em;
   text-align: right;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+#mute {
+  padding: 0 0.5em 0 0.5em;
 }
 
 .Footer {
@@ -107,6 +111,7 @@ h1 {
   font-weight: bold;
   font-size: calc(min(5vw, 4vh));
   flex-direction: row;
+  padding-bottom: 1.5em;
 }
 
 .lobbyButtons div {
@@ -405,6 +410,14 @@ h1 {
   justify-content: flex-end;
   flex-direction: row-reverse;
   overflow-x: visible;
+}
+
+.handTooltip {
+  color: #ccc;
+  font-size: 0.75em;
+  position: fixed;
+  bottom: 1.5em;
+  width: 100%;
 }
 
 .cardWrapper {

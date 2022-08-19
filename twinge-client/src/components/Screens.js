@@ -52,10 +52,10 @@ class Lobby extends React.Component {
     return <div className='Lobby'>
       <div id='instructions'>
         <h1>😣 twinge</h1>
-        1. Play in ascending order<br></br>
-        2. Anyone can play at any time<br></br>
-        3. Missing a number costs the team a life<br></br>
-        4. Can you make it through the whole deck?
+        🤫 Don't talk about your cards!<br></br>
+        ⬆️ Play if you think you're the next highest<br></br>
+        💔 Each skipped card costs the team a life<br></br>
+        🏁 Can you make it to the end?
       </div>
       {info}
       {inputs}

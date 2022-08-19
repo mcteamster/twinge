@@ -1,6 +1,7 @@
 import './App.css';
 import { Header, Footer, Overlay } from './components/Banners';
 import { About, Lobby, Play } from './components/Screens'
+import { AudioContext, audioSettings } from './context/AudioContext';
 import React from 'react';
 
 class App extends React.Component {
@@ -10,6 +11,7 @@ class App extends React.Component {
       gameId: localStorage.getItem('gameId'),
       playerId: localStorage.getItem('playerId'),
       createTime: localStorage.getItem('createTime'),
+      audio: audioSettings.loud,
       overlay: {
         message: '',
       }
@@ -19,6 +21,11 @@ class App extends React.Component {
     this.audio = {
       ring: new Audio("/audio/ring.mp3"),
       buzz: new Audio("/audio/buzz.mp3"),
+    }
+    this.toggleMute = () => {
+      this.setState(state => ({
+        audio: state.audio === audioSettings.loud ? audioSettings.silent : audioSettings.loud,
+      }));
     }
   }
 
@@ -179,17 +186,21 @@ class App extends React.Component {
       </div>
     } else if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed') {
       return <div className='App unselectable'>
-        <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Header>
-        <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Lobby>
-        <Footer state={this.state}></Footer>
-        <Overlay overlay={this.state.overlay}></Overlay>
+        <AudioContext.Provider value={this.state.audio}>
+          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute}></Header>
+          <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} ></Lobby>
+          <Footer state={this.state}></Footer>
+          <Overlay overlay={this.state.overlay}></Overlay>
+        </AudioContext.Provider>
       </div>
     } else {
       return <div className='App unselectable'>
-        <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)}></Header>
-        <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} audio={this.audio}></Play>
-        <Footer state={this.state}></Footer>
-        <Overlay overlay={this.state.overlay}></Overlay>
+        <AudioContext.Provider value={this.state.audio}>
+          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute}></Header>
+          <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} audio={this.audio}></Play>
+          <Footer state={this.state}></Footer>
+          <Overlay overlay={this.state.overlay}></Overlay>
+        </AudioContext.Provider>
       </div>
     }
   }

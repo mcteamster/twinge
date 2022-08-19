@@ -26,8 +26,13 @@ class Header extends React.Component {
       }}>
         {this.props.state.roomCode ? `${this.props.state.roomCode}` : ''}
       </div>
-      <div id='exit' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'leave', gameId: this.props.state.gameId, playerId: this.props.state.playerId, stateHash: this.props.state.stateHash }) }}>
-        {this.props.state?.gameId && '❌'}
+      <div id='functions'>      
+        <div id='mute' onClick={() => { this.props.toggleMute() }}>
+          {this.props.state?.gamestate?.meta?.phase === 'playing' && (this.props.state?.audio.mute ? '🔇' : '🔊')}
+        </div>
+        <div id='exit' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'leave', gameId: this.props.state.gameId, playerId: this.props.state.playerId, stateHash: this.props.state.stateHash }) }}>
+          {this.props.state?.gameId && '❌'}
+        </div>
       </div>
     </div>
   }

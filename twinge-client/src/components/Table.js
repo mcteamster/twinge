@@ -1,4 +1,5 @@
 import React from 'react';
+import { AudioContext } from '../context/AudioContext';
 
 class Players extends React.Component {
   constructor(props) {
@@ -11,7 +12,7 @@ class Players extends React.Component {
   render() {
     let players = this.props.players.map((player, i) => {
       if(this.props.context === 'lobby') {
-        if(i == 0) {
+        if(i === 0) {
           player.name = `⭐️ ${player.name}`
         }
         return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} context='lobby' number={i+1} name={player.name} strikes={player.strikes} connected={player.connected} style={player.playerId && { border: '0.25em solid greenyellow' }}></Player>
@@ -155,8 +156,22 @@ class Player extends React.PureComponent {
 }
 
 class Status extends React.Component {
+  calculateMaxRounds(currentRound, numPlayers, remainingCards) {
+    let remainingRounds = 0;
+    while(remainingCards >= 0) {
+      remainingRounds += 1;
+      remainingCards = remainingCards -numPlayers*(currentRound + remainingRounds);
+    }
+    return remainingRounds+currentRound
+  }
+
   render() {
-    let round = `Level ${this.props.state?.gamestate?.meta?.round}`;
+    // Levels
+    let round = Number(this.props.state?.gamestate?.meta?.round);
+    let numPlayers = Number(this.props.state?.gamestate?.players.length);
+    let remainingCards = Number(this.props.state?.gamestate?.public?.remaining);
+
+    // Lives
     let lives = '';
     let currentLives = this.props.state?.gamestate?.public?.lives;
     let maxLives = this.props.state?.gamestate?.config?.maxLives;
@@ -166,11 +181,21 @@ class Status extends React.Component {
     } else {
       lives = `${currentLives} ❤️`
     }
-    let deck = `${this.props.state?.gamestate?.config?.deckSize - this.props.state?.gamestate?.public?.remaining}/${this.props.state?.gamestate?.config?.deckSize}`
+
+    // Deck
+    let deck = `${this.props.state?.gamestate?.config?.deckSize - remainingCards}/${this.props.state?.gamestate?.config?.deckSize}`
     return <div className='Status'>
-      <div>{round}</div>
+      <div>
+        Level
+        <br></br>
+        {round} of {this.calculateMaxRounds(round, numPlayers, remainingCards)}
+      </div>
       <div>{lives}</div>
-      <div>{deck}</div>
+      <div>
+        Dealt
+        <br></br>
+        {deck}
+      </div>
     </div>
   }
 }
@@ -182,6 +207,7 @@ class Latest extends React.Component {
   }
 
   render() {
+    let audio = this.context;
     if(this.props.event[0]) {
       let event = this.props.event[0];
       let card;
@@ -191,10 +217,12 @@ class Latest extends React.Component {
         card = <Card value='0' stale={true}></Card>
       }
       if (event?.card !== this.lastCard) {
-        if (event?.missed && (event.round === this.props.round)) {
-          this.props.audio.buzz.play(); // MISS SOUND
-        } else {
-          this.props.audio.ring.play(); // HIT SOUND
+        if(!audio.mute) {
+          if (event?.missed && (event.round === this.props.round)) {
+            this.props.audio.buzz.play(); // MISS SOUND
+          } else {
+            this.props.audio.ring.play(); // HIT SOUND
+          }
         }
       }
       this.lastCard = event?.card || 0;
@@ -208,6 +236,7 @@ class Latest extends React.Component {
     }
   }
 }
+Latest.contextType = AudioContext;
 
 class Pile extends React.Component {
   render() {
@@ -346,6 +375,7 @@ class Hand extends React.Component {
               <div className='handWrapper'>
                 {hand.reverse()}
               </div>
+              {this.props.state.gamestate.meta.round < 4 && <div className='handTooltip centered'>Hold and Release to Play, Tap Again to Cancel</div>}
             </div>
           } else {
             return <div className='Hand centered unselectable'>
