@@ -20,11 +20,15 @@ class Create extends React.Component {
 
 class Join extends React.Component {
   render() {
-    return <input id='inputBox' type='text' pattern='[A-Z]' maxLength="4" placeholder='or Join "ABCD"' className='Join centered' onKeyUp={(event) => { 
+    return <input id='inputBox' type='text' pattern='[A-Z]' maxLength="4" placeholder='or Join Game' className='Join centered' 
+    onKeyUp={(event) => { 
       if (document.getElementById('inputBox').value.length === 4 && event.key !== 'Enter') {
         this.props.sendMsg({ action: 'play', actionType: 'join', roomCode: document.getElementById('inputBox').value })
         window.scrollTo(0, 0);
       }
+    }}
+    onSelect={()=> {
+      document.getElementById('inputBox').placeholder = 'e.g. "ABCD"'
     }}>
     </input>
   }

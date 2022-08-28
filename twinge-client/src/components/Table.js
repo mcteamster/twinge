@@ -324,7 +324,7 @@ class Hand extends React.Component {
             Replay
           </div>
           <div className='Button centered endgame' 
-            style={{ background: `radial-gradient(circle, red, red ${4*this.state.endBuffer}%, white ${4*this.state.endBuffer}%, white)`}} 
+            style={{ background: `radial-gradient(circle, yellow, yellow ${4*this.state.endBuffer}%, white ${4*this.state.endBuffer}%, white)`}} 
             onMouseDown={() => { this.startBuffer('endBuffer') }}
             onMouseUp={() => { this.triggerBuffer('endBuffer', 'end') }}
             onMouseLeave={() => { this.cancelBuffer() }}
