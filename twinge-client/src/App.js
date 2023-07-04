@@ -109,7 +109,7 @@ class App extends React.Component {
               return `${playerId}${player.playerId || ''}`
             }, ''),
           });
-        }, 1000 * (i - this.cursor)));
+        }, 666 * (i - this.cursor)));
       }
       this.cursor = data?.gamestate?.public?.pile.length;
     } else {
