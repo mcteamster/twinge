@@ -1,30 +1,48 @@
 const hash = require('object-hash');
-const AWS = require("aws-sdk");
-const dynamoDbClient = new AWS.DynamoDB.DocumentClient();
+const {
+  DynamoDBDocument
+} = require("@aws-sdk/lib-dynamodb"),
+  {
+    DynamoDB
+  } = require("@aws-sdk/client-dynamodb");
+const marshallOptions = {
+  // Whether to automatically convert empty strings, blobs, and sets to `null`.
+  convertEmptyValues: false, // false, by default.
+  // Whether to remove undefined values while marshalling.
+  removeUndefinedValues: false, // false, by default.
+  // Whether to convert typeof object to map attribute.
+  convertClassInstanceToMap: true, // false, by default.
+};
+const unmarshallOptions = {
+  // Whether to return numbers as a string instead of converting them to native JavaScript numbers.
+  wrapNumbers: false, // false, by default.
+};
+const translateConfig = { marshallOptions, unmarshallOptions };
+const dynamoDbClient = DynamoDBDocument.from(new DynamoDB(), translateConfig);
 const GAME_TABLE = process.env.GAME_TABLE;
 
 async function createGame(gameId, gamestate) {
   function makeCode() {
     let codeChars = [
-      Math.floor((Math.random()*26))+65,
-      Math.floor((Math.random()*26))+65,
-      Math.floor((Math.random()*26))+65,
-      Math.floor((Math.random()*26))+65
+      Math.floor((Math.random() * 26)) + 65,
+      Math.floor((Math.random() * 26)) + 65,
+      Math.floor((Math.random() * 26)) + 65,
+      Math.floor((Math.random() * 26)) + 65
     ]
     return String.fromCharCode(...codeChars);
   }
   let roomCode = makeCode();
   let regenCount = 0;
-  while(regenCount < 100 && (await findGames("roomCode", roomCode)).length > 0 ) {
+  while (regenCount < 100 && (await findGames("roomCode", roomCode)).length > 0) {
     roomCode = makeCode();
     retries++;
   }
-  if (regenCount >= 100 ) {
+  if (regenCount >= 100) {
     return 400
   }
 
   let currentTime = new Date();
-  let expiryTimeEpoch = new Date().setHours(currentTime.getHours() + 12)/1000;
+  let expiryTimeEpoch = new Date().setHours(currentTime.getHours() + 12) / 1000;
   const params = {
     TableName: GAME_TABLE,
     Item: {
@@ -38,7 +56,7 @@ async function createGame(gameId, gamestate) {
   };
 
   try {
-    await dynamoDbClient.put(params).promise();
+    await dynamoDbClient.put(params);
     return params.Item;
   } catch (error) {
     console.log(error);
@@ -55,7 +73,7 @@ async function readGame(gameId) {
   };
 
   try {
-    return (await dynamoDbClient.get(params).promise()).Item;
+    return (await dynamoDbClient.get(params)).Item;
   } catch (error) {
     console.log(error);
     return 500
@@ -67,7 +85,7 @@ async function findGames(queryKey, queryValue) {
     TableName: GAME_TABLE,
     IndexName: queryKey,
     KeyConditionExpression: "#queryKey = :queryValue",
-    ExpressionAttributeNames:{
+    ExpressionAttributeNames: {
       "#queryKey": queryKey,
     },
     ExpressionAttributeValues: {
@@ -76,7 +94,7 @@ async function findGames(queryKey, queryValue) {
   };
 
   try {
-    return (await dynamoDbClient.query(params).promise()).Items;
+    return (await dynamoDbClient.query(params)).Items;
   } catch (error) {
     console.log(error);
     return 500
@@ -98,7 +116,7 @@ async function updateGame(gameId, gamestate) {
   };
 
   try {
-    return (await dynamoDbClient.update(params).promise()).Attributes;
+    return (await dynamoDbClient.update(params)).Attributes;
   } catch (error) {
     console.log(error);
     return 500
@@ -114,7 +132,7 @@ async function deleteGame(gameId) {
   };
 
   try {
-    await dynamoDbClient.delete(params).promise();
+    await dynamoDbClient.delete(params);
     return 200
   } catch (error) {
     console.log(error);

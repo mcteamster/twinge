@@ -16,43 +16,21 @@ class Players extends React.Component {
           player.name = `⭐️ ${player.name}`
         }
         return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} context='lobby' number={i+1} name={player.name} strikes={player.strikes} connected={player.connected} style={player.playerId && { border: '0.25em solid greenyellow' }}></Player>
-      } else if (!player.playerId) {
-        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} number={i+1} name={player.name} handSize={player.handSize} hidden={true} strikes={player.strikes} connected={player.connected}></Player>
+      } else {
+        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} number={i+1} name={player.name} handSize={player.handSize} strikes={player.strikes} connected={player.connected} pin={player.playerId === this.props.state.playerId}></Player>
       }
-      return null;
     }); 
     let featuredPlayers = players.sort((a, b) => {
-      if (a) {
-        if (b) {
-          return b.props?.handSize - a.props.handSize
-        } else {
-          return -1
-        }
-      } else {
+      if (a.props.pin) {
+        return -1
+      } else if(b.props.pin) {
         return 1
+      } else {
+        return b.props?.handSize - a.props.handSize
       }
     })
-    featuredPlayers.push(...featuredPlayers.splice(0, 4*this.state.page));
     return <div className={`Players`} >
       <div className={`${this.props.context === 'lobby' ? 'playerLobby' : 'playerTable'}`}>
-        <div className={`pageHolder ${(this.props.context === 'lobby' || (this.props.players.length) < 6) && 'hidden'}`}>
-          <div className='page' onClick={() => {
-            let maxPage = Math.floor((this.props.players.length - 1)/4);
-            this.setState({
-              page: (this.state.page - 1) < 0 ? maxPage : (this.state.page - 1),
-            })
-          }}>
-            ◀️
-          </div>
-          <div className='page' onClick={() => {
-            let maxPage = Math.floor((this.props.players.length - 1)/4);
-            this.setState({
-              page: (this.state.page + 1) > maxPage ? 0 : (this.state.page + 1),
-            })
-          }}>
-            ▶️
-          </div>
-        </div>
         {featuredPlayers}
       </div>
     </div>
@@ -146,7 +124,7 @@ class Player extends React.PureComponent {
         onTouchStart={() => { this.startBuffer('kickBuffer') }}
         onTouchEnd={() => { this.triggerBuffer('kickBuffer') }}
       >
-        <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`}>
+        <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`} style={{ background: `${this.props.pin && "lightyellow"}`}} >
           <div className='playerName'>{this.props.name}</div>
           {`🖐 ${this.props.handSize}`}
         </div>

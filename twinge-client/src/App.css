@@ -235,21 +235,19 @@ h1 {
 
 .playerTable {
   display: flex;
-  padding-top: 3em;
   align-items: flex-start;
   justify-content: flex-start;
   flex-direction: column;
   min-height: 20em;
-  max-height: 30vh;
+  max-height: 50vh;
   min-width: 10em;
-  overflow: hidden;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.Player:nth-child(2),
-.Player:nth-child(3),
-.Player:nth-child(4),
-.Player:nth-child(5) {
-  display: flex; 
+.playerTable::-webkit-scrollbar {
+  display: none;
 }
 
 .pageHolder {

@@ -12,7 +12,7 @@ provider:
   endpointType: regional
   stage: dev
   region: ap-southeast-2
-  runtime: nodejs14.x
+  runtime: nodejs18.x
   iam:
     role:
       statements:

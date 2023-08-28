@@ -1,13 +1,15 @@
-const AWS = require("aws-sdk");
+const {
+  ApiGatewayManagementApi
+} = require("@aws-sdk/client-apigatewaymanagementapi");
 const connections = require('../helpers/connections');
-const apigatewaymanagementapi = new AWS.ApiGatewayManagementApi({
+const apigatewaymanagementapi = new ApiGatewayManagementApi({
   apiVersion: '2018-11-29',
   endpoint: `https://${process.env.HOSTNAME}`,
 });
 
 async function send(connectionId, payload) {
   if (connectionId) {
-    await apigatewaymanagementapi.postToConnection({ ConnectionId: connectionId, Data: JSON.stringify(payload) }).promise();
+    await apigatewaymanagementapi.postToConnection({ ConnectionId: connectionId, Data: JSON.stringify(payload) });
   }
 };
 
