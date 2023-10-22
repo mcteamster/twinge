@@ -257,8 +257,7 @@ a {
   align-items: flex-start;
   justify-content: flex-start;
   flex-direction: column;
-  min-height: 20em;
-  max-height: 50vh;
+  max-height: 40vh;
   min-width: 10em;
   overflow-y: scroll;
   scrollbar-width: none;
