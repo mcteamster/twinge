@@ -1,5 +1,5 @@
 import './App.css';
-import { Header, Footer, Overlay } from './components/Banners';
+import { Header, Footer, Overlay, Modal } from './components/Banners';
 import { About, Lobby, Play } from './components/Screens'
 import { AudioContext, audioSettings } from './context/AudioContext';
 import React from 'react';
@@ -14,6 +14,9 @@ class App extends React.Component {
       audio: audioSettings.loud,
       overlay: {
         message: '',
+      },
+      modal: {
+        type: '',
       }
     };
     this.cursor = 0;
@@ -25,6 +28,13 @@ class App extends React.Component {
     this.toggleMute = () => {
       this.setState(state => ({
         audio: state.audio === audioSettings.loud ? audioSettings.silent : audioSettings.loud,
+      }));
+    }
+    this.toggleQR = () => {
+      this.setState(state => ({
+        modal: {
+          type: state.modal.type === 'qr' ? '' : 'qr',
+        }
       }));
     }
   }
@@ -187,18 +197,20 @@ class App extends React.Component {
     } else if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed') {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
-          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute}></Header>
+          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR}></Header>
           <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} ></Lobby>
           <Footer state={this.state}></Footer>
+          <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
           <Overlay overlay={this.state.overlay}></Overlay>
         </AudioContext.Provider>
       </div>
     } else {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
-          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute}></Header>
+          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR}></Header>
           <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} audio={this.audio}></Play>
           <Footer state={this.state}></Footer>
+          <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
           <Overlay overlay={this.state.overlay}></Overlay>
         </AudioContext.Provider>
       </div>

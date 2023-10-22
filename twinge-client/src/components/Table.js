@@ -12,7 +12,7 @@ class Players extends React.Component {
   render() {
     let players = this.props.players.map((player, i) => {
       if(this.props.context === 'lobby') {
-        if(i === 0) {
+        if(i === 0 && !player.name.startsWith("⭐️")) {
           player.name = `⭐️ ${player.name}`
         }
         return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} context='lobby' number={i+1} name={player.name} strikes={player.strikes} connected={player.connected} style={player.playerId && { border: '0.25em solid greenyellow' }}></Player>
