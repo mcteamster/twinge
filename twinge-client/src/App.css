@@ -103,6 +103,12 @@ h1 {
   font-size: 4em;
 }
 
+a {
+  text-decoration: underline;
+  font-weight: bold;
+  color: black;
+}
+
 #instructions {
   padding: 0.25em;
 }
@@ -115,7 +121,7 @@ h1 {
 }
 
 .lobbyButtons div {
-  border-radius: 1em;
+  border-radius: 0.5em;
   cursor: pointer;
 }
 
@@ -165,7 +171,7 @@ h1 {
   font-size: 1em;
   text-align: center;
   box-shadow: none;
-  border-radius: 1em;
+  border-radius: 0.5em;
   border: 0.1em solid lightgrey;
 }
 
@@ -228,6 +234,7 @@ h1 {
   width: 90vw;
   display: flex;
   flex-direction: row;
+  align-items: center;
   justify-content: center;
   flex-wrap: wrap;
   overflow-y: visible;
@@ -411,7 +418,7 @@ h1 {
 }
 
 .handTooltip {
-  color: #ccc;
+  color: black;
   font-size: 0.75em;
   position: fixed;
   bottom: 1.5em;
@@ -476,7 +483,6 @@ h1 {
   flex-direction: column;
   align-items: center;
   justify-content: space-around;
-  font-size: 1.25em;
 }
 
 .aboutParagraph {

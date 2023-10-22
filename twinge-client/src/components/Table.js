@@ -353,7 +353,7 @@ class Hand extends React.Component {
               <div className='handWrapper'>
                 {hand.reverse()}
               </div>
-              {this.props.state.gamestate.meta.round < 4 && <div className='handTooltip centered'>Hold and Release to Play, Tap Again to Cancel</div>}
+              {this.props.state.gamestate.meta.round < 4 && <div className='handTooltip centered'>HOLD and RELEASE when you think you're up next</div>}
             </div>
           } else {
             return <div className='Hand centered unselectable'>

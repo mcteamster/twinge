@@ -52,11 +52,10 @@ class Lobby extends React.Component {
     return <div className='Lobby'>
       <div id='instructions'>
         <h1>😣 twinge</h1>
-        🤫 Keep your cards a secret!<br></br>
-        😉 You can make non-numeric hints<br></br>
-        ⬆️ Play if you think you're the lowest<br></br>
-        💔 Skipped cards cost the team lives<br></br>
-        🏁 Can you make it to the end?
+        ⬆️ Play in ascending order as a team!<br></br>
+        😉 Only give non-numeric hints<br></br>
+        💔 Skip a card, lose a life<br></br>
+        🙋 <a href='./about'>More Details</a>
       </div>
       {info}
       {inputs}
@@ -80,14 +79,42 @@ class About extends React.Component {
   render() {
     return <div className='About'>
         <div className='aboutParagraph'>
-          <b>twinge</b> by <a href='https://mcteamster.com' target='_blank' rel="noreferrer">mcteamster</a>
+          <p><b>twinge</b> by <a href='https://mcteamster.com' target='_blank' rel="noreferrer">mcteamster</a></p>
+          <p>A co-operative card game inspired by Wolfgang Warsch's <a href='https://boardgamegeek.com/boardgame/244992/mind' target='_blank' rel="noreferrer">The Mind</a>.</p>
+          <p>
+            🏁 <b>Goal</b><br></br>
+            Work together to get through a series of 10-1000 cards by playing in ascending order. There are no turns, anyone can play at any time!
+          </p>
+          <p>
+            📈 <b>Levels</b><br></br>  
+            Players start at Level 1 with one card each. Subsequent levels deal out one more card per player (i.e. 3 cards for Level 3). This continues until the deck is exhausted.
+          </p>
+          <p>
+            ❤️ <b>Lives</b><br></br>
+            If a card is played out of order, the team loses a life for every lower numbered card still in other players' hands. Set the number of lives between 1-100 to adjust difficulty.
+          </p>
+          <p>
+            🤫 <b>Clues</b><br></br>
+            The team should decide on what kind of talk is acceptable. Saying numbers is too easy. Playing in silence is very hard. Subjective clues are the most fun!
+          </p>
+          <p>
+            ⏩ <b>Combos</b><br></br>
+            Consecutive cards (e.g. 32,33) will be played together. The green border shows which cards are up next.
+          </p>
+          <p>
+            🎟️ <b>Joining</b><br></br>
+            Enter the room code, follow the link, or scan the QR code. Set a name in the game lobby. A random animal name will be assigned if joining a started game.
+          </p>
+          <p>
+            ⛔️ <b>Kicking</b><br></br>
+            Warn a player by holding their name until they turn orange, repeat to eject them (their cards are removed without penalty). Anyone can do this. Warnings last for one level. 
+          </p>
+          <p>
+            🛜 <b>Reconnecting</b><br></br>
+            The game will automatically attempt to reconnect to the last active game. If this fails, try refreshing the page. In the worst case, rejoin and kick the idle player.            
+          </p>
         </div>
-        <div className='aboutParagraph'>
-          This is a co-operative card game based off <a href='https://boardgamegeek.com/boardgame/244992/mind' target='_blank' rel="noreferrer">The Mind</a> by Wolfgang Warsch.
-          Players work together to get through a deck of 10-1000 cards in ascending order. Hands are dealt with increasing size, and cards are played at any time; without replacement.
-          Difficulty may be adjusted by granting up to 100 extra lives to compensate for missing cards out of order.
-        </div>
-        <div className='back' onClick={() => {
+        <div className='aboutParagraph back' onClick={() => {
           window.location.pathname = '';
         }}>🔙</div>
       </div>
