@@ -130,13 +130,17 @@ class Gamestate {
         this.meta.round++;
         let quotient = this.private.deck.length / numberPlaying;
         let remainder = this.private.deck.length % numberPlaying;
-        this.players.forEach((player, i) => {
+        this.players.forEach((player) => {
           // Exclude Spectators
           if (player.strikes === -1) {
             player.hand = []
             player.handSize = 0
           } else {
-            let bonus = (i < remainder) ? 1 : 0;
+            let bonus = 0
+            if (remainder) {
+              bonus = 1
+              remainder -= 1
+            }
             player.hand = this.private.deck.splice(0, quotient + bonus);
             player.hand.sort((a, b) => { return a - b });
             player.handSize = player.hand.length;
