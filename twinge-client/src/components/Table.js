@@ -105,7 +105,7 @@ class Player extends React.PureComponent {
 
   render() {
     if(this.props.context === 'lobby') {
-      return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.strikes && 'strikes'}`}
+      return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.strikes > 0 && 'strikes'}`}
         style={{ ...this.props.style, background: `radial-gradient(circle, orange, orange ${1*this.state.kickBuffer}%, white ${1*this.state.kickBuffer}%, white)`}} 
         onMouseDown={() => { this.startBuffer('kickBuffer') }}
         onMouseUp={() => { this.triggerBuffer('kickBuffer') }}
@@ -113,10 +113,10 @@ class Player extends React.PureComponent {
         onTouchStart={() => { this.startBuffer('kickBuffer') }}
         onTouchEnd={() => { this.triggerBuffer('kickBuffer') }}
       >
-        <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`} >{`${this.props.name}`}</div>
+        <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`} >{`${this.props.name} ${this.props.strikes < 0 ? '👀' : ''}`}</div>
       </div>
     } else {
-      return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.hidden && 'hidden'} ${this.props.strikes && 'strikes'} ${this.props.handSize === 0 && 'stale'}`}
+      return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.hidden && 'hidden'} ${this.props.strikes > 0 && 'strikes'} ${this.props.handSize === 0 && 'stale'}`}
         style={{ background: `radial-gradient(circle, orange, orange ${1*this.state.kickBuffer}%, white ${1*this.state.kickBuffer}%, white)`}} 
         onMouseDown={() => { this.startBuffer('kickBuffer') }}
         onMouseUp={() => { this.triggerBuffer('kickBuffer') }}
@@ -126,7 +126,7 @@ class Player extends React.PureComponent {
       >
         <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`} style={{ background: `${this.props.pin && "lightyellow"}`}} >
           <div className='playerName'>{this.props.name}</div>
-          {`🖐 ${this.props.handSize}`}
+          {`${this.props.strikes === -1 ? `👀 ${this.props.handSize || ''}` : `🖐 ${this.props.handSize}`}`}
         </div>
       </div>
     }
@@ -135,18 +135,22 @@ class Player extends React.PureComponent {
 
 class Status extends React.Component {
   calculateMaxRounds(currentRound, numPlayers, remainingCards) {
-    let remainingRounds = 0;
-    while(remainingCards > 0) {
-      remainingRounds += 1;
-      remainingCards = remainingCards -numPlayers*(currentRound + remainingRounds);
+    if(numPlayers > 0) {
+      let remainingRounds = 0;
+      while(remainingCards > 0) {
+        remainingRounds += 1;
+        remainingCards = remainingCards -numPlayers*(currentRound + remainingRounds);
+      }
+      return remainingRounds+currentRound
+    } else {
+      return false
     }
-    return remainingRounds+currentRound
   }
 
   render() {
     // Levels
     let round = Number(this.props.state?.gamestate?.meta?.round);
-    let numPlayers = Number(this.props.state?.gamestate?.players.length);
+    let numPlayers = Number(this.props.state?.gamestate?.players.length - this.props.state?.gamestate?.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
     let remainingCards = Number(this.props.state?.gamestate?.public?.remaining);
 
     // Lives
@@ -166,7 +170,7 @@ class Status extends React.Component {
       <div>
         Level
         <br></br>
-        {round} of {this.calculateMaxRounds(round, numPlayers, remainingCards)}
+        {round} of {this.calculateMaxRounds(round, numPlayers, remainingCards) || "N/A"}
       </div>
       <div>{lives}</div>
       <div>
@@ -314,6 +318,7 @@ class Hand extends React.Component {
         </div>
       } else {
         let unplayedCards = this.props.state.gamestate.players.reduce((playerCards, player) => { return playerCards += player.handSize }, 0);
+        let numPlayers = Number(this.props.state?.gamestate?.players.length - this.props.state?.gamestate?.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
         if (unplayedCards === 0) {
           return <div className='Hand centered unselectable' 
             style={{ background: `radial-gradient(circle, greenyellow, greenyellow ${4*this.state.nextBuffer}%, white ${4*this.state.nextBuffer}%, white)`}} 
@@ -323,7 +328,7 @@ class Hand extends React.Component {
             onTouchStart={() => { this.startBuffer('nextBuffer') }}
             onTouchEnd={() => { this.triggerBuffer('nextBuffer', 'next') }}
           >
-            <div className='Button'>Next Level</div>
+            <div className='Button'>{numPlayers ? 'Next Level' : 'No Active Players'}</div>
           </div>
         } else {
           let activePlayer = this.props.state.gamestate.players.find((player) => { return player.playerId === this.props.state.playerId });
@@ -353,7 +358,7 @@ class Hand extends React.Component {
               <div className='handWrapper'>
                 {hand.reverse()}
               </div>
-              {this.props.state.gamestate.meta.round < 4 && <div className='handTooltip centered'>HOLD and RELEASE when you think you're up next</div>}
+              {this.props.state.gamestate.meta.round < 4 && <div className='handTooltip centered'>HOLD and RELEASE when you think you're next</div>}
             </div>
           } else {
             return <div className='Hand centered unselectable'>

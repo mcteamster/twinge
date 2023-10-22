@@ -105,7 +105,20 @@ async function kickPlayer(payload) {
               await leaveGame(newPayload);
             }
           } else {
-            await leaveGame(payload);
+            // Self-Kick turns you into a spectator
+            if (targetPlayer.strikes == -1) {
+              // If spectating, resume playing from next round
+              targetPlayer.strikes = 0;
+            } else {
+              // This means you will not be dealt cards, and will be kicked if anyone warns you
+              targetPlayer.strikes = -1; 
+            }
+            if (game.stateHash === payload.stateHash) {
+              game = await games.updateGame(game.gameId, gamestate);
+            } else {
+              await messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
+            }
+            await messages.broadcastGame(game);
           }
         } else {
           await messages.send(payload.connectionId, { code: 7, message: 'Target not found' });

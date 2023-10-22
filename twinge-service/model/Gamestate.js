@@ -104,32 +104,47 @@ class Gamestate {
 
   async setupRound() {
     // Deal cards to players - subtract from the deck
+    let numberPlaying = (this.players.length - this.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
     if (this.private.deck.length == 0) {
       // Not Enough Cards - End The Game Here! You WIN!
       this.public.pile.push({ time: new Date().toISOString(), card: 'You Win! 🥳', round: this.meta.round, playerIndex: -1 });
       this.meta.phase = 'won';
-    } else if (this.private.deck.length >= (this.meta.round + 1) * this.players.length) {
-      this.meta.round++;
-      this.players.forEach((player) => {
-        player.hand = this.private.deck.splice(0, this.meta.round);
-        player.hand.sort((a, b) => { return a - b });
-        player.handSize = player.hand.length;
-        player.strikes = 0;
-      });
-      this.public.remaining = this.private.deck.length;
-    } else {
-      // Partial distrbution for final round
-      this.meta.round++;
-      let quotient = this.private.deck.length / this.players.length;
-      let remainder = this.private.deck.length % this.players.length;
-      this.players.forEach((player, i) => {
-        let bonus = (i < remainder) ? 1 : 0;
-        player.hand = this.private.deck.splice(0, quotient + bonus);
-        player.hand.sort((a, b) => { return a - b });
-        player.handSize = player.hand.length;
-        player.strikes = 0;
-      });
-      this.public.remaining = this.private.deck.length;
+    } else if (numberPlaying > 0) {
+      if (this.private.deck.length >= (this.meta.round + 1) * numberPlaying) {
+        this.meta.round++;
+        this.players.forEach((player) => {
+          // Exclude Spectators
+          if (player.strikes === -1) {
+            player.hand = []
+            player.handSize = 0
+          } else {
+            player.hand = this.private.deck.splice(0, this.meta.round);
+            player.hand.sort((a, b) => { return a - b });
+            player.handSize = player.hand.length;
+            player.strikes = 0;
+          }
+        });
+        this.public.remaining = this.private.deck.length;
+      } else {
+        // Partial distrbution for final round
+        this.meta.round++;
+        let quotient = this.private.deck.length / numberPlaying;
+        let remainder = this.private.deck.length % numberPlaying;
+        this.players.forEach((player, i) => {
+          // Exclude Spectators
+          if (player.strikes === -1) {
+            player.hand = []
+            player.handSize = 0
+          } else {
+            let bonus = (i < remainder) ? 1 : 0;
+            player.hand = this.private.deck.splice(0, quotient + bonus);
+            player.hand.sort((a, b) => { return a - b });
+            player.handSize = player.hand.length;
+            player.strikes = 0;
+          }
+        });
+        this.public.remaining = this.private.deck.length;
+      }
     }
   }
 

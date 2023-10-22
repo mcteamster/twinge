@@ -7,7 +7,20 @@ class Header extends React.Component {
       <div id='title' onClick={() => { window.location.pathname = 'about' }}>
         twinge
       </div>
-      <div id='roomCode' onClick={this.props.toggleQR}>
+      <div id='roomCode' onClick={() => {
+        this.props.toggleQR()
+        let code = document.getElementById('roomCode');
+        try {
+          window.navigator.clipboard.writeText(`${window.location.origin}/${this.props.state.roomCode}`);
+        } catch (err) {
+          console.err("Fallback Copy Method")
+          code.select();
+          code.value = `${window.location.origin}/${this.props.state.roomCode}`;
+          code.setSelectionRange(0, 99999);
+          document.execCommand("copy");
+          code.value = this.props.state.roomCode;
+        }
+      }}>
         {this.props.state.roomCode ? `${this.props.state.roomCode}` : ''}
       </div>
       <div id='functions'>
