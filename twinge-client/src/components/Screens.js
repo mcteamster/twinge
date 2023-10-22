@@ -103,7 +103,7 @@ class About extends React.Component {
           </p>
           <p>
             🎟️ <b>Joining</b><br></br>
-            Enter the room code. Tap the room code to show a join link and QR code. Set a name in the game lobby. A random name is assigned if an in-progress game.
+            Enter the room code. Tap the room code to show a join link and QR code. Set a name in the game lobby. A random name is assigned if joining an game in progress.
           </p>
           <p>
             ⛔️ <b>Kicking</b><br></br>
