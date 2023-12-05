@@ -355,10 +355,16 @@ class Hand extends React.Component {
               onTouchStart={() => { this.startBuffer('cardBuffer') }}
               onTouchEnd={() => { this.triggerBuffer('cardBuffer', 'twinge')}}
             >
+              {this.props.state.gamestate.meta.round < 4 && 
+                <div className='handTooltip'>
+                  <div>Hold 👇</div>
+                  <div>Brace 😬</div>
+                  <div>Release 👋</div>
+                </div>
+              }
               <div className='handWrapper'>
                 {hand.reverse()}
               </div>
-              {this.props.state.gamestate.meta.round < 4 && <div className='handTooltip centered'>HOLD and RELEASE when you think you're next</div>}
             </div>
           } else {
             return <div className='Hand centered unselectable'>
