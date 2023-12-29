@@ -435,11 +435,11 @@ a {
 .handTooltip {
   color: black;
   width: 6em;
-  margin-bottom: 2em;
+  margin-bottom: 2.75em;
   text-align: right;
-  font-size: 1.25em;
+  font-size: 1em;
   position: fixed;
-  right: calc(50vw + 3.5vh + 1.75em);
+  right: calc(50vw + 3.5vh + 2.25em);
 }
 
 .cardWrapper {

@@ -52,9 +52,9 @@ class Lobby extends React.Component {
     return <div className='Lobby'>
       <div id='instructions'>
         <h1>😣 twinge</h1>
-        ⬆️ Play in ascending order as a team!<br></br>
-        😉 Only give non-numeric hints<br></br>
-        💔 Skip a card, lose a life<br></br>
+        ⬆️ Count Upwards As A Team!<br></br>
+        😉 Only Give Subjective Clues<br></br>
+        💔 Skip A Card, Lose A Life<br></br>
         🙋 <a href='./about'>More Details</a>
       </div>
       {info}
@@ -84,6 +84,10 @@ class About extends React.Component {
           <p>
             🏁 <b>Goal</b><br></br>
             Work together to get through a series of 10-1000 cards by playing in ascending order. There are no turns, anyone can play at any time!
+          </p>
+          <p>
+            🕹️ <b>Controls</b><br></br>
+            This is a one button game. Tap and hold in the bottom area to prepare a card, release to play into the pile, or keep holding for 4 seconds to cancel.
           </p>
           <p>
             📈 <b>Levels</b><br></br>  

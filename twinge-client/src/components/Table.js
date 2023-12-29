@@ -11,19 +11,19 @@ class Players extends React.Component {
 
   render() {
     let players = this.props.players.map((player, i) => {
-      if(this.props.context === 'lobby') {
-        if(i === 0 && !player.name.startsWith("⭐️")) {
+      if (this.props.context === 'lobby') {
+        if (i === 0 && !player.name.startsWith("⭐️")) {
           player.name = `⭐️ ${player.name}`
         }
-        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} context='lobby' number={i+1} name={player.name} strikes={player.strikes} connected={player.connected} style={player.playerId && { border: '0.25em solid greenyellow' }}></Player>
+        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} context='lobby' number={i + 1} name={player.name} strikes={player.strikes} connected={player.connected} style={player.playerId && { border: '0.25em solid greenyellow' }}></Player>
       } else {
-        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} number={i+1} name={player.name} handSize={player.handSize} strikes={player.strikes} connected={player.connected} pin={player.playerId === this.props.state.playerId}></Player>
+        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} number={i + 1} name={player.name} handSize={player.handSize} strikes={player.strikes} connected={player.connected} pin={player.playerId === this.props.state.playerId}></Player>
       }
-    }); 
+    });
     let featuredPlayers = players.sort((a, b) => {
       if (a.props.pin) {
         return -1
-      } else if(b.props.pin) {
+      } else if (b.props.pin) {
         return 1
       } else {
         return b.props?.handSize - a.props.handSize
@@ -73,7 +73,7 @@ class Player extends React.PureComponent {
     this.interval = setInterval(() => {
       if (this.stateHash !== this.props.state.stateHash) {
         this.cancelBuffer();
-      } else if(this.state[buffer] < 100) {
+      } else if (this.state[buffer] < 100) {
         let state = {};
         state[buffer] = this.state[buffer] + 1;
         this.setState(state)
@@ -84,11 +84,11 @@ class Player extends React.PureComponent {
   triggerBuffer = (buffer) => {
     if (this.state[buffer] >= 100) {
       this.props.sendMsg({
-        action: 'play', 
-        gameId: this.props.state.gameId, 
+        action: 'play',
+        gameId: this.props.state.gameId,
         playerId: this.props.state.playerId,
         actionType: 'kick',
-        target: (this.props.number-1),
+        target: (this.props.number - 1),
         stateHash: this.props.state.stateHash,
       });
     }
@@ -104,9 +104,9 @@ class Player extends React.PureComponent {
   }
 
   render() {
-    if(this.props.context === 'lobby') {
+    if (this.props.context === 'lobby') {
       return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.strikes > 0 && 'strikes'}`}
-        style={{ ...this.props.style, background: `radial-gradient(circle, orange, orange ${1*this.state.kickBuffer}%, white ${1*this.state.kickBuffer}%, white)`}} 
+        style={{ ...this.props.style, background: `radial-gradient(circle, orange, orange ${1 * this.state.kickBuffer}%, white ${1 * this.state.kickBuffer}%, white)` }}
         onMouseDown={() => { this.startBuffer('kickBuffer') }}
         onMouseUp={() => { this.triggerBuffer('kickBuffer') }}
         onMouseLeave={() => { this.cancelBuffer() }}
@@ -117,14 +117,14 @@ class Player extends React.PureComponent {
       </div>
     } else {
       return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.hidden && 'hidden'} ${this.props.strikes > 0 && 'strikes'} ${this.props.handSize === 0 && 'stale'}`}
-        style={{ background: `radial-gradient(circle, orange, orange ${1*this.state.kickBuffer}%, white ${1*this.state.kickBuffer}%, white)`}} 
+        style={{ background: `radial-gradient(circle, orange, orange ${1 * this.state.kickBuffer}%, white ${1 * this.state.kickBuffer}%, white)` }}
         onMouseDown={() => { this.startBuffer('kickBuffer') }}
         onMouseUp={() => { this.triggerBuffer('kickBuffer') }}
         onMouseLeave={() => { this.cancelBuffer() }}
         onTouchStart={() => { this.startBuffer('kickBuffer') }}
         onTouchEnd={() => { this.triggerBuffer('kickBuffer') }}
       >
-        <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`} style={{ background: `${this.props.pin && "lightyellow"}`}} >
+        <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`} style={{ background: `${this.props.pin && "lightyellow"}` }} >
           <div className='playerName'>{this.props.name}</div>
           {`${this.props.strikes === -1 ? `👀 ${this.props.handSize || ''}` : `🖐 ${this.props.handSize}`}`}
         </div>
@@ -135,13 +135,13 @@ class Player extends React.PureComponent {
 
 class Status extends React.Component {
   calculateMaxRounds(currentRound, numPlayers, remainingCards) {
-    if(numPlayers > 0) {
+    if (numPlayers > 0) {
       let remainingRounds = 0;
-      while(remainingCards > 0) {
+      while (remainingCards > 0) {
         remainingRounds += 1;
-        remainingCards = remainingCards -numPlayers*(currentRound + remainingRounds);
+        remainingCards = remainingCards - numPlayers * (currentRound + remainingRounds);
       }
-      return remainingRounds+currentRound
+      return remainingRounds + currentRound
     } else {
       return false
     }
@@ -157,7 +157,7 @@ class Status extends React.Component {
     let lives = '';
     let currentLives = this.props.state?.gamestate?.public?.lives;
     let maxLives = this.props.state?.gamestate?.config?.maxLives;
-    if(maxLives <= 10) {
+    if (maxLives <= 10) {
       lives += '❤️'.repeat(currentLives);
       lives += '🤍'.repeat((maxLives - currentLives) > 0 ? (maxLives - currentLives) : 0);
     } else {
@@ -190,7 +190,7 @@ class Latest extends React.Component {
 
   render() {
     let audio = this.context;
-    if(this.props.event[0]) {
+    if (this.props.event[0]) {
       let event = this.props.event[0];
       let card;
       if (event.round === this.props.round) {
@@ -199,7 +199,7 @@ class Latest extends React.Component {
         card = <Card value='0' stale={true}></Card>
       }
       if (event?.card !== this.lastCard) {
-        if(!audio.mute) {
+        if (!audio.mute) {
           if (event?.missed && (event.round === this.props.round)) {
             this.props.audio.buzz.play(); // MISS SOUND
           } else {
@@ -231,7 +231,7 @@ class Pile extends React.Component {
         }
       });
       return <div className='Pile'>
-        {this.props?.pile?.slice(-1)[0]?.round === this.props.round ? pile.slice(-7,-1) : pile.slice(-6)}
+        {this.props?.pile?.slice(-1)[0]?.round === this.props.round ? pile.slice(-7, -1) : pile.slice(-6)}
       </div>
     } else {
       return null
@@ -244,10 +244,10 @@ class Hand extends React.Component {
     super(props);
     this.sendMsg = (type) => {
       this.props.sendMsg({
-        action: 'play', 
-        gameId: this.props.state.gameId, 
+        action: 'play',
+        gameId: this.props.state.gameId,
         playerId: this.props.state.playerId,
-        actionType: type, 
+        actionType: type,
         stateHash: this.stateHash,
       });
     }
@@ -259,7 +259,7 @@ class Hand extends React.Component {
     }
     this.stateHash = this.props.state.stateHash;
   }
-  
+
   startBuffer = (buffer) => {
     this.cancelBuffer();
     this.interval = setInterval(() => {
@@ -274,7 +274,7 @@ class Hand extends React.Component {
   }
 
   triggerBuffer = (buffer, msg) => {
-    if (this.state[buffer] > 25) {
+    if (this.state[buffer] <= 200 && this.state[buffer] > 25) {
       this.sendMsg(msg);
     }
     this.cancelBuffer();
@@ -291,12 +291,39 @@ class Hand extends React.Component {
     })
   }
 
+  bufferColor = (buffer, initial) => {
+    // greenyellow HSL(84, 100%, 59%)
+    let [hue, saturation, lightness] = [84, 100, 59]
+    if (initial === 'yellow') {
+      // yellow HSL(60, 100%, 50%)
+      [hue, saturation, lightness] = [60, 100, 50]
+    }
+
+    if (buffer > 200) {
+      // white HSL(0, 0%, 100%)
+      [hue, saturation, lightness] = [0, 0, 100]
+    } else if (buffer > 175) {
+      // orange HSL(38.8, 100%, 50%)
+      [hue, saturation, lightness] = [38.8, 100, 50]
+    } else if (buffer > 75) {
+      if (initial === 'yellow') {
+        // yellow HSL(60, 100%, 50%)
+        hue = 60 - (60 - 38.8) * (buffer - 75) / 100;
+      } else {
+        // greenyellow HSL(84, 100%, 59%)
+        hue = 84 - (84 - 38.8) * (buffer - 75) / 100;
+        lightness = 59 - (59 - 50) * (buffer - 75) / 100;
+      }
+    }
+    return `HSL(${hue}, ${saturation}%, ${lightness}%)`
+  }
+
   render() {
     if (this.props.state.gamestate) {
       if (this.props.state.gamestate.meta.phase === 'won' || this.props.state.gamestate.meta.phase === 'lost') {
         return <div className='Hand centered unselectable'>
-          <div className='Button centered replay'           
-            style={{ background: `radial-gradient(circle, greenyellow, greenyellow ${4*this.state.replayBuffer}%, white ${4*this.state.replayBuffer}%, white)`}} 
+          <div className='Button centered replay'
+            style={{ background: `radial-gradient(circle, ${this.bufferColor(this.state.replayBuffer)}, ${this.bufferColor(this.state.replayBuffer)} ${4 * this.state.replayBuffer}%, white ${4 * this.state.replayBuffer}%, white)` }}
             onMouseDown={() => { this.startBuffer('replayBuffer') }}
             onMouseUp={() => { this.triggerBuffer('replayBuffer', 'restart') }}
             onMouseLeave={() => { this.cancelBuffer() }}
@@ -305,8 +332,8 @@ class Hand extends React.Component {
           >
             Replay
           </div>
-          <div className='Button centered endgame' 
-            style={{ background: `radial-gradient(circle, yellow, yellow ${4*this.state.endBuffer}%, white ${4*this.state.endBuffer}%, white)`}} 
+          <div className='Button centered endgame'
+            style={{ background: `radial-gradient(circle, ${this.bufferColor(this.state.endBuffer, 'yellow')}, ${this.bufferColor(this.state.endBuffer, 'yellow')} ${4 * this.state.endBuffer}%, white ${4 * this.state.endBuffer}%, white)` }}
             onMouseDown={() => { this.startBuffer('endBuffer') }}
             onMouseUp={() => { this.triggerBuffer('endBuffer', 'end') }}
             onMouseLeave={() => { this.cancelBuffer() }}
@@ -320,8 +347,8 @@ class Hand extends React.Component {
         let unplayedCards = this.props.state.gamestate.players.reduce((playerCards, player) => { return playerCards += player.handSize }, 0);
         let numPlayers = Number(this.props.state?.gamestate?.players.length - this.props.state?.gamestate?.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
         if (unplayedCards === 0) {
-          return <div className='Hand centered unselectable' 
-            style={{ background: `radial-gradient(circle, greenyellow, greenyellow ${4*this.state.nextBuffer}%, white ${4*this.state.nextBuffer}%, white)`}} 
+          return <div className='Hand centered unselectable'
+            style={{ background: `radial-gradient(circle, ${this.bufferColor(this.state.nextBuffer)}, ${this.bufferColor(this.state.nextBuffer)} ${4 * this.state.nextBuffer}%, white ${4 * this.state.nextBuffer}%, white)` }}
             onMouseDown={() => { this.startBuffer('nextBuffer') }}
             onMouseUp={() => { this.triggerBuffer('nextBuffer', 'next') }}
             onMouseLeave={() => { this.cancelBuffer() }}
@@ -338,28 +365,33 @@ class Hand extends React.Component {
             let bufferStyle = {};
             if (a.length === unplayedCards) {
               wrapperClass = 'autoCard';
-              bufferStyle = { background: `radial-gradient(circle, yellow, yellow ${4*this.state.cardBuffer}%, white ${4*this.state.cardBuffer}%, white)`} 
-            } else if (card === a[0]+i) {
+              bufferStyle = { background: `radial-gradient(circle, ${this.bufferColor(this.state.cardBuffer, 'yellow')}, ${this.bufferColor(this.state.cardBuffer, 'yellow')} ${4 * this.state.cardBuffer}%, white ${4 * this.state.cardBuffer}%, white)` }
+            } else if (card === a[0] + i) {
               wrapperClass = 'nextCard';
-              bufferStyle = { background: `radial-gradient(circle, greenyellow, greenyellow ${4*this.state.cardBuffer}%, white ${4*this.state.cardBuffer}%, white)`} 
+              bufferStyle = { background: `radial-gradient(circle, ${this.bufferColor(this.state.cardBuffer)}, ${this.bufferColor(this.state.cardBuffer)} ${4 * this.state.cardBuffer}%, white ${4 * this.state.cardBuffer}%, white)` }
             }
             return <div key={`h${i + 1}`} className={`cardWrapper ${wrapperClass}`} style={{ 'zIndex': a.length - i }}>
-              <Card value={card} style={bufferStyle}></Card> 
+              <Card value={card} style={bufferStyle}></Card>
             </div>
           });
           if (hand.length > 0) {
-            return <div className='Hand unselectable' 
+            return <div className='Hand unselectable'
               onMouseDown={() => { this.startBuffer('cardBuffer') }}
-              onMouseUp={() => { this.triggerBuffer('cardBuffer', 'twinge')}}
+              onMouseUp={() => { this.triggerBuffer('cardBuffer', 'twinge') }}
               onMouseLeave={() => { this.cancelBuffer() }}
               onTouchStart={() => { this.startBuffer('cardBuffer') }}
-              onTouchEnd={() => { this.triggerBuffer('cardBuffer', 'twinge')}}
+              onTouchEnd={() => { this.triggerBuffer('cardBuffer', 'twinge') }}
             >
-              {this.props.state.gamestate.meta.round < 4 && 
+              {this.props.state.gamestate.meta.round <= 4 &&
                 <div className='handTooltip'>
-                  <div>Hold 👇</div>
-                  <div>Brace 😬</div>
-                  <div>Release 👋</div>
+                  {(this.state.cardBuffer <= 25 || this.state.cardBuffer > 200) && <div>👇 Hold to Prepare</div>}
+                  {(this.state.cardBuffer > 25 && this.state.cardBuffer <= 200) &&
+                    <>
+                      <div>👋 Release to Play</div>
+                      <br></br>
+                      <div>👎 Hold to Cancel</div>
+                    </>
+                  }
                 </div>
               }
               <div className='handWrapper'>
