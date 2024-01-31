@@ -126,7 +126,7 @@ class Player extends React.PureComponent {
       >
         <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`} style={{ background: `${this.props.pin && "lightyellow"}` }} >
           <div className='playerName'>{this.props.name}</div>
-          {`${this.props.strikes === -1 ? `👀 ${this.props.handSize || ''}` : `🖐 ${this.props.handSize}`}`}
+          {`${this.props.strikes === -1 ? `👀 ${this.props.handSize || ''}` : `✋ ${this.props.handSize}`}`}
         </div>
       </div>
     }
