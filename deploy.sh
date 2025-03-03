@@ -1,6 +1,6 @@
 #!/bin/bash
 cd "./twinge-service"
-serverless deploy
+npx serverless deploy
 cd "../twinge-client"
 npm run build
 aws s3 sync "./dist" "s3://twinge-client"
