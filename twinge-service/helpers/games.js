@@ -23,13 +23,14 @@ const GAME_TABLE = process.env.GAME_TABLE;
 
 async function createGame(gameId, gamestate) {
   function makeCode() {
+    const validChars = "BCDFGHJKLMNPQRSTVWXZ"; // No vowels to avoid spelling words
     let codeChars = [
-      Math.floor((Math.random() * 26)) + 65,
-      Math.floor((Math.random() * 26)) + 65,
-      Math.floor((Math.random() * 26)) + 65,
-      Math.floor((Math.random() * 26)) + 65
+      validChars[Math.floor((Math.random() * 20))],
+      validChars[Math.floor((Math.random() * 20))],
+      validChars[Math.floor((Math.random() * 20))],
+      validChars[Math.floor((Math.random() * 20))],
     ]
-    return String.fromCharCode(...codeChars);
+    return codeChars.join('');
   }
   let roomCode = makeCode();
   let regenCount = 0;

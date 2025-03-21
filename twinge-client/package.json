@@ -17,6 +17,7 @@
   "scripts": {
     "start": "vite",
     "build": "vite build",
+    "deploy": "../../.ci/deploy-twinge.sh",
     "serve": "vite preview"
   },
   "eslintConfig": {
