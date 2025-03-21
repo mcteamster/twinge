@@ -124,7 +124,7 @@ class Player extends React.PureComponent {
         onTouchStart={() => { this.startBuffer('kickBuffer') }}
         onTouchEnd={() => { this.triggerBuffer('kickBuffer') }}
       >
-        <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`} style={{ background: `${this.props.pin && "lightyellow"}` }} >
+        <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`} style={{ background: `${this.props.pin && "lightblue"}` }} >
           <div className='playerName'>{this.props.name}</div>
           {`${this.props.strikes === -1 ? `👀 ${this.props.handSize || ''}` : `✋ ${this.props.handSize}`}`}
         </div>
