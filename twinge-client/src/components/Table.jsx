@@ -15,7 +15,7 @@ class Players extends React.Component {
         if (i === 0 && !player.name.startsWith("⭐️")) {
           player.name = `⭐️ ${player.name}`
         }
-        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} context='lobby' number={i + 1} name={player.name} strikes={player.strikes} connected={player.connected} style={player.playerId && { border: '0.25em solid greenyellow' }}></Player>
+        return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} context='lobby' number={i + 1} name={player.name} strikes={player.strikes} connected={player.connected} style={player.playerId && { border: '0.25em solid skyblue' }}></Player>
       } else {
         return <Player key={`p${i + 1}`} state={this.props.state} sendMsg={this.props.sendMsg} number={i + 1} name={player.name} handSize={player.handSize} strikes={player.strikes} connected={player.connected} pin={player.playerId === this.props.state.playerId}></Player>
       }
@@ -106,7 +106,7 @@ class Player extends React.PureComponent {
   render() {
     if (this.props.context === 'lobby') {
       return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.strikes > 0 && 'strikes'}`}
-        style={{ ...this.props.style, background: `radial-gradient(circle, orange, orange ${1 * this.state.kickBuffer}%, white ${1 * this.state.kickBuffer}%, white)` }}
+        style={{ ...this.props.style, background: `radial-gradient(circle, rebeccapurple, rebeccapurple ${1 * this.state.kickBuffer}%, white ${1 * this.state.kickBuffer}%, white)` }}
         onMouseDown={() => { this.startBuffer('kickBuffer') }}
         onMouseUp={() => { this.triggerBuffer('kickBuffer') }}
         onMouseLeave={() => { this.cancelBuffer() }}
@@ -117,14 +117,14 @@ class Player extends React.PureComponent {
       </div>
     } else {
       return <div key={`p${this.state.id}`} id={this.state.id} className={`Player ${this.props.hidden && 'hidden'} ${this.props.strikes > 0 && 'strikes'} ${this.props.handSize === 0 && 'stale'}`}
-        style={{ background: `radial-gradient(circle, orange, orange ${1 * this.state.kickBuffer}%, white ${1 * this.state.kickBuffer}%, white)` }}
+        style={{ background: `radial-gradient(circle, rebeccapurple, rebeccapurple ${1 * this.state.kickBuffer}%, white ${1 * this.state.kickBuffer}%, white)` }}
         onMouseDown={() => { this.startBuffer('kickBuffer') }}
         onMouseUp={() => { this.triggerBuffer('kickBuffer') }}
         onMouseLeave={() => { this.cancelBuffer() }}
         onTouchStart={() => { this.startBuffer('kickBuffer') }}
         onTouchEnd={() => { this.triggerBuffer('kickBuffer') }}
       >
-        <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`} style={{ background: `${this.props.pin && "lightblue"}` }} >
+        <div className={`playerValue ${(this.props.connected === false) && 'disconnected'}`} style={{ background: `${this.props.pin && "skyblue"}` }} >
           <div className='playerName'>{this.props.name}</div>
           {`${this.props.strikes === -1 ? `👀 ${this.props.handSize || ''}` : `✋ ${this.props.handSize}`}`}
         </div>
@@ -292,27 +292,30 @@ class Hand extends React.Component {
   }
 
   bufferColor = (buffer, initial) => {
-    // greenyellow HSL(84, 100%, 59%)
-    let [hue, saturation, lightness] = [84, 100, 59]
-    if (initial === 'yellow') {
-      // yellow HSL(60, 100%, 50%)
-      [hue, saturation, lightness] = [60, 100, 50]
+    // skyblue HSL(197.4, 71.4%, 72.5%)
+    let [hue, saturation, lightness] = [197.4, 71.4, 72.5]
+    if (initial === 'royalblue') {
+        // royalblue HSL(225, 72.7%, 56.9%)
+      [hue, saturation, lightness] = [225, 72.7, 56.9]
     }
 
     if (buffer > 200) {
       // white HSL(0, 0%, 100%)
       [hue, saturation, lightness] = [0, 0, 100]
     } else if (buffer > 175) {
-      // orange HSL(38.8, 100%, 50%)
-      [hue, saturation, lightness] = [38.8, 100, 50]
+      // rebeccapurple HSL(270, 67%, 60%)
+      [hue, saturation, lightness] = [270, 67, 60]
     } else if (buffer > 75) {
-      if (initial === 'yellow') {
-        // yellow HSL(60, 100%, 50%)
-        hue = 60 - (60 - 38.8) * (buffer - 75) / 100;
+      if (initial === 'royalblue') {
+        // royalblue HSL(225, 72.7%, 56.9%)
+        hue = 225 - (225 - 270) * (buffer - 75) / 100;
+        saturation = 72.7 - (72.7 - 67) * (buffer - 75) / 100;
+        lightness = 56.9 - (56.9 - 60) * (buffer - 75) / 100;
       } else {
-        // greenyellow HSL(84, 100%, 59%)
-        hue = 84 - (84 - 38.8) * (buffer - 75) / 100;
-        lightness = 59 - (59 - 50) * (buffer - 75) / 100;
+        // skyblue HSL(197.4, 71.4%, 72.5%)
+        hue = 197.4 - (197.4 - 270) * (buffer - 75) / 100;
+        saturation = 71.4 - (71.4 - 67) * (buffer - 75) / 100;
+        lightness = 72.5 - (72.5 - 60) * (buffer - 75) / 100;
       }
     }
     return `HSL(${hue}, ${saturation}%, ${lightness}%)`
@@ -333,7 +336,7 @@ class Hand extends React.Component {
             Replay
           </div>
           <div className='Button centered endgame'
-            style={{ background: `radial-gradient(circle, ${this.bufferColor(this.state.endBuffer, 'yellow')}, ${this.bufferColor(this.state.endBuffer, 'yellow')} ${4 * this.state.endBuffer}%, white ${4 * this.state.endBuffer}%, white)` }}
+            style={{ background: `radial-gradient(circle, ${this.bufferColor(this.state.endBuffer, 'royalblue')}, ${this.bufferColor(this.state.endBuffer, 'royalblue')} ${4 * this.state.endBuffer}%, white ${4 * this.state.endBuffer}%, white)` }}
             onMouseDown={() => { this.startBuffer('endBuffer') }}
             onMouseUp={() => { this.triggerBuffer('endBuffer', 'end') }}
             onMouseLeave={() => { this.cancelBuffer() }}
@@ -365,7 +368,7 @@ class Hand extends React.Component {
             let bufferStyle = {};
             if (a.length === unplayedCards) {
               wrapperClass = 'autoCard';
-              bufferStyle = { background: `radial-gradient(circle, ${this.bufferColor(this.state.cardBuffer, 'yellow')}, ${this.bufferColor(this.state.cardBuffer, 'yellow')} ${4 * this.state.cardBuffer}%, white ${4 * this.state.cardBuffer}%, white)` }
+              bufferStyle = { background: `radial-gradient(circle, ${this.bufferColor(this.state.cardBuffer, 'royalblue')}, ${this.bufferColor(this.state.cardBuffer, 'royalblue')} ${4 * this.state.cardBuffer}%, white ${4 * this.state.cardBuffer}%, white)` }
             } else if (card === a[0] + i) {
               wrapperClass = 'nextCard';
               bufferStyle = { background: `radial-gradient(circle, ${this.bufferColor(this.state.cardBuffer)}, ${this.bufferColor(this.state.cardBuffer)} ${4 * this.state.cardBuffer}%, white ${4 * this.state.cardBuffer}%, white)` }

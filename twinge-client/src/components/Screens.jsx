@@ -103,7 +103,7 @@ class About extends React.Component {
           </p>
           <p>
             ⏩ <b>Combos</b><br></br>
-            Consecutive cards (e.g. 32,33) will be played together. The green border shows which cards are up next.
+            Consecutive cards (e.g. 32,33) will be played together. The blue border shows which cards are up next.
           </p>
           <p>
             🎟️ <b>Joining</b><br></br>
@@ -111,11 +111,11 @@ class About extends React.Component {
           </p>
           <p>
             👻 <b>Spectating</b><br></br>
-            Players can toggle spectator mode by holding down on their own name until the border turns orange. Spectators will not be dealt cards, but the current hand must still be played.
+            Players can toggle spectator mode by holding down on their own name until the border turns purple. Spectators will not be dealt cards, but the current hand must still be played.
           </p>
           <p>
             ⛔️ <b>Kicking</b><br></br>
-            Warn a player by holding their name until they turn orange, repeat to eject them (their cards are removed without penalty). Anyone can do this. Warnings last for one level. 
+            Warn a player by holding their name until they turn purple, repeat to eject them (their cards are removed without penalty). Anyone can do this. Warnings last for one level. 
           </p>
           <p>
             🛜 <b>Reconnecting</b><br></br>
