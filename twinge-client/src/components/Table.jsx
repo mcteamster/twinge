@@ -387,13 +387,11 @@ class Hand extends React.Component {
             >
               {this.props.state.gamestate.meta.round <= 4 &&
                 <div className='handTooltip'>
-                  {(this.state.cardBuffer <= 25 || this.state.cardBuffer > 200) && <div>👇 Hold to Prepare</div>}
+                  {(this.state.cardBuffer <= 25 || this.state.cardBuffer > 200) && <div>👇 Tap and Hold to Prep</div>}
                   {(this.state.cardBuffer > 25 && this.state.cardBuffer <= 200) &&
-                    <>
-                      <div>👋 Release to Play</div>
-                      <br></br>
-                      <div>👎 Hold to Cancel</div>
-                    </>
+                    <div>
+                      👋 Release to Play or Hold to Cancel 👎
+                    </div>
                   }
                 </div>
               }
