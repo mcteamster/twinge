@@ -1,6 +1,8 @@
 # Twinge
 This is a co-operative card game based off The Mind by Wolfgang Warsch. Players work together to get through a deck of 10-1000 cards in ascending order. Hands are dealt with increasing size, and cards are played at any time; without replacement. Difficulty may be adjusted by granting up to 100 extra lives to compensate for missing cards out of order.
 
+![gameplay](./docs/gameplay.gif)
+
 ## Handy Hints
 Cancel a prepared move by (mouse) moving the away from the pressed area, or (touch) tapping with a second finger.
 
@@ -21,7 +23,7 @@ The web client for Twinge is a static site hosted in S3 and served from Cloudfro
 
 The React app is relatively simple (there is literally one button you need to press) and was written using class components (which were still cool at the time). `Gamestate` is passed down through props to few layers of components as there was not enough complexity to warrant using a state management library. Audio is provided through an `AudioContext` wrapper using sounds recorded from everyday household objects.
 
-![architecture](./docs/gameplay.png)
+![gameplay](./docs/gameplay.png)
 
 ### Twinge Service
 Serverless Framework Node.js
