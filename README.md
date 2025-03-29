@@ -23,8 +23,6 @@ The web client for Twinge is a static site hosted in S3 and served from Cloudfro
 
 The React app is relatively simple (there is literally one button you need to press) and was written using class components (which were still cool at the time). `Gamestate` is passed down through props to few layers of components as there was not enough complexity to warrant using a state management library. Audio is provided through an `AudioContext` wrapper using sounds recorded from everyday household objects.
 
-![gameplay](./docs/gameplay.png)
-
 ### Twinge Service
 Serverless Framework Node.js
 - API Gateway
