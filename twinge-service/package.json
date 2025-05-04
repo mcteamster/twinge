@@ -14,7 +14,7 @@
     "unique-names-generator": "^4.7.1"
   },
   "devDependencies": {
-    "serverless": "^3.38.0",
+    "serverless": "^3.40.0",
     "serverless-apigateway-service-proxy": "^2.2.1",
     "serverless-http": "^2.7.0"
   }
