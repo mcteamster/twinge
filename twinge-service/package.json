@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "deploy": "../../.ci/deploy-twinge.sh"
+    "deploy": "mcdeploy twinge"
   },
   "dependencies": {
     "@aws-sdk/client-apigatewaymanagementapi": "^3.398.0",
