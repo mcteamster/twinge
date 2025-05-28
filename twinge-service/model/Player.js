@@ -5,15 +5,24 @@ class Player {
   constructor(player) {
     // Default Player
     if (!player || !player.playerId) {
+      let playerName = uniqueNamesGenerator({ 
+        dictionaries: [animals],
+        style: 'upperCase',
+        separator: ' ',
+      });
+      while (playerName.length > 10) {
+        playerName = uniqueNamesGenerator({ 
+          dictionaries: [animals],
+          style: 'upperCase',
+          separator: ' ',
+        });
+      } // Just keep generating names until we get one that is 10 characters or less
+
       player = {
         playerId: String(Guid.create()),
         connected: true,
         strikes: 0,
-        name: uniqueNamesGenerator({ 
-          dictionaries: [animals],
-          style: 'upperCase',
-          separator: ' ',
-        }),
+        name: playerName,
         hand: [],
         handSize: 0,
       };
