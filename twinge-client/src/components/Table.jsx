@@ -194,7 +194,7 @@ class Latest extends React.Component {
       let event = this.props.event[0];
       let card;
       if (event.round === this.props.round) {
-        card = <Card value={event?.card} missed={event?.missed}></Card>
+        card = <Card value={event?.card} missed={event?.missed} playerName={event?.playerName}></Card>
       } else {
         card = <Card value='0' stale={true}></Card>
       }
@@ -225,9 +225,9 @@ class Pile extends React.Component {
     if (this.props.pile && this.props.round) {
       let pile = this.props.pile.map((event, i) => {
         if (event.round === this.props.round) {
-          return <Card key={`c${i + 1}`} value={event.card} missed={event.missed}></Card>
+          return <Card key={`c${i + 1}`} value={event.card} missed={event.missed} playerName={event?.playerName}></Card>
         } else {
-          return <Card key={`c${i + 1}`} value={event.card} missed={event.missed} stale={true}></Card>
+          return <Card key={`c${i + 1}`} value={event.card} missed={event.missed} playerName={event?.playerName} stale={true}></Card>
         }
       });
       return <div className='Pile'>
@@ -414,9 +414,16 @@ class Hand extends React.Component {
 
 class Card extends React.Component {
   render() {
-    return <div key={this.props.value} className={`Card centered ${this.props.missed && 'missed'} ${this.props.stale && 'stale'}`} style={this.props?.style}>
-      {this.props.value}
-    </div>
+    return <>
+      <div key={this.props.value} className={`Card column ${this.props.missed && 'missed'} ${this.props.stale && 'stale'}`} style={this.props?.style}>
+        <div>
+          {this.props.value}
+        </div>
+        <div style={{ fontSize: 'calc(max(6pt, 40%)' }}>
+          {this.props.playerName}
+        </div>
+      </div>
+    </>
   }
 }
 

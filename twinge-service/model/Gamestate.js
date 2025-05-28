@@ -158,9 +158,9 @@ class Gamestate {
       return player.playerId == playerId;
     });
     let activePlayer = this.players[activePlayerIndex];
-    let lowestCards = [{ time: new Date().toISOString(), card: activePlayer.hand.shift(), round: this.meta.round, playerIndex: activePlayerIndex }];
+    let lowestCards = [{ time: new Date().toISOString(), card: activePlayer.hand.shift(), round: this.meta.round, playerIndex: activePlayerIndex, playerName: activePlayer.name }];
     while (activePlayer.hand[0] == lowestCards[lowestCards.length - 1].card + 1) {
-      lowestCards.push({ time: new Date().toISOString(), card: activePlayer.hand.shift(), round: this.meta.round, playerIndex: activePlayerIndex });
+      lowestCards.push({ time: new Date().toISOString(), card: activePlayer.hand.shift(), round: this.meta.round, playerIndex: activePlayerIndex, playerName: activePlayer.name });
     }
     activePlayer.handSize = activePlayer.hand.length;
     this.public.pile.push(...lowestCards);
@@ -170,7 +170,7 @@ class Gamestate {
     this.players.forEach((player, playerIndex) => {
       if (player.playerId != activePlayer.playerId) {
         while (player.hand[0] < lowestCards[0].card) {
-          missedCards.push({ time: new Date().toISOString(), card: player.hand.shift(), round: this.meta.round, playerIndex: playerIndex, missed: true })
+          missedCards.push({ time: new Date().toISOString(), card: player.hand.shift(), round: this.meta.round, playerIndex: playerIndex, playerName: player.name, missed: true })
         }
         player.handSize = player.hand.length;
       }
@@ -191,7 +191,7 @@ class Gamestate {
       this.players.forEach((player, playerIndex) => {
         if (player.handSize > 0) {
           this.public.pile.push(...player.hand.splice(0).map((card) => {
-            return { time: new Date().toISOString(), card: card, round: this.meta.round, playerIndex: playerIndex }
+            return { time: new Date().toISOString(), card: card, round: this.meta.round, playerIndex: playerIndex, playerName: player.name }
           }));
           player.handSize = 0;
         }

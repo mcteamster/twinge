@@ -69,7 +69,7 @@ class Play extends React.Component {
       <Status state={this.props.state}></Status>
       <Players className='Players centered' state={this.props.state} sendMsg={this.props.sendMsg} context='play' players={this.props.state?.gamestate?.players || []}></Players>
       <Latest className='Latest centered' state={this.props.state} event={this.props.state?.gamestate?.public?.pile?.slice(-1) || []} round={this.props.state?.gamestate?.meta?.round || 0} audio={this.props.audio}></Latest>
-      <Pile pile={this.props.state?.gamestate?.public?.pile} round={this.props.state?.gamestate?.meta?.round || 0}></Pile>
+      <Pile state={this.props.state} pile={this.props.state?.gamestate?.public?.pile} round={this.props.state?.gamestate?.meta?.round || 0}></Pile>
       <Hand state={this.props?.state} sendMsg={this.props.sendMsg} audio={this.props.audio}></Hand>
       </div>
   }
