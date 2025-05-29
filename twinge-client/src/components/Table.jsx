@@ -165,7 +165,7 @@ class Status extends React.Component {
     }
 
     // Deck
-    let deck = `${(100*(this.props.state?.gamestate?.config?.deckSize - remainingCards)/this.props.state?.gamestate?.config?.deckSize).toFixed(0)}%`;
+    let deck = `${(100*(this.props.state?.gamestate?.config?.deckSize - remainingCards)/this.props.state?.gamestate?.config?.deckSize).toFixed(1)}%`;
     return <div className='Status'>
       <div>
         <b>Level</b>
