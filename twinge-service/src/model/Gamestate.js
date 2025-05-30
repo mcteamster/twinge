@@ -1,4 +1,4 @@
-const Player = require('../model/Player');
+const Player = require('./Player');
 
 class Gamestate {
   constructor(gamestate) {

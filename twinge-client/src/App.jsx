@@ -41,7 +41,7 @@ class App extends React.Component {
 
   componentDidMount() {
     this.setState({ overlay: { message: '' } });
-    this.ws = new WebSocket('wss://twinge-service.mcteamster.com');
+    this.ws = new WebSocket(import.meta.env.VITE_SERVICE_URL);
     this.ws.onopen = this.autoJoin;
     this.ws.onmessage = this.messageHandler;
 
@@ -181,7 +181,7 @@ class App extends React.Component {
   sendMsg = async (msg) => {
     if (!this.ws || this.ws.readyState !== 1) {
       this.setState({ overlay: { message: 'Disconnected...' } });
-      this.ws = new WebSocket('wss://twinge-service.mcteamster.com');
+      this.ws = new WebSocket(import.meta.env.VITE_SERVICE_URL);
       this.ws.onopen = this.autoJoin;
       this.ws.onmessage = this.messageHandler;
     } else {

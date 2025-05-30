@@ -1,10 +1,10 @@
 const {
   ApiGatewayManagementApi
 } = require("@aws-sdk/client-apigatewaymanagementapi");
-const connections = require('../helpers/connections');
+const connections = require('./connections');
 const apigatewaymanagementapi = new ApiGatewayManagementApi({
   apiVersion: '2018-11-29',
-  endpoint: `https://${process.env.HOSTNAME}`,
+  endpoint: (process.env.GATEWAY_ENDPOINT).replace('wss://', 'https://'),
 });
 
 async function send(connectionId, payload) {

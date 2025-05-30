@@ -1,21 +1,24 @@
 {
   "name": "twinge-service",
   "version": "1.0.0",
-  "description": "",
+  "bin": {
+    "twinge-service": "bin/twinge-service.js"
+  },
   "scripts": {
     "deploy": "mcdeploy twinge"
+  },
+  "devDependencies": {
+    "aws-cdk": "2.1017.0",
+    "esbuild": "^0.25.5"
   },
   "dependencies": {
     "@aws-sdk/client-apigatewaymanagementapi": "^3.398.0",
     "@aws-sdk/client-dynamodb": "^3.398.0",
     "@aws-sdk/lib-dynamodb": "^3.398.0",
+    "aws-cdk-lib": "2.198.0",
+    "constructs": "^10.0.0",
     "guid": "^0.0.12",
     "object-hash": "^3.0.0",
     "unique-names-generator": "^4.7.1"
-  },
-  "devDependencies": {
-    "serverless": "^3.40.0",
-    "serverless-apigateway-service-proxy": "^2.2.1",
-    "serverless-http": "^2.7.0"
   }
 }
