@@ -167,13 +167,13 @@ class Status extends React.Component {
     // Deck
     let deck = `${(100*(this.props.state?.gamestate?.config?.deckSize - remainingCards)/this.props.state?.gamestate?.config?.deckSize).toFixed(1)}%`;
     return <div className='Status'>
-      <div>
+      <div style={{ width: '4em'}}>
         <b>Level</b>
         <br></br>
         {round} of {this.calculateMaxRounds(round, numPlayers, remainingCards) || "N/A"}
       </div>
       <div>{lives}</div>
-      <div>
+      <div style={{ width: '4em'}}>
         <b>Dealt</b>
         <br></br>
         {deck}

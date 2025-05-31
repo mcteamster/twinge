@@ -4,10 +4,10 @@ import QRCode from "react-qr-code";
 class Header extends React.Component {
   render() {
     return <div className='Header'>
-      <div id='title' onClick={() => { window.location.pathname = 'about' }}>
+      <div id='title' style={{ width: '4em', fontSize: '1.25em' }} onClick={() => { window.location.pathname = 'about' }}>
         twinge
       </div>
-      <div id='roomCode' onClick={() => {
+      <div id='roomCode' style={{ width: '5em'}} onClick={() => {
         this.props.toggleQR()
         let code = document.getElementById('roomCode');
         try {
@@ -23,7 +23,7 @@ class Header extends React.Component {
       }}>
         {this.props.state.roomCode ? `${this.props.state.roomCode}` : ''}
       </div>
-      <div id='functions'>
+      <div id='functions' style={{ width: '5em'}}>
         <div id='mute' onClick={() => { this.props.toggleMute() }}>
           {this.props.state?.gamestate?.meta?.phase === 'playing' && (this.props.state?.audio.mute ? '🔇' : '🔊')}
         </div>
