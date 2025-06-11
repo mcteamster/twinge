@@ -1,4 +1,4 @@
-const Guid = require('guid');
+const { v4: uuidv4 } = require('uuid');
 const { uniqueNamesGenerator, animals } = require('unique-names-generator');
 
 class Player {
@@ -19,7 +19,7 @@ class Player {
       } // Just keep generating names until we get one that is 10 characters or less
 
       player = {
-        playerId: String(Guid.create()),
+        playerId: uuidv4(),
         connected: true,
         strikes: 0,
         name: playerName,

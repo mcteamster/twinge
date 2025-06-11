@@ -23,13 +23,48 @@ const GAME_TABLE = process.env.GAME_TABLE;
 
 async function createGame(gameId, gamestate) {
   function makeCode() {
-    const validChars = "BCDFGHJKLMNPQRSTVWXZ"; // No vowels to avoid spelling words
+    const alphabet = "BCDFGHJKLMNPQRSTVWXZ"; // No vowels to avoid spelling words
     let codeChars = [
-      validChars[Math.floor((Math.random() * 20))],
-      validChars[Math.floor((Math.random() * 20))],
-      validChars[Math.floor((Math.random() * 20))],
-      validChars[Math.floor((Math.random() * 20))],
+      alphabet[Math.floor((Math.random() * 20))],
+      alphabet[Math.floor((Math.random() * 20))],
+      alphabet[Math.floor((Math.random() * 20))]
     ]
+
+    let serverCode;
+    // From East to West
+    switch (process.env.AWS_REGION) {
+      case 'ap-southeast-2':
+        serverCode = 'BC'; // Sydney AU 🇦🇺
+        break;
+      case 'ap-northeast-1':
+        serverCode = 'DF'; // Tokyo JP 🇯🇵
+        break;
+      case 'ap-southeast-1':
+        serverCode = 'GH'; // Singapore SG 🇸🇬
+        break;
+      case 'ap-south-1':
+        serverCode = 'JK'; // Mumbai IN 🇮🇳
+        break;
+      case 'eu-central-1':
+        serverCode = 'LM'; // Frankfurt EU 🇪🇺
+        break;
+      case 'eu-west-1':
+        serverCode = 'NP'; // London UK 🇬🇧
+        break;
+      case 'sa-east-1':
+        serverCode = 'QR'; // Sao Paolo BR 🇧🇷
+        break;
+      case 'us-east-1':
+        serverCode = 'ST'; // Washington D.C. US 🇺🇸
+        break;
+      case 'us-west-2':
+        serverCode = 'VW'; // San Francisco US 🇺🇸
+        break;
+      default:
+        serverCode = 'XZ'; // Local or Fallback
+    }
+    codeChars.push(serverCode.slice(Math.floor((Math.random() * serverCode.length)))[0]) // Allocate a random character from the corresponding server code
+
     return codeChars.join('');
   }
   let roomCode = makeCode();

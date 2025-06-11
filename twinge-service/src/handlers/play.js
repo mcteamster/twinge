@@ -3,12 +3,12 @@ const games = require('../helpers/games');
 const messages = require('../helpers/messages');
 const Gamestate = require('../model/Gamestate');
 const Player = require('../model/Player');
-const Guid = require('guid');
+const { v4: uuidv4 } = require('uuid');
 
 // Lobby Handlers
 async function newGame(payload) {
   // Create new game
-  let gameId = String(Guid.create());
+  let gameId = uuidv4();
   let gamestate = new Gamestate({config: payload.config});
   payload.playerId = await gamestate.addPlayer(new Player());
   payload.game = await games.createGame(gameId, gamestate);

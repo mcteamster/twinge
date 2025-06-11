@@ -17,8 +17,8 @@
     "@aws-sdk/lib-dynamodb": "^3.398.0",
     "aws-cdk-lib": "2.198.0",
     "constructs": "^10.0.0",
-    "guid": "^0.0.12",
     "object-hash": "^3.0.0",
-    "unique-names-generator": "^4.7.1"
+    "unique-names-generator": "^4.7.1",
+    "uuid": "^11.1.0"
   }
 }
