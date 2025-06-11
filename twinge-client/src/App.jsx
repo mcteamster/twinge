@@ -1,6 +1,7 @@
 import './App.css';
 import { Header, Footer, Overlay, Modal } from './components/Banners';
 import { About, Lobby, Play } from './components/Screens'
+import { ENDPOINTS, getRegionFromCode } from './constants/constants';
 import { AudioContext, audioSettings } from './context/AudioContext';
 import React from 'react';
 
@@ -41,7 +42,14 @@ class App extends React.Component {
 
   componentDidMount() {
     this.setState({ overlay: { message: '' } });
-    this.ws = new WebSocket(import.meta.env.VITE_SERVICE_URL);
+    this.region = 'DEFAULT';
+    let path = window.location.pathname.slice(1);
+    if (path.match(/^[A-Z]{4}$/i)) {
+      this.region = getRegionFromCode(path);
+      this.ws = new WebSocket(ENDPOINTS[this.region])
+    } else {
+      this.ws = new WebSocket(ENDPOINTS.DEFAULT);
+    }
     this.ws.onopen = this.autoJoin;
     this.ws.onmessage = this.messageHandler;
 
@@ -181,7 +189,7 @@ class App extends React.Component {
   sendMsg = async (msg) => {
     if (!this.ws || this.ws.readyState !== 1) {
       this.setState({ overlay: { message: 'Disconnected...' } });
-      this.ws = new WebSocket(import.meta.env.VITE_SERVICE_URL);
+      this.ws = new WebSocket(ENDPOINTS[this.region]);
       this.ws.onopen = this.autoJoin;
       this.ws.onmessage = this.messageHandler;
     } else {

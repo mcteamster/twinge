@@ -1,10 +1,6 @@
 const hash = require('object-hash');
-const {
-  DynamoDBDocument
-} = require("@aws-sdk/lib-dynamodb"),
-  {
-    DynamoDB
-  } = require("@aws-sdk/client-dynamodb");
+const { DynamoDBDocument } = require("@aws-sdk/lib-dynamodb");
+const { DynamoDB } = require("@aws-sdk/client-dynamodb");
 const marshallOptions = {
   // Whether to automatically convert empty strings, blobs, and sets to `null`.
   convertEmptyValues: false, // false, by default.
