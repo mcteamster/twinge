@@ -133,7 +133,7 @@ class TwingeServiceStack extends cdk.Stack {
 
 // Multi-Region Deployment
 const regions = [
-  // 'ap-southeast-2', // Australia
+  'ap-southeast-2', // Australia
   'ap-northeast-1', // Japan
   'ap-southeast-1', // Singapore
   // 'ap-south-1', // India
