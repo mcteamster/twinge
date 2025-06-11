@@ -8,7 +8,7 @@ export const ENDPOINTS = {
   'BR': 'wss://br.twinge.mcteamster.com',      // Sao Paolo BR 🇧🇷
   'US-EAST': 'wss://us-east.twinge.mcteamster.com', // Washington D.C. US 🇺🇸
   'US-WEST': 'wss://us-west.twinge.mcteamster.com', // San Francisco US 🇺🇸
-  'DEFAULT': 'wss://eu.mcteamster.com' // Default or Local
+  'DEFAULT': 'wss://eu.twinge.mcteamster.com' // Default or Local
 }
 
 export const getRegionFromCode = (roomCode) => {
