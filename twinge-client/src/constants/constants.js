@@ -1,3 +1,16 @@
+// Enable Regions by uncommenting the flags
+export const FLAGS = {
+  'AU': '🇦🇺',
+  'JP': '🇯🇵',
+  'SG': '🇸🇬',
+  // 'IN': '🇮🇳',
+  'EU': '🇪🇺',
+  // 'UK': '🇬🇧',
+  // 'BR': '🇧🇷',
+  'US-EAST': '🇺🇸',
+  'US-WEST': '🇺🇸',
+}
+
 export const ENDPOINTS = {
   'AU': 'wss://au.twinge.mcteamster.com',      // Sydney AU 🇦🇺
   'JP': 'wss://jp.twinge.mcteamster.com',      // Tokyo JP 🇯🇵
@@ -8,7 +21,7 @@ export const ENDPOINTS = {
   'BR': 'wss://br.twinge.mcteamster.com',      // Sao Paolo BR 🇧🇷
   'US-EAST': 'wss://us-east.twinge.mcteamster.com', // Washington D.C. US 🇺🇸
   'US-WEST': 'wss://us-west.twinge.mcteamster.com', // San Francisco US 🇺🇸
-  'DEFAULT': 'wss://eu.twinge.mcteamster.com' // Default or Local
+  'DEFAULT': 'wss://eu.twinge.mcteamster.com' // Default to EU as the most central server
 }
 
 export const getRegionFromCode = (roomCode) => {

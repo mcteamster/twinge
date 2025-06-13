@@ -1,5 +1,62 @@
 import React from 'react';
 import QRCode from "react-qr-code";
+import { FLAGS } from '../constants/constants';
+
+class RegionSelect extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      regionSelect: false,
+      selectedRegion: this.props.region,
+    };
+  }
+
+  render() {
+    return <>
+      { this.state.regionSelect ?
+        <div className='Overlay centered' style={{ display: 'flex' }}>
+          <div className="region-list" style={{
+            width: '90vw',
+            display: this.state.regionSelect ? 'flex' : 'none',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            fontSize: '0.4em',
+          }}>
+            {Object.entries(FLAGS).map(([region, flag]) => (
+              <div
+                key={region}
+                onClick={() => {
+                  this.setState({ selectedRegion: region, regionSelect: false });
+                  this.props.setRegion(region);
+                }}
+                style={{
+                  width: '4em',
+                  height: '4em',
+                  margin: '0.25em',
+                  padding: '0.25em',
+                  backgroundColor: this.state.selectedRegion == region ? 'royalblue' : '#eee',
+                  borderRadius: '0.5em',
+                  display: 'flex',
+                  textAlign: 'center',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                {flag}<br></br>
+                {region.replace('-', ' ')}
+              </div>
+            ))}
+          </div>
+        </div> :
+        <div onClick={() => { this.setState({ regionSelect: true })}}>
+          {FLAGS[this.state.selectedRegion] || '🌏'}
+        </div>
+      }
+    </>
+  }
+}
 
 class Header extends React.Component {
   render() {
@@ -7,7 +64,7 @@ class Header extends React.Component {
       <div id='title' style={{ width: '4em', fontSize: '1.25em' }} onClick={() => { window.location.pathname = 'about' }}>
         twinge
       </div>
-      <div id='roomCode' style={{ width: '5em'}} onClick={() => {
+      <div id='roomCode' style={{ width: '5em' }} onClick={() => {
         this.props.toggleQR()
         let code = document.getElementById('roomCode');
         try {
@@ -23,13 +80,18 @@ class Header extends React.Component {
       }}>
         {this.props.state.roomCode ? `${this.props.state.roomCode}` : ''}
       </div>
-      <div id='functions' style={{ width: '5em'}}>
+      <div id='functions' style={{ width: '5em' }}>
         <div id='mute' onClick={() => { this.props.toggleMute() }}>
           {this.props.state?.gamestate?.meta?.phase === 'playing' && (this.props.state?.audio.mute ? '🔇' : '🔊')}
         </div>
-        <div id='exit' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'leave', gameId: this.props.state.gameId, playerId: this.props.state.playerId, stateHash: this.props.state.stateHash }) }}>
-          {this.props.state?.gameId && '❌'}
-        </div>
+        {
+          this.props.state.roomCode && this.props.state?.gameId ?
+            <div id='exit' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'leave', gameId: this.props.state.gameId, playerId: this.props.state.playerId, stateHash: this.props.state.stateHash }) }}>
+              ❌
+            </div>
+            :
+            <RegionSelect region={this.props.region} setRegion={this.props.setRegion} />
+        }
       </div>
     </div>
   }

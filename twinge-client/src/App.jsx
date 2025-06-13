@@ -38,20 +38,25 @@ class App extends React.Component {
         }
       }));
     }
+    this.region = 'DEFAULT';
+    this.ws = new WebSocket(ENDPOINTS[this.region])
+    this.ws.onopen = this.autoJoin;
+    this.ws.onmessage = this.messageHandler;
+    this.setRegion = (region) => {
+      console.debug('Region:', region)
+      this.region = region;
+      this.ws = new WebSocket(ENDPOINTS[region])
+      this.ws.onopen = this.autoJoin;
+      this.ws.onmessage = this.messageHandler;
+    }
   }
 
   componentDidMount() {
     this.setState({ overlay: { message: '' } });
-    this.region = 'DEFAULT';
     let path = window.location.pathname.slice(1);
     if (path.match(/^[A-Z]{4}$/i)) {
-      this.region = getRegionFromCode(path);
-      this.ws = new WebSocket(ENDPOINTS[this.region])
-    } else {
-      this.ws = new WebSocket(ENDPOINTS.DEFAULT);
+      this.setRegion(getRegionFromCode(path));
     }
-    this.ws.onopen = this.autoJoin;
-    this.ws.onmessage = this.messageHandler;
 
     setInterval(() => {
       if (this.state.gameId && this.state.playerId) {
@@ -205,7 +210,7 @@ class App extends React.Component {
     } else if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed') {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
-          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR}></Header>
+          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.region} setRegion={this.setRegion}></Header>
           <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} ></Lobby>
           <Footer state={this.state}></Footer>
           <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
@@ -215,7 +220,7 @@ class App extends React.Component {
     } else {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
-          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR}></Header>
+          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.region} setRegion={this.setRegion}></Header>
           <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} audio={this.audio}></Play>
           <Footer state={this.state}></Footer>
           <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
