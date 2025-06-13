@@ -18,7 +18,7 @@ class RegionSelect extends React.Component {
           <div className="region-list" style={{
             width: '90vw',
             display: this.state.regionSelect ? 'flex' : 'none',
-            flexDirection: 'row',
+            flexDirection: 'row-reverse',
             alignItems: 'center',
             justifyContent: 'center',
             flexWrap: 'wrap',
