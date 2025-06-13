@@ -9,6 +9,7 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      region: localStorage.getItem('region'),
       gameId: localStorage.getItem('gameId'),
       playerId: localStorage.getItem('playerId'),
       createTime: localStorage.getItem('createTime'),
@@ -38,26 +39,31 @@ class App extends React.Component {
         }
       }));
     }
-    this.region = 'DEFAULT';
-    this.ws = new WebSocket(ENDPOINTS[this.region])
-    this.ws.onopen = this.autoJoin;
-    this.ws.onmessage = this.messageHandler;
     this.setRegion = (region) => {
       console.debug('Region:', region)
-      this.region = region;
-      this.ws = new WebSocket(ENDPOINTS[region])
-      this.ws.onopen = this.autoJoin;
-      this.ws.onmessage = this.messageHandler;
+      this.setState((state) => {
+        state.region = region
+        return state
+      });
+      localStorage.setItem('region', region);
+      let ws = new WebSocket(ENDPOINTS[region])
+      ws.onopen = this.autoJoin;
+      ws.onmessage = this.messageHandler;
+      this.ws = ws;
     }
   }
-
+  
   componentDidMount() {
     this.setState({ overlay: { message: '' } });
     let path = window.location.pathname.slice(1);
     if (path.match(/^[A-Z]{4}$/i)) {
       this.setRegion(getRegionFromCode(path));
+    } else if (localStorage.getItem('region')) {
+      this.setRegion(localStorage.getItem('region'));
+    } else {
+      this.setRegion('DEFAULT')
     }
-
+    
     setInterval(() => {
       if (this.state.gameId && this.state.playerId) {
         this.sendMsg({ action: 'play', actionType: 'refresh', gameId: this.state.gameId, playerId: this.state.playerId })
@@ -167,7 +173,6 @@ class App extends React.Component {
         } catch (err) {
           console.error(err);
         }
-        localStorage.setItem('gameId', null);
         localStorage.setItem('playerId', null);
         localStorage.setItem('createTime', null);
         this.setState({
@@ -194,9 +199,7 @@ class App extends React.Component {
   sendMsg = async (msg) => {
     if (!this.ws || this.ws.readyState !== 1) {
       this.setState({ overlay: { message: 'Disconnected...' } });
-      this.ws = new WebSocket(ENDPOINTS[this.region]);
-      this.ws.onopen = this.autoJoin;
-      this.ws.onmessage = this.messageHandler;
+      this.setRegion(this.state.region)
     } else {
       this.ws.send(JSON.stringify(msg));
     }
@@ -210,7 +213,7 @@ class App extends React.Component {
     } else if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed') {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
-          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.region} setRegion={this.setRegion}></Header>
+          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
           <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} ></Lobby>
           <Footer state={this.state}></Footer>
           <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
@@ -220,7 +223,7 @@ class App extends React.Component {
     } else {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
-          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.region} setRegion={this.setRegion}></Header>
+          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
           <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} audio={this.audio}></Play>
           <Footer state={this.state}></Footer>
           <Modal state={this.state} toggleQR={this.toggleQR}></Modal>

@@ -7,7 +7,6 @@ class RegionSelect extends React.Component {
     super(props)
     this.state = {
       regionSelect: false,
-      selectedRegion: this.props.region,
     };
   }
 
@@ -28,7 +27,7 @@ class RegionSelect extends React.Component {
               <div
                 key={region}
                 onClick={() => {
-                  this.setState({ selectedRegion: region, regionSelect: false });
+                  this.setState({ regionSelect: false });
                   this.props.setRegion(region);
                 }}
                 style={{
@@ -36,7 +35,7 @@ class RegionSelect extends React.Component {
                   height: '4em',
                   margin: '0.25em',
                   padding: '0.25em',
-                  backgroundColor: this.state.selectedRegion == region ? 'royalblue' : '#eee',
+                  backgroundColor: this.props.region == region ? 'royalblue' : '#eee',
                   borderRadius: '0.5em',
                   display: 'flex',
                   textAlign: 'center',
@@ -51,7 +50,7 @@ class RegionSelect extends React.Component {
           </div>
         </div> :
         <div onClick={() => { this.setState({ regionSelect: true })}}>
-          {FLAGS[this.state.selectedRegion] || '🌏'}
+          {FLAGS[this.props.region] || '🌏'}
         </div>
       }
     </>
