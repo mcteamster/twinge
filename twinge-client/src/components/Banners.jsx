@@ -44,7 +44,7 @@ class RegionSelect extends React.Component {
                 }}
               >
                 {flag}<br></br>
-                {region.replace('-', ' ')}
+                {region}
               </div>
             ))}
           </div>
