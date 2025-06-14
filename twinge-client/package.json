@@ -19,6 +19,8 @@
     "dev": "vite --host",
     "build": "vite build",
     "deploy": "mcdeploy twinge",
+    "deploy:client": "mcdeploy twinge client",
+    "deploy:service": "mcdeploy twinge service",
     "serve": "vite preview"
   },
   "eslintConfig": {
