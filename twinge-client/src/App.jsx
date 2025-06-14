@@ -197,7 +197,13 @@ class App extends React.Component {
   }
 
   sendMsg = async (msg) => {
-    if (!this.ws || this.ws.readyState !== 1) {
+    if (this?.ws?.readyState == 0) {
+      // Retry every second until connected
+      this.setState({ ...this.state, overlay: { message: 'Connecting...' } });
+      setTimeout(()=> {
+        this.sendMsg(msg)
+      }, 1000)
+    } else if (!this.ws || this.ws.readyState !== 1) {
       this.setState({ overlay: { message: 'Disconnected...' } });
       this.setRegion(this.state.region)
     } else {
