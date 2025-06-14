@@ -28,7 +28,7 @@ class Join extends React.Component {
       }
     }}
     onSelect={()=> {
-      document.getElementById('inputBox').placeholder = 'e.g. "ABCD"'
+      document.getElementById('inputBox').placeholder = 'e.g. "TWNG"'
     }}>
     </input>
   }

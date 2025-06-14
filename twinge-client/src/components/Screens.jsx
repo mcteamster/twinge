@@ -52,10 +52,10 @@ class Lobby extends React.Component {
     return <div className='Lobby'>
       <div id='instructions'>
         <h1>😣 twinge</h1>
-        ⬆️ Count Upwards As A Team!<br></br>
-        😉 Only Give Subjective Clues<br></br>
-        💔 Skip A Card, Lose A Life<br></br>
-        🙋 <a href='./about'>More Details</a>
+        👥 A <b>Teamwork</b> Game<br></br>
+        ⬆️ <b>Count Upwards</b> Together<br></br>
+        😉 Give <b>Subjective Clues</b> Only<br></br>
+        💔 <b>Skip</b> A Card = <b>Lose</b> A Life<br></br>
       </div>
       {info}
       {inputs}
