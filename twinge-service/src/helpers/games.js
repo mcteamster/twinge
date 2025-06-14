@@ -44,7 +44,7 @@ async function createGame(gameId, gamestate) {
       case 'eu-central-1':
         serverCode = 'LM'; // Frankfurt EU 🇪🇺
         break;
-      case 'eu-west-1':
+      case 'eu-west-2':
         serverCode = 'NP'; // London UK 🇬🇧
         break;
       case 'sa-east-1':
