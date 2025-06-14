@@ -35,7 +35,7 @@ class RegionSelect extends React.Component {
                   height: '4em',
                   margin: '0.25em',
                   padding: '0.25em',
-                  backgroundColor: this.props.region == region ? 'skyblue' : '#eee',
+                  backgroundColor: this.props.region == region ? 'skyblue' : '#ddd',
                   borderRadius: '0.5em',
                   display: 'flex',
                   textAlign: 'center',
