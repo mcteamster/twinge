@@ -66,9 +66,10 @@ class App extends React.Component {
     
     setInterval(() => {
       if (this.state.gameId && this.state.playerId) {
+        console.debug('Syncing State')
         this.sendMsg({ action: 'play', actionType: 'refresh', gameId: this.state.gameId, playerId: this.state.playerId })
       }
-    }, 360000);
+    }, 30000);
   }
 
   autoJoin = async () => {
