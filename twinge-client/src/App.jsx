@@ -197,7 +197,13 @@ class App extends React.Component {
   }
 
   sendMsg = async (msg) => {
-    if (this?.ws?.readyState == 0) {
+    if (msg.roomCode && getRegionFromCode(msg.roomCode) != this.state.region) {
+      // Handle Region Mismatch
+      this.setRegion(getRegionFromCode(msg.roomCode));
+      setTimeout(()=> {
+        this.sendMsg(msg)
+      }, 0)
+    } else if (this?.ws?.readyState == 0) {
       // Retry every second until connected
       this.setState({ ...this.state, overlay: { message: 'Connecting...' } });
       setTimeout(()=> {
