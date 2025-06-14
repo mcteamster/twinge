@@ -13,17 +13,17 @@ class RegionSelect extends React.Component {
   render() {
     return <>
       { this.state.regionSelect ?
-        <div className='Overlay centered' style={{ display: 'flex' }}>
+        <div className='Overlay centered' style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="region-list" style={{
-            width: '90vw',
+            width: '15em',
             display: this.state.regionSelect ? 'flex' : 'none',
-            flexDirection: 'row-reverse',
+            flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
             flexWrap: 'wrap',
             fontSize: '0.4em',
           }}>
-            {Object.entries(FLAGS).map(([region, flag]) => (
+            {Object.entries(FLAGS).reverse().map(([region, flag]) => (
               <div
                 key={region}
                 onClick={() => {

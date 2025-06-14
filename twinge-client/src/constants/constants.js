@@ -19,8 +19,8 @@ export const ENDPOINTS = {
   'EU': 'wss://eu.twinge.mcteamster.com',      // Frankfurt EU 🇪🇺
   'UK': 'wss://uk.twinge.mcteamster.com',      // London UK 🇬🇧
   'BR': 'wss://br.twinge.mcteamster.com',      // Sao Paolo BR 🇧🇷
-  'US-EAST': 'wss://us-east.twinge.mcteamster.com', // Washington D.C. US 🇺🇸
-  'US-WEST': 'wss://us-west.twinge.mcteamster.com', // San Francisco US 🇺🇸
+  'US-EAST': 'wss://use.twinge.mcteamster.com', // Washington D.C. US 🇺🇸
+  'US-WEST': 'wss://usw.twinge.mcteamster.com', // San Francisco US 🇺🇸
   'DEFAULT': 'wss://eu.twinge.mcteamster.com' // Default to EU as the most central server
 }
 
