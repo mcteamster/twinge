@@ -136,10 +136,10 @@ const regions = [
   'ap-southeast-2', // Australia
   'ap-northeast-1', // Japan
   'ap-southeast-1', // Singapore
-  // 'ap-south-1', // India
+  'ap-south-1', // India
   'eu-central-1', // Europe
-  // 'eu-west-1', // UK
-  // 'sa-east-1', // Brazil 
+  'eu-west-2', // UK
+  'sa-east-1', // Brazil
   'us-east-1', // US East
   'us-west-2', // US West
 ]
