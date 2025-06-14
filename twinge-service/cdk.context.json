@@ -26,5 +26,13 @@
   "hosted-zone:account=922236493844:domainName=mcteamster.com:region=sa-east-1": {
     "Id": "/hostedzone/Z0639363ZGUL9YOFVOMV",
     "Name": "mcteamster.com."
+  },
+  "hosted-zone:account=922236493844:domainName=mcteamster.com:region=ap-south-1": {
+    "Id": "/hostedzone/Z0639363ZGUL9YOFVOMV",
+    "Name": "mcteamster.com."
+  },
+  "hosted-zone:account=922236493844:domainName=mcteamster.com:region=eu-west-2": {
+    "Id": "/hostedzone/Z0639363ZGUL9YOFVOMV",
+    "Name": "mcteamster.com."
   }
 }
