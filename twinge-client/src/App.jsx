@@ -219,7 +219,16 @@ class App extends React.Component {
   }
 
   render() {
-    if (window.location.pathname.match('/about')) {
+    // Check for In-App Browsers
+    if (navigator.userAgent.match(/FBAN|FBAV|Instagram/i)) {
+      console.log('In-app browser detected');
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', textAlign: 'center', height: '60vh', width: 'calc(100vw - 2em)', padding: '1em', fontSize: '1.5em' }}>
+          <h1>😣 twinge</h1>
+          please open this page in your primary browser for the best gameplay experience
+        </div>
+      )
+    } else if (window.location.pathname.match('/about')) {
       return <div className='App'>
         <About></About>
       </div>
