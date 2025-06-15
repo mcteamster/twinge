@@ -48,7 +48,7 @@ async function createGame(gameId, gamestate) {
         serverCode = 'NP'; // London UK 🇬🇧
         break;
       case 'sa-east-1':
-        serverCode = 'QR'; // Sao Paolo BR 🇧🇷
+        serverCode = 'QR'; // Sao Paulo BR 🇧🇷
         break;
       case 'us-east-1':
         serverCode = 'ST'; // Washington D.C. US 🇺🇸
