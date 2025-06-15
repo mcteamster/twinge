@@ -1,9 +1,10 @@
 import './App.css';
 import { Header, Footer, Overlay, Modal } from './components/Banners';
 import { About, Lobby, Play } from './components/Screens'
-import { ENDPOINTS, getRegionFromCode } from './constants/constants';
+import { AWS_REGIONS, ENDPOINTS, getRegionFromCode } from './constants/constants';
 import { AudioContext, audioSettings } from './context/AudioContext';
 import React from 'react';
+import { Virgo2AWS } from 'virgo';
 
 class App extends React.Component {
   constructor(props) {
@@ -61,7 +62,14 @@ class App extends React.Component {
     } else if (localStorage.getItem('region')) {
       this.setRegion(localStorage.getItem('region'));
     } else {
-      this.setRegion('DEFAULT')
+      // Try to approximate the closest region using https://github.com/mcteamster/virgo
+      const { closestRegion } = Virgo2AWS.getClosestRegion({ regions: Object.keys(AWS_REGIONS) });
+      console.info(`Approximate Closest AWS Region: ${closestRegion}`)
+      if (AWS_REGIONS[closestRegion]) {
+        this.setRegion(AWS_REGIONS[closestRegion])
+      } else {
+        this.setRegion('DEFAULT')
+      }
     }
     
     setInterval(() => {
@@ -92,7 +100,7 @@ class App extends React.Component {
     let data = JSON.parse(msg.data);
     // Websocket Acknowlegements
     if (data.code === 0 && data.message === 'ack') {
-      console.log(new Date().toISOString());
+      console.debug(new Date().toISOString());
     }
     // Handle Errors
     else if (data.code) {
@@ -221,7 +229,7 @@ class App extends React.Component {
   render() {
     // Check for In-App Browsers
     if (navigator.userAgent.match(/FBAN|FBAV|Instagram/i)) {
-      console.log('In-app browser detected');
+      console.warn('In-app browser detected');
       return (
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', textAlign: 'center', height: '60vh', width: 'calc(100vw - 2em)', padding: '1em', fontSize: '1.5em' }}>
           <h1>😣 twinge</h1>

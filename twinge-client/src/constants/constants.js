@@ -24,6 +24,18 @@ export const ENDPOINTS = {
   'DEFAULT': 'wss://eu.twinge.mcteamster.com' // Default to EU as the most central server
 }
 
+export const AWS_REGIONS = {
+  'ap-southeast-2': 'AU',
+  'ap-northeast-1': 'JP',
+  'ap-southeast-1': 'SG',
+  'ap-south-1': 'IN',
+  'eu-central-1': 'EU',
+  'eu-west-2': 'UK',
+  'sa-east-1': 'BR',
+  'us-east-1': 'EAST',
+  'us-west-2': 'WEST',
+}
+
 export const getRegionFromCode = (roomCode) => {
   const lastLetter = roomCode[roomCode.length - 1].toUpperCase();
   let region;
