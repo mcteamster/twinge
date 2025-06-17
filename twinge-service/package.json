@@ -17,7 +17,7 @@
     "@aws-sdk/client-apigatewaymanagementapi": "^3.398.0",
     "@aws-sdk/client-dynamodb": "^3.398.0",
     "@aws-sdk/lib-dynamodb": "^3.398.0",
-    "aws-cdk-lib": "2.198.0",
+    "aws-cdk-lib": "^2.201.0",
     "constructs": "^10.0.0",
     "object-hash": "^3.0.0",
     "unique-names-generator": "^4.7.1",
