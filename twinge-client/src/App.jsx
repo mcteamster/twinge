@@ -4,7 +4,7 @@ import { About, Lobby, Play } from './components/Screens'
 import { AWS_REGIONS, ENDPOINTS, getRegionFromCode } from './constants/constants';
 import { AudioContext, audioSettings } from './context/AudioContext';
 import React from 'react';
-import { Virgo2AWS } from 'virgo';
+import { Virgo2AWS } from '@mcteamster/virgo';
 
 class App extends React.Component {
   constructor(props) {
