@@ -67,11 +67,11 @@ class Header extends React.Component {
         this.props.toggleQR()
         let code = document.getElementById('roomCode');
         try {
-          window.navigator.clipboard.writeText(`${window.location.origin}/${this.props.state.roomCode}`);
+          window.navigator.clipboard.writeText(`https://twinge.mcteamster.com/${this.props.state.roomCode}`);
         } catch (err) {
           console.err("Fallback Copy Method")
           code.select();
-          code.value = `${window.location.origin}/${this.props.state.roomCode}`;
+          code.value = `https://twinge.mcteamster.com/${this.props.state.roomCode}`;
           code.setSelectionRange(0, 99999);
           document.execCommand("copy");
           code.value = this.props.state.roomCode;
@@ -123,11 +123,11 @@ class Modal extends React.Component {
         code.classList.remove('clickedLink');
       }, 250);
       try {
-        window.navigator.clipboard.writeText(`${window.location.origin}/${this.props.state.roomCode}`);
+        window.navigator.clipboard.writeText(`https://twinge.mcteamster.com/${this.props.state.roomCode}`);
       } catch (err) {
         console.err("Fallback Copy Method")
         code.select();
-        code.value = `${window.location.origin}/${this.props.state.roomCode}`;
+        code.value = `https://twinge.mcteamster.com/${this.props.state.roomCode}`;
         code.setSelectionRange(0, 99999);
         document.execCommand("copy");
         code.value = this.props.state.roomCode;
@@ -141,9 +141,9 @@ class Modal extends React.Component {
         <div className='centered' style={{ flexDirection: 'column' }}>
           <div id='roomUrl' onClick={this.copyToClipboard} style={{ fontSize: "0.75em", padding: '1em' }}>
             Tap to Copy<br></br>
-            <u>{`${window.location.host}/${this.props.state.roomCode}`}</u>
+            <u>{`twinge.mcteamster.com/${this.props.state.roomCode}`}</u>
           </div>
-          <QRCode value={`${window.location.origin}/${this.props.state.roomCode}`} style={{ padding: '1em' }}></QRCode>
+          <QRCode value={`https://twinge.mcteamster.com/${this.props.state.roomCode}`} style={{ padding: '1em' }}></QRCode>
           <div className='back' onClick={this.props.toggleQR}>🔙</div>
         </div>
       }
