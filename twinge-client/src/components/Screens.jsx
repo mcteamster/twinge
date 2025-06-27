@@ -121,6 +121,10 @@ class About extends React.Component {
             🛜 <b>Reconnecting</b><br></br>
             The game will automatically attempt to reconnect to the last active game. If this fails, try refreshing the page. In the worst case, rejoin and kick the idle player.            
           </p>
+          <p>
+            🔎 <b>Privacy</b><br></br>
+            No personally identifiable information is collected. Anonymous user stats are collected through the use of Microsoft Clarity.            
+          </p>
         </div>
         <div className='aboutParagraph back' onClick={() => {
           window.location.pathname = '';
