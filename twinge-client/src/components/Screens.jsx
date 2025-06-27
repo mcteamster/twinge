@@ -122,8 +122,7 @@ class About extends React.Component {
             The game will automatically attempt to reconnect to the last active game. If this fails, try refreshing the page. In the worst case, rejoin and kick the idle player.            
           </p>
           <p>
-            🔎 <b>Privacy</b><br></br>
-            No personally identifiable information is collected. Anonymous user stats are collected through the use of Microsoft Clarity.            
+            <a href='legal'>Terms of Service and Privacy Policy</a>
           </p>
         </div>
         <div className='aboutParagraph back' onClick={() => {
@@ -133,4 +132,45 @@ class About extends React.Component {
   }
 }
 
-export { About, Lobby, Play }
+class Legal extends React.Component {
+  render() {
+    return <div className='About'>
+        <div className='aboutParagraph'>
+          <p><b>Terms of Service</b></p>
+          <p>
+            By accessing this website, we assume you accept these terms and conditions. 
+            Do not continue to use twinge if you do not agree to take all of the terms and conditions stated on this page.
+          </p>
+          <p>
+            Twinge is provided "as is" and "as available." We make no representations or warranties of any kind, 
+            express or implied, as to the operation of the Game, including but not limited to any implied warranties of merchantability, 
+            fitness for a particular purpose, or non-infringement.
+          </p>
+          <p>
+            You agree not to violate any laws or regulations while playing, or interfere with other users' enjoyment of the game.
+          </p>
+          <p>
+            In no event shall we be liable for any indirect, incidental, special, consequential, or punitive damages arising out of your use of Twinge,
+            even if we have been advised of the possibility of such damages.
+          </p>
+          <p>
+            We reserve the right, at our sole discretion, to modify or replace these Terms of Service at any time.
+          </p>
+          <p><b>Privacy Policy</b></p>
+          <p>
+            When you visit the website, we automatically collect anonymised user stats through Microsoft Clarity.
+            This includes information about your device, such as web browser, time zone, and how you interact with the website.
+            We use this information to improve the game development experience.</p>
+          <p>
+            We may update this Privacy Policy from time to time in response to changing legal, technical, or business developments. 
+            When we update our Privacy Policy, we will take steps to make sure that these changes are brought to your attention and posted on this page.
+          </p>
+        </div>
+        <div className='back' onClick={() => {
+          window.location.pathname = '';
+        }}>🔙</div>
+      </div>
+  }
+}
+
+export { About, Lobby, Play, Legal }

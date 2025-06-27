@@ -1,4 +1,6 @@
 # Twinge
+![cover_art](./docs/cover_art.png)
+
 This is a co-operative card game based off The Mind by Wolfgang Warsch. Players work together to get through a deck of 10-1000 cards in ascending order. Hands are dealt with increasing size, and cards are played at any time; without replacement. Difficulty may be adjusted by granting up to 100 extra lives to compensate for missing cards out of order.
 
 ![gameplay](./docs/gameplay.gif)

@@ -1,6 +1,6 @@
 import './App.css';
 import { Header, Footer, Overlay, Modal } from './components/Banners';
-import { About, Lobby, Play } from './components/Screens'
+import { About, Lobby, Play, Legal } from './components/Screens'
 import { AWS_REGIONS, ENDPOINTS, getRegionFromCode } from './constants/constants';
 import { AudioContext, audioSettings } from './context/AudioContext';
 import React from 'react';
@@ -239,6 +239,10 @@ class App extends React.Component {
     } else if (window.location.pathname.match('/about')) {
       return <div className='App'>
         <About></About>
+      </div>
+    } else if (window.location.pathname.match('/legal')) {
+      return <div className='App'>
+        <Legal></Legal>
       </div>
     } else if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed') {
       return <div className='App unselectable'>
