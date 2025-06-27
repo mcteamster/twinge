@@ -227,6 +227,15 @@ class App extends React.Component {
   }
 
   render() {
+    // Force Clean State for Discord
+    const queryParams = new URLSearchParams(window.location.search);
+    if (queryParams.has('discord') && queryParams.get('discord') == 1) {
+      localStorage.setItem('gameId', null);
+      localStorage.setItem('playerId', null);
+      localStorage.setItem('createTime', null);
+      window.history.replaceState({}, document.title, "/");
+    }
+
     // Check for In-App Browsers
     if (navigator.userAgent.match(/FBAN|FBAV|Instagram/i)) {
       console.warn('In-app browser detected');
@@ -245,13 +254,6 @@ class App extends React.Component {
         <Legal></Legal>
       </div>
     } else if ((!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed')) {
-      // Force Clean State
-      if (window.location.pathname.match('/app')) {
-        localStorage.setItem('gameId', null);
-        localStorage.setItem('playerId', null);
-        localStorage.setItem('createTime', null);
-        window.history.replaceState({}, document.title, "/");
-      }
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
           <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
