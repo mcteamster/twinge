@@ -227,15 +227,6 @@ class App extends React.Component {
   }
 
   render() {
-    // Force Clean State for Discord
-    const queryParams = new URLSearchParams(window.location.search);
-    if (queryParams.has('discord') && queryParams.get('discord') == 1) {
-      localStorage.setItem('gameId', null);
-      localStorage.setItem('playerId', null);
-      localStorage.setItem('createTime', null);
-      window.history.replaceState({}, document.title, "/");
-    }
-
     // Check for In-App Browsers
     if (navigator.userAgent.match(/FBAN|FBAV|Instagram/i)) {
       console.warn('In-app browser detected');

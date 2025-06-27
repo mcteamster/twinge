@@ -4,6 +4,11 @@ import { ENDPOINTS } from './constants';
 // Initialise Discord Integration
 export function initaliseDiscord() {
   if ((new URLSearchParams(window.location.href)).get('frame_id')) {
+    // Purge Persistent State
+    localStorage.setItem('gameId', null);
+    localStorage.setItem('playerId', null);
+    localStorage.setItem('createTime', null);
+
     // Patch Service URLs for CSP compatibiltiy with the Discord proxy
     const urlPatches = Object.keys(ENDPOINTS).map((endpoint) => {
       return {
