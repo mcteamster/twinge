@@ -244,7 +244,14 @@ class App extends React.Component {
       return <div className='App'>
         <Legal></Legal>
       </div>
-    } else if (!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed') {
+    } else if ((!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed')) {
+      // Force Clean State
+      if (window.location.pathname.match('/app')) {
+        localStorage.setItem('gameId', null);
+        localStorage.setItem('playerId', null);
+        localStorage.setItem('createTime', null);
+        window.history.replaceState({}, document.title, "/");
+      }
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
           <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
