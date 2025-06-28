@@ -109,24 +109,24 @@ class Overlay extends React.Component {
     let message = <div>Please Adjust Screen</div>;
     if (this.props.overlay.message) {
       message = <>{this.props.overlay.message}</>
-    } else if (this.props.state?.gamestate?.public?.pile.length > 0) {
+    } else if ((this.props.state?.gamestate?.public?.pile.length > 0) || this.props.state?.gamestate?.meta?.round == 1) {
       let pile = this.props.state?.gamestate?.public?.pile;
       let latestCard = 0;
-      if (pile[pile.length - 1]?.round == this.props.state?.gamestate?.meta?.round) {
+      if ((pile[pile.length - 1]?.round == this.props.state?.gamestate?.meta?.round)) {
         latestCard = pile[pile.length - 1]?.card
       }
       let activePlayer = this.props.state.gamestate.players.find((player) => { return player.playerId === this.props.state.playerId });
-      let lowestHand = '-';
+      let lowestHand = <></>;
       if (activePlayer.hand[0]) {
-        lowestHand = activePlayer.hand[0]
+        lowestHand = <div style={{ fontSize: '0.75em' }}>
+          ✋&nbsp;{activePlayer.hand[0]}
+        </div>
       }
       message = <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-around', alignItems: 'center' }}>
-        <div style={{ fontSize: '2em' }}>
-          ⬆️&nbsp;{latestCard}
+        <div style={{ fontSize: '1.5em' }}>
+          {latestCard}
         </div>
-        <div style={{ fontSize: '0.75em' }}>
-          ✋&nbsp;{lowestHand}
-        </div>
+        {lowestHand}
       </div>
     }
 
