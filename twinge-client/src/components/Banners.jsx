@@ -106,8 +106,32 @@ class Footer extends React.Component {
 
 class Overlay extends React.Component {
   render() {
+    let message = <div>Please Adjust Screen</div>;
+    if (this.props.overlay.message) {
+      message = <>{this.props.overlay.message}</>
+    } else if (this.props.state?.gamestate?.public?.pile.length > 0) {
+      let pile = this.props.state?.gamestate?.public?.pile;
+      let latestCard = 0;
+      if (pile[pile.length - 1]?.round == this.props.state?.gamestate?.meta?.round) {
+        latestCard = pile[pile.length - 1]?.card
+      }
+      let activePlayer = this.props.state.gamestate.players.find((player) => { return player.playerId === this.props.state.playerId });
+      let lowestHand = '-';
+      if (activePlayer.hand[0]) {
+        lowestHand = activePlayer.hand[0]
+      }
+      message = <div style={{ width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-around', alignItems: 'center' }}>
+        <div style={{ fontSize: '2em' }}>
+          ⬆️&nbsp;{latestCard}
+        </div>
+        <div style={{ fontSize: '0.75em' }}>
+          ✋&nbsp;{lowestHand}
+        </div>
+      </div>
+    }
+
     return <div className='Overlay centered' style={this.props.overlay.message !== '' ? { display: 'flex' } : { display: 'none' }}>
-      <div>{this.props.overlay.message || <div>&#8635;</div>}</div>
+      {message}
     </div>
   }
 }

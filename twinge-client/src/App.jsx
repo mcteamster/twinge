@@ -219,7 +219,7 @@ class App extends React.Component {
         this.sendMsg(msg)
       }, 1000)
     } else if (!this.ws || this.ws.readyState !== 1) {
-      this.setState({ overlay: { message: 'Disconnected...' } });
+      this.setState({ overlay: { message: 'Disconnected. Please Try Refreshing.' } });
       this.setRegion(this.state.region)
     } else {
       this.ws.send(JSON.stringify(msg));
@@ -261,7 +261,7 @@ class App extends React.Component {
           <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} audio={this.audio}></Play>
           <Footer state={this.state}></Footer>
           <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
-          <Overlay overlay={this.state.overlay}></Overlay>
+          <Overlay state={this.state} overlay={this.state.overlay}></Overlay>
         </AudioContext.Provider>
       </div>
     }
