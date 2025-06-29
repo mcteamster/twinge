@@ -28,7 +28,7 @@ class RegionSelect extends React.Component {
                 key={region}
                 onClick={() => {
                   this.setState({ regionSelect: false });
-                  this.props.setRegion(region);
+                  this.props.setRegion(region, false);
                 }}
                 style={{
                   width: '4em',

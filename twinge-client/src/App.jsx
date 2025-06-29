@@ -40,7 +40,7 @@ class App extends React.Component {
         }
       }));
     }
-    this.setRegion = (region) => {
+    this.setRegion = (region, autoJoin) => {
       console.debug('Region:', region)
       this.setState((state) => {
         state.region = region
@@ -48,7 +48,7 @@ class App extends React.Component {
       });
       localStorage.setItem('region', region);
       let ws = new WebSocket(ENDPOINTS[region])
-      ws.onopen = this.autoJoin;
+      ws.onopen = autoJoin != false ? this.autoJoin : () => {};
       ws.onmessage = this.messageHandler;
       this.ws = ws;
     }
@@ -98,8 +98,14 @@ class App extends React.Component {
       console.debug(`Checking room info for: ${localStorage.getItem('channel_id')}`)
       const roomData = await (await fetch(`https://api.mcteamster.com/common/rooms/${localStorage.getItem('channel_id')}`)).json()
       if (roomData.room) {
-        this.setState({ overlay: { message: 'Connecting...' } });
-        this.sendMsg({ action: 'play', actionType: 'join', roomCode: roomData.room });
+        if (getRegionFromCode(roomData.room) != this.state.region) {
+          // Handle Region Mismatch
+          this.setState({ overlay: { message: 'Connecting...' } });
+          this.setRegion(getRegionFromCode(roomData.room));
+        } else {
+          this.setState({ overlay: { message: 'Connecting...' } });
+          this.sendMsg({ action: 'play', actionType: 'join', roomCode: roomData.room });
+        }
       }
     }
   };
