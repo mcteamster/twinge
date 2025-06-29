@@ -3,19 +3,25 @@ import { ENDPOINTS } from './constants';
 
 // Initialise Discord Integration
 export function initaliseDiscord() {
-  if ((new URLSearchParams(window.location.href)).get('frame_id')) {
-    // Purge Persistent State
-    localStorage.setItem('gameId', null);
-    localStorage.setItem('playerId', null);
-    localStorage.setItem('createTime', null);
+  const params = new URLSearchParams(window.location.href);
+
+  if (params.get('frame_id')) {
+    // Set Session State for Discord
+    sessionStorage.setItem('channel_id', params.get('channel_id'))
 
     // Patch Service URLs for CSP compatibiltiy with the Discord proxy
-    const urlPatches = Object.keys(ENDPOINTS).map((endpoint) => {
-      return {
-        prefix: `/${endpoint.toLowerCase()}`,
-        target: ENDPOINTS[endpoint].replace('wss://', '')
-      }
-    })
+    const urlPatches = [
+      {
+        prefix: '/api',
+        target: 'api.mcteamster.com'
+      },
+      ...Object.keys(ENDPOINTS).map((endpoint) => {
+        return {
+          prefix: `/${endpoint.toLowerCase()}`,
+          target: ENDPOINTS[endpoint].replace('wss://', '')
+        }
+      })
+    ]
     patchUrlMappings(urlPatches);
 
     // Setup SDK
@@ -23,7 +29,7 @@ export function initaliseDiscord() {
     (async () => {
       // Configuration
       await discordSdk.ready();
-    })().then(() => {
+    })().then(async () => {
       // Usage
       console.info("Discord SDK is ready");
     });

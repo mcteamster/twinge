@@ -81,8 +81,9 @@ class App extends React.Component {
   }
 
   autoJoin = async () => {
-    // Join from path if supplied, otherwise join from memory
+    // Join from Path, Memory, or Discord Channel's latest session
     let createTime = new Date(localStorage.getItem('createTime'));
+    console.debug(createTime)
     let currentTime = new Date();
     let path = window.location.pathname.slice(1);
 
@@ -93,6 +94,13 @@ class App extends React.Component {
     } else if (createTime > currentTime.setHours(currentTime.getHours() - 1)) {
       this.setState({ overlay: { message: 'Connecting...' } });
       this.sendMsg({ action: 'play', actionType: 'join', gameId: this.state.gameId, playerId: this.state.playerId });
+    } else if (sessionStorage.getItem('channel_id')) {
+      console.debug(`Checking room info for: ${sessionStorage.getItem('channel_id')}`)
+      const roomData = await (await fetch(`https://api.mcteamster.com/common/rooms/${sessionStorage.getItem('channel_id')}`)).json()
+      if (roomData.room) {
+        this.setState({ overlay: { message: 'Connecting...' } });
+        this.sendMsg({ action: 'play', actionType: 'join', roomCode: roomData.room });
+      }
     }
   };
 
@@ -115,6 +123,14 @@ class App extends React.Component {
   }
 
   gamestateHandler = (data) => {
+    // Publish room code upon creation in Discord
+    if (sessionStorage.getItem('channel_id') && data.roomCode && data?.gamestate?.meta?.phase == 'open' && data?.gamestate?.players?.length == 1) {
+      fetch(`https://api.mcteamster.com/common/rooms/${sessionStorage.getItem('channel_id')}/${data.roomCode}`, {
+        method: "PUT",
+      })
+    }
+
+    // Update Cursor 
     if ((data?.gamestate?.public?.pile && !this.cursor) || (data?.gamestate?.public?.pile[this?.cursor - 1]?.round !== data?.gamestate?.meta?.round)) {
       this.cursor = 1 + data.gamestate.public.pile.map((card) => { return card.round }).lastIndexOf(data.gamestate.meta.round - 1);
       if (this.cursor < 0) {
@@ -122,6 +138,7 @@ class App extends React.Component {
       }
     }
 
+    // Animations if gamestate has progressed
     if ((data?.gamestate?.public?.pile.length > this.cursor)) {
       for (let i = this.cursor; i < (data?.gamestate?.public?.pile.length); i++) {
         let game = JSON.parse(JSON.stringify(data));
