@@ -121,7 +121,7 @@ class About extends React.Component {
           🛜 <b>Reconnecting</b><br></br>
           The game will automatically attempt to reconnect to the last active game. If this fails, try refreshing the page. In the worst case, rejoin and kick the idle player.
         </p>
-        <p onClick={() => { window.location.href = 'legal' }} style={{ cursor: 'pointer' }}>
+        <p onClick={() => { window.location.pathname = 'legal' }} style={{ cursor: 'pointer' }}>
           <a>Terms of Service</a> and <a>Privacy Policy</a>
         </p>
       </div>
