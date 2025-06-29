@@ -94,9 +94,9 @@ class App extends React.Component {
     } else if (createTime > currentTime.setHours(currentTime.getHours() - 1)) {
       this.setState({ overlay: { message: 'Connecting...' } });
       this.sendMsg({ action: 'play', actionType: 'join', gameId: this.state.gameId, playerId: this.state.playerId });
-    } else if (sessionStorage.getItem('channel_id')) {
-      console.debug(`Checking room info for: ${sessionStorage.getItem('channel_id')}`)
-      const roomData = await (await fetch(`https://api.mcteamster.com/common/rooms/${sessionStorage.getItem('channel_id')}`)).json()
+    } else if (localStorage.getItem('channel_id')) {
+      console.debug(`Checking room info for: ${localStorage.getItem('channel_id')}`)
+      const roomData = await (await fetch(`https://api.mcteamster.com/common/rooms/${localStorage.getItem('channel_id')}`)).json()
       if (roomData.room) {
         this.setState({ overlay: { message: 'Connecting...' } });
         this.sendMsg({ action: 'play', actionType: 'join', roomCode: roomData.room });
@@ -124,8 +124,8 @@ class App extends React.Component {
 
   gamestateHandler = (data) => {
     // Publish room code upon creation in Discord
-    if (sessionStorage.getItem('channel_id') && data.roomCode && data?.gamestate?.meta?.phase == 'open' && data?.gamestate?.players?.length == 1) {
-      fetch(`https://api.mcteamster.com/common/rooms/${sessionStorage.getItem('channel_id')}/${data.roomCode}`, {
+    if (localStorage.getItem('channel_id') && data.roomCode && data?.gamestate?.meta?.phase == 'open' && data?.gamestate?.players?.length == 1) {
+      fetch(`https://api.mcteamster.com/common/rooms/${localStorage.getItem('channel_id')}/${data.roomCode}`, {
         method: "PUT",
       })
     }
