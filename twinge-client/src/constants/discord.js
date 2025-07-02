@@ -6,15 +6,6 @@ export function initaliseDiscord() {
   const params = new URLSearchParams(window.location.href);
 
   if (params.get('frame_id')) {
-    // Set State for Discord
-    if (!localStorage.getItem('channel_id') || (localStorage.getItem('channel_id') != params.get('channel_id'))) {
-      // Purge local state on new sessions or when changing channels
-      localStorage.setItem('gameId', null);
-      localStorage.setItem('playerId', null);
-      localStorage.setItem('createTime', null);
-    }
-    localStorage.setItem('channel_id', params.get('channel_id'))
-
     // Patch Service URLs for CSP compatibiltiy with the Discord proxy
     const urlPatches = [
       {
@@ -38,6 +29,14 @@ export function initaliseDiscord() {
     })().then(async () => {
       // Usage
       console.info("Discord SDK is ready");
+      
+      // Purge local state on new sessions
+      if (!localStorage.getItem('instance_id') || (localStorage.getItem('instance_id') != discordSdk.instanceId)) {
+        localStorage.setItem('gameId', null);
+        localStorage.setItem('playerId', null);
+        localStorage.setItem('createTime', null);
+      }
+      localStorage.setItem('instance_id', discordSdk.instanceId)
     });
     return true
   } else {
