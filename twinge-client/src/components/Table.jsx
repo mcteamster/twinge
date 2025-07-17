@@ -167,7 +167,7 @@ class Status extends React.Component {
 
     // Deck
     let deck = `${(100*(this.props.state?.gamestate?.config?.deckSize - remainingCards)/this.props.state?.gamestate?.config?.deckSize).toFixed(1)}%`;
-    return <div className='Status' style={ discordSdk && ((window.innerWidth/window.innerHeight) < 1) && { top: '6em' } }>
+    return <div className='Status' style={ (discordSdk && ((window.innerWidth/window.innerHeight) < 1)) ? { top: '6em' } : {} }>
       <div style={{ width: '4em'}}>
         <b>Level</b>
         <br></br>

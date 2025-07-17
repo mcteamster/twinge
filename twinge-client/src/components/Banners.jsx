@@ -60,7 +60,7 @@ class RegionSelect extends React.Component {
 
 class Header extends React.Component {
   render() {
-    return <div className='Header' style={ discordSdk && ((window.innerWidth/window.innerHeight) < 1) && { height: '4.75em', alignItems: 'flex-end', paddingBottom: '0.5em'} }>
+    return <div className='Header' style={ (discordSdk && ((window.innerWidth/window.innerHeight) < 1)) ? { height: '4.75em', alignItems: 'flex-end', paddingBottom: '0.5em'} : {} }>
       <div id='title' style={{ width: '4em', fontSize: '1.25em' }} onClick={() => { window.location.pathname = 'about' }}>
         twinge
       </div>
