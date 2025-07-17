@@ -2,6 +2,7 @@ import { DiscordSDK, patchUrlMappings } from "@discord/embedded-app-sdk";
 import { ENDPOINTS } from './constants';
 
 // Initialise Discord Integration
+export let discordSdk;
 export function initaliseDiscord() {
   const params = new URLSearchParams(window.location.href);
 
@@ -22,7 +23,7 @@ export function initaliseDiscord() {
     patchUrlMappings(urlPatches);
 
     // Setup SDK
-    const discordSdk = new DiscordSDK("1385639813268373587");
+    discordSdk = new DiscordSDK("1385639813268373587");
     (async () => {
       // Configuration
       await discordSdk.ready();

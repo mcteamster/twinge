@@ -1,6 +1,7 @@
 import React from 'react';
 import { Players, Status, Latest, Pile, Hand } from './Table';
 import { Create, Join, Rename, Start } from './Buttons';
+import { discordSdk } from '../constants/discord';
 
 class Lobby extends React.Component {
   constructor(props) {
@@ -125,7 +126,7 @@ class About extends React.Component {
           <a>Terms of Service</a> and <a>Privacy Policy</a>
         </p>
       </div>
-      <div className='aboutParagraph back' onClick={() => {
+      <div className='back' style={ discordSdk && { top: '1em' } } onClick={() => {
         window.location.pathname = '';
       }}>🔙</div>
     </div>
@@ -166,7 +167,7 @@ class Legal extends React.Component {
           When we update our Privacy Policy, we will take steps to make sure that these changes are brought to your attention and posted on this page.
         </p>
       </div>
-      <div className='back' onClick={() => {
+      <div className='back' style={ discordSdk && { top: '1em' } } onClick={() => {
         window.location.pathname = '';
       }}>🔙</div>
     </div>

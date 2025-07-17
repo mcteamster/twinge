@@ -1,5 +1,6 @@
 import React from 'react';
 import { AudioContext } from '../context/AudioContext';
+import { discordSdk } from '../constants/discord';
 
 class Players extends React.Component {
   constructor(props) {
@@ -166,7 +167,7 @@ class Status extends React.Component {
 
     // Deck
     let deck = `${(100*(this.props.state?.gamestate?.config?.deckSize - remainingCards)/this.props.state?.gamestate?.config?.deckSize).toFixed(1)}%`;
-    return <div className='Status'>
+    return <div className='Status' style={ discordSdk && { top: '6em' } }>
       <div style={{ width: '4em'}}>
         <b>Level</b>
         <br></br>

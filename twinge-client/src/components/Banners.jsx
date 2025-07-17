@@ -1,6 +1,7 @@
 import React from 'react';
 import QRCode from "react-qr-code";
 import { FLAGS } from '../constants/constants';
+import { discordSdk } from '../constants/discord';
 
 class RegionSelect extends React.Component {
   constructor(props) {
@@ -59,7 +60,7 @@ class RegionSelect extends React.Component {
 
 class Header extends React.Component {
   render() {
-    return <div className='Header'>
+    return <div className='Header' style={ discordSdk && { height: '4.75em', alignItems: 'flex-end', paddingBottom: '0.5em'} }>
       <div id='title' style={{ width: '4em', fontSize: '1.25em' }} onClick={() => { window.location.pathname = 'about' }}>
         twinge
       </div>
@@ -168,7 +169,7 @@ class Modal extends React.Component {
             <u>{`twinge.mcteamster.com/${this.props.state.roomCode}`}</u>
           </div>
           <QRCode value={`https://twinge.mcteamster.com/${this.props.state.roomCode}`} style={{ padding: '1em' }}></QRCode>
-          <div className='back' onClick={this.props.toggleQR}>🔙</div>
+          <div style={{ fontSize: '3em' }} onClick={this.props.toggleQR}>🔙</div>
         </div>
       }
     </div>
