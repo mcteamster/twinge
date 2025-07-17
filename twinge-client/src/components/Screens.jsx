@@ -126,7 +126,7 @@ class About extends React.Component {
           <a>Terms of Service</a> and <a>Privacy Policy</a>
         </p>
       </div>
-      <div className='back' style={ discordSdk && { top: '1em' } } onClick={() => {
+      <div className='back' style={ discordSdk && ((window.innerWidth/window.innerHeight) < 1) && { top: '1em' } } onClick={() => {
         window.location.pathname = '';
       }}>🔙</div>
     </div>
@@ -167,7 +167,7 @@ class Legal extends React.Component {
           When we update our Privacy Policy, we will take steps to make sure that these changes are brought to your attention and posted on this page.
         </p>
       </div>
-      <div className='back' style={ discordSdk && { top: '1em' } } onClick={() => {
+      <div className='back' style={ discordSdk && ((window.innerWidth/window.innerHeight) < 1) && { top: '1em' } } onClick={() => {
         window.location.pathname = '';
       }}>🔙</div>
     </div>
