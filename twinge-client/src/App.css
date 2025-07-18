@@ -107,6 +107,17 @@ body {
   font-weight: bold;
 }
 
+.Notice {
+  position: fixed;
+  bottom: 0.5em;
+  left: 0;
+  width: 100vw;
+  z-index: 925;
+  font-size: 0.75em;
+  font-weight: bold;
+  text-align: center;
+}
+
 .Lobby {
   grid-area: screen;
   display: flex;

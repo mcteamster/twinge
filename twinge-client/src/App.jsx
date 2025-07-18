@@ -1,5 +1,5 @@
 import './App.css';
-import { Header, Footer, Overlay, Modal } from './components/Banners';
+import { Header, Footer, Overlay, Modal, Notices } from './components/Banners';
 import { About, Lobby, Play, Legal } from './components/Screens'
 import { AWS_REGIONS, ENDPOINTS, getRegionFromCode } from './constants/constants';
 import { AudioContext, audioSettings } from './context/AudioContext';
@@ -275,6 +275,7 @@ class App extends React.Component {
           <Footer state={this.state}></Footer>
           <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
           <Overlay overlay={this.state.overlay}></Overlay>
+          <Notices region={this.state.region} />
         </AudioContext.Provider>
       </div>
     } else {
@@ -285,6 +286,7 @@ class App extends React.Component {
           <Footer state={this.state}></Footer>
           <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
           <Overlay state={this.state} overlay={this.state.overlay}></Overlay>
+          <Notices region={this.state.region} />
         </AudioContext.Provider>
       </div>
     }
