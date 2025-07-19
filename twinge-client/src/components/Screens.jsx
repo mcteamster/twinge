@@ -82,6 +82,15 @@ class About extends React.Component {
       <div className='aboutParagraph'>
         <p><b>twinge</b> by <a href='https://mcteamster.com' target='_blank' rel="noreferrer">mcteamster</a></p>
         <p>A co-operative card game inspired by Wolfgang Warsch's <a href='https://boardgamegeek.com/boardgame/244992/mind' target='_blank' rel="noreferrer">The Mind</a>.</p>
+        {
+          !discordSdk &&         
+          <p className='centered'>
+            <a className='discordButton' href='https://discord.com/discovery/applications/1385639813268373587' target='_blank'>
+              <img height='25' width='25' src='discord.svg' /><br></br>
+              Open in Discord
+            </a>
+          </p>
+        }
         <p>
           🏁 <b>Goal</b><br></br>
           Work together to get through a series of 10-1000 cards by playing in ascending order. There are no turns, anyone can play at any time!

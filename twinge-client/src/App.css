@@ -525,6 +525,15 @@ a {
   max-width: calc(min(40em, 80vw));
 }
 
+.discordButton {
+  width: 10em;
+  padding: 0.25em;
+  border-radius: 1em;
+  background-color: #5865F2;
+  text-decoration: none;
+  cursor: pointer;
+}
+
 .back {
   position: fixed;
   top: 0;
