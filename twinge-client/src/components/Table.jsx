@@ -268,14 +268,14 @@ class Hand extends React.Component {
         this.cancelBuffer();
       } else {
         let state = {};
-        state[buffer] = this.state[buffer] + 1;
+        state[buffer] = this.state[buffer] == 0 ? 10 : this.state[buffer] + 1;
         this.setState(state)
       }
     }, 20)
   }
 
   triggerBuffer = (buffer, msg) => {
-    if (this.state[buffer] <= 200 && this.state[buffer] > 25) {
+    if (this.state[buffer] <= 150 && this.state[buffer] > 25) {
       this.sendMsg(msg);
     }
     this.cancelBuffer();
@@ -300,23 +300,23 @@ class Hand extends React.Component {
       [hue, saturation, lightness] = [225, 72.7, 56.9]
     }
 
-    if (buffer > 200) {
+    if (buffer > 150) {
       // white HSL(0, 0%, 100%)
       [hue, saturation, lightness] = [0, 0, 100]
-    } else if (buffer > 175) {
+    } else if (buffer > 125) {
       // rebeccapurple HSL(270, 67%, 60%)
       [hue, saturation, lightness] = [270, 67, 60]
-    } else if (buffer > 75) {
+    } else if (buffer > 25) {
       if (initial === 'royalblue') {
         // royalblue HSL(225, 72.7%, 56.9%)
-        hue = 225 - (225 - 270) * (buffer - 75) / 100;
-        saturation = 72.7 - (72.7 - 67) * (buffer - 75) / 100;
-        lightness = 56.9 - (56.9 - 60) * (buffer - 75) / 100;
+        hue = 225 - (225 - 270) * (buffer - 25) / 100;
+        saturation = 72.7 - (72.7 - 67) * (buffer - 25) / 100;
+        lightness = 56.9 - (56.9 - 60) * (buffer - 25) / 100;
       } else {
         // skyblue HSL(197.4, 71.4%, 72.5%)
-        hue = 197.4 - (197.4 - 270) * (buffer - 75) / 100;
-        saturation = 71.4 - (71.4 - 67) * (buffer - 75) / 100;
-        lightness = 72.5 - (72.5 - 60) * (buffer - 75) / 100;
+        hue = 197.4 - (197.4 - 270) * (buffer - 25) / 100;
+        saturation = 71.4 - (71.4 - 67) * (buffer - 25) / 100;
+        lightness = 72.5 - (72.5 - 60) * (buffer - 25) / 100;
       }
     }
     return `HSL(${hue}, ${saturation}%, ${lightness}%)`
@@ -388,8 +388,8 @@ class Hand extends React.Component {
             >
               {this.props.state.gamestate.meta.round <= 4 &&
                 <div className='handTooltip'>
-                  {(this.state.cardBuffer <= 25 || this.state.cardBuffer > 200) && <div>👇 Tap and Hold to Prep</div>}
-                  {(this.state.cardBuffer > 25 && this.state.cardBuffer <= 200) &&
+                  {(this.state.cardBuffer <= 25 || this.state.cardBuffer > 150) && <div>👇 Tap and Hold to Prep</div>}
+                  {(this.state.cardBuffer > 25 && this.state.cardBuffer <= 150) &&
                     <div>
                       👋 Release to Play or Hold to Cancel 👎
                     </div>
