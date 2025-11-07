@@ -261,6 +261,43 @@ class Hand extends React.Component {
     this.stateHash = this.props.state.stateHash;
   }
 
+  componentDidMount() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key == " ") {
+        if (this.props.state.gamestate.meta.phase === 'won' || this.props.state.gamestate.meta.phase === 'lost') {
+          if (this.state.replayBuffer == 0) {
+            this.startBuffer('replayBuffer');
+          }
+        } else {
+          let unplayedCards = this.props.state.gamestate.players.reduce((playerCards, player) => { return playerCards += player.handSize }, 0);
+          if (unplayedCards > 0) {
+            if (this.state.cardBuffer == 0) {
+              this.startBuffer('cardBuffer');
+            }
+          } else {
+            if (this.state.nextBuffer == 0) {
+              this.startBuffer('nextBuffer');
+            }
+          }
+        }
+      }
+    })
+    document.addEventListener('keyup', (e) => {
+      console.log(e)
+      if (e.key == " ") {
+        if (this.state.cardBuffer > 0) {
+          this.triggerBuffer('cardBuffer', 'twinge');
+        }
+        if (this.state.nextBuffer > 0) {
+          this.triggerBuffer('nextBuffer', 'next');
+        }
+        if (this.state.replayBuffer > 0) {
+          this.triggerBuffer('replayBuffer', 'restart');
+        }
+      }
+    })
+  }
+
   startBuffer = (buffer) => {
     this.cancelBuffer();
     this.interval = setInterval(() => {
@@ -366,15 +403,18 @@ class Hand extends React.Component {
           let hand = activePlayer.hand.map((card, i, a) => {
             // Check for consecutive next cards to be played together
             let wrapperClass = '';
-            let bufferStyle = {};
+            let borderStyle = { position: "relative" };
+            let bufferStyle = { position: "relative" };
             if (a.length === unplayedCards) {
               wrapperClass = 'autoCard';
-              bufferStyle = { background: `radial-gradient(circle, ${this.bufferColor(this.state.cardBuffer, 'royalblue')}, ${this.bufferColor(this.state.cardBuffer, 'royalblue')} ${4 * this.state.cardBuffer}%, white ${4 * this.state.cardBuffer}%, white)` }
+              borderStyle.bottom = this.state.cardBuffer < 150 ? (this.state.cardBuffer < 25 ? `${this.state.cardBuffer * (-0.2)}em` : "-5em") : 0;
+              bufferStyle.background = `radial-gradient(circle, ${this.bufferColor(this.state.cardBuffer, 'royalblue')}, ${this.bufferColor(this.state.cardBuffer, 'royalblue')} ${4 * this.state.cardBuffer}%, white ${4 * this.state.cardBuffer}%, white)`;
             } else if (card === a[0] + i) {
               wrapperClass = 'nextCard';
-              bufferStyle = { background: `radial-gradient(circle, ${this.bufferColor(this.state.cardBuffer)}, ${this.bufferColor(this.state.cardBuffer)} ${4 * this.state.cardBuffer}%, white ${4 * this.state.cardBuffer}%, white)` }
+              borderStyle.bottom = this.state.cardBuffer < 150 ? (this.state.cardBuffer < 25 ? `${this.state.cardBuffer * (-0.2)}em` : "-5em") : 0;
+              bufferStyle.background = `radial-gradient(circle, ${this.bufferColor(this.state.cardBuffer)}, ${this.bufferColor(this.state.cardBuffer)} ${4 * this.state.cardBuffer}%, white ${4 * this.state.cardBuffer}%, white)`;
             }
-            return <div key={`h${i + 1}`} className={`cardWrapper ${wrapperClass}`} style={{ 'zIndex': a.length - i }}>
+            return <div key={`h${card}`} className={`cardWrapper ${wrapperClass}`} style={{ ...borderStyle, 'zIndex': a.length - i }}>
               <Card value={card} style={bufferStyle}></Card>
             </div>
           });
@@ -388,10 +428,16 @@ class Hand extends React.Component {
             >
               {this.props.state.gamestate.meta.round <= 4 &&
                 <div className='handTooltip'>
-                  {(this.state.cardBuffer <= 25 || this.state.cardBuffer > 150) && <div>👇 Tap and Hold to Prep</div>}
+                  {(this.state.cardBuffer <= 25 || this.state.cardBuffer > 150) && 
+                    <div>
+                      👇 PRESS to Start when you<br></br>
+                       think you're the lowest ⬇️<br></br>
+                    </div>
+                  }
                   {(this.state.cardBuffer > 25 && this.state.cardBuffer <= 150) &&
                     <div>
-                      👋 Release to Play or Hold to Cancel 👎
+                      👋 RELEASE to Send or<br></br>
+                      keep HOLDING to Cancel 🙅
                     </div>
                   }
                 </div>

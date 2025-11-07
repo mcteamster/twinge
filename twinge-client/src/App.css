@@ -392,14 +392,24 @@ a {
   height: 30vh;
   width: 20vh;
   font-size: 3em;
-  animation: playLatest 0.5s 1;
+  animation: playLatest 0.25s 1;
 }
 
 @keyframes playLatest {
   0% {
     position: relative;
     left: 0px;
-    top: 5vh;
+    top: 4vh;
+  }
+  33% {
+    position: relative;
+    left: 0px;
+    top: -2vh;
+  }
+  67% {
+    position: relative;
+    left: 0px;
+    top: 1vh;
   }
   100% {
     position: relative;
@@ -412,7 +422,7 @@ a {
   height: 4vh;
   width: 5.5em;
   font-size: 0.75em;
-  animation: playPile 0.5s 1;
+  animation: playPile 0.25s 1;
 }
 
 @keyframes playPile {
@@ -467,6 +477,18 @@ a {
 .nextCard {
   border: 0.25em solid skyblue;
   border-radius: 1.125em;
+  animation: playNext 0.25s 1;
+}
+
+@keyframes playNext {
+  0% {
+    position: relative;
+    left: 2em;
+  }
+  100% {
+    position: relative;
+    left: 0;
+  }
 }
 
 .autoCard {
