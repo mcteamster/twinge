@@ -8,7 +8,7 @@ class Create extends React.Component {
       create.classList.add('clickedButton');
       setTimeout(() => {
         create.classList.remove('clickedButton');
-      }, 250);
+      }, 1000);
       let deckSize = document.getElementById('deckSize').value;
       let maxLives = document.getElementById('maxLives').value;
       this.props.sendMsg({ action: 'play', actionType: 'new', config: { deckSize: deckSize, maxLives: maxLives }}) 
@@ -62,7 +62,7 @@ class Start extends React.Component {
       start.classList.add('clickedButton');
       setTimeout(() => {
         start.classList.remove('clickedButton');
-      }, 250);
+      }, 1000);
       this.props.sendMsg({ action: 'play', actionType: 'start', gameId: this.props.state.gameId, playerId: this.props.state.playerId }) 
     }}>
       <div>Start</div>

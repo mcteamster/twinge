@@ -1,5 +1,6 @@
 import React from 'react';
 import { AudioContext } from '../context/AudioContext';
+import { LoadingContext } from '../context/LoadingContext';
 import { discordSdk } from '../constants/discord';
 
 class Players extends React.Component {
@@ -283,7 +284,6 @@ class Hand extends React.Component {
       }
     })
     document.addEventListener('keyup', (e) => {
-      console.log(e)
       if (e.key == " ") {
         if (this.state.cardBuffer > 0) {
           this.triggerBuffer('cardBuffer', 'twinge');
@@ -299,16 +299,18 @@ class Hand extends React.Component {
   }
 
   startBuffer = (buffer) => {
-    this.cancelBuffer();
-    this.interval = setInterval(() => {
-      if (buffer === 'cardBuffer' && this.stateHash !== this.props.state.stateHash) {
-        this.cancelBuffer();
-      } else {
-        let state = {};
-        state[buffer] = this.state[buffer] == 0 ? 10 : this.state[buffer] + 1;
-        this.setState(state)
-      }
-    }, 20)
+    if (!this.loading) {
+      this.cancelBuffer();
+      this.interval = setInterval(() => {
+        if (buffer === 'cardBuffer' && this.stateHash !== this.props.state.stateHash) {
+          this.cancelBuffer();
+        } else {
+          let state = {};
+          state[buffer] = this.state[buffer] == 0 ? 10 : this.state[buffer] + 1;
+          this.setState(state)
+        }
+      }, 20)
+    }
   }
 
   triggerBuffer = (buffer, msg) => {
@@ -360,9 +362,10 @@ class Hand extends React.Component {
   }
 
   render() {
+    this.loading = this.context
     if (this.props.state.gamestate) {
       if (this.props.state.gamestate.meta.phase === 'won' || this.props.state.gamestate.meta.phase === 'lost') {
-        return <div className='Hand centered unselectable'>
+        return <div className='Hand centered unselectable' style={{ opacity: this.loading && 0.5 }}>
           <div className='Button centered replay'
             style={{ background: `radial-gradient(circle, ${this.bufferColor(this.state.replayBuffer)}, ${this.bufferColor(this.state.replayBuffer)} ${4 * this.state.replayBuffer}%, white ${4 * this.state.replayBuffer}%, white)` }}
             onMouseDown={() => { this.startBuffer('replayBuffer') }}
@@ -389,7 +392,10 @@ class Hand extends React.Component {
         let numPlayers = Number(this.props.state?.gamestate?.players.length - this.props.state?.gamestate?.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
         if (unplayedCards === 0) {
           return <div className='Hand centered unselectable'
-            style={{ background: `radial-gradient(circle, ${this.bufferColor(this.state.nextBuffer)}, ${this.bufferColor(this.state.nextBuffer)} ${4 * this.state.nextBuffer}%, white ${4 * this.state.nextBuffer}%, white)` }}
+            style={{ 
+              opacity: this.loading && 0.5,
+              background: `radial-gradient(circle, ${this.bufferColor(this.state.nextBuffer)}, ${this.bufferColor(this.state.nextBuffer)} ${4 * this.state.nextBuffer}%, white ${4 * this.state.nextBuffer}%, white)`
+            }}
             onMouseDown={() => { this.startBuffer('nextBuffer') }}
             onMouseUp={() => { this.triggerBuffer('nextBuffer', 'next') }}
             onMouseLeave={() => { this.cancelBuffer() }}
@@ -425,6 +431,7 @@ class Hand extends React.Component {
               onMouseLeave={() => { this.cancelBuffer() }}
               onTouchStart={() => { this.startBuffer('cardBuffer') }}
               onTouchEnd={() => { this.triggerBuffer('cardBuffer', 'twinge') }}
+              style={{ opacity: this.loading && 0.5 }}
             >
               {this.props.state.gamestate.meta.round <= 4 &&
                 <div className='handTooltip'>
@@ -447,7 +454,7 @@ class Hand extends React.Component {
               </div>
             </div>
           } else {
-            return <div className='Hand centered unselectable'>
+            return <div className='Hand centered unselectable' style={{ opacity: this.loading && 0.5 }}>
               <div className='Button'>{unplayedCards} Card{unplayedCards !== 1 ? 's' : ''} Remaining</div>
             </div>
           }
@@ -458,6 +465,7 @@ class Hand extends React.Component {
     }
   }
 }
+Hand.contextType = LoadingContext;
 
 class Card extends React.Component {
   render() {

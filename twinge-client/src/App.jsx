@@ -3,6 +3,7 @@ import { Header, Footer, Overlay, Modal, Notices } from './components/Banners';
 import { About, Lobby, Play, Legal } from './components/Screens'
 import { AWS_REGIONS, ENDPOINTS, getRegionFromCode } from './constants/constants';
 import { AudioContext, audioSettings } from './context/AudioContext';
+import { LoadingContext } from './context/LoadingContext';
 import React from 'react';
 import { Virgo2AWS } from '@mcteamster/virgo';
 
@@ -15,6 +16,7 @@ class App extends React.Component {
       playerId: localStorage.getItem('playerId'),
       createTime: localStorage.getItem('createTime'),
       audio: audioSettings.loud,
+      loading: false,
       overlay: {
         message: '',
       },
@@ -39,6 +41,12 @@ class App extends React.Component {
           type: state.modal.type === 'qr' ? '' : 'qr',
         }
       }));
+    }
+    this.setLoading = (loading) => {
+      this.setState((state) => {
+        state.loading = loading;
+        return state
+      });
     }
     this.setRegion = (region, autoJoin) => {
       console.debug('Region:', region)
@@ -111,6 +119,7 @@ class App extends React.Component {
   };
 
   messageHandler = (msg) => {
+    this.setLoading(false);
     let data = JSON.parse(msg.data);
     // Websocket Acknowlegements
     if (data.code === 0 && data.message === 'ack') {
@@ -245,6 +254,7 @@ class App extends React.Component {
       this.setState({ overlay: { message: 'Disconnected. Please Try Refreshing.' } });
       this.setRegion(this.state.region)
     } else {
+      this.setLoading(true);
       this.ws.send(JSON.stringify(msg));
     }
   }
@@ -270,8 +280,8 @@ class App extends React.Component {
     } else if ((!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed')) {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
-          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
-          <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} ></Lobby>
+          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
+          <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} ></Lobby>
           <Footer state={this.state}></Footer>
           <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
           <Overlay overlay={this.state.overlay}></Overlay>
@@ -281,12 +291,14 @@ class App extends React.Component {
     } else {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
-          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
-          <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 200)} audio={this.audio}></Play>
-          <Footer state={this.state}></Footer>
-          <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
-          <Overlay state={this.state} overlay={this.state.overlay}></Overlay>
-          <Notices region={this.state.region} />
+          <LoadingContext.Provider value={this.state.loading}>
+            <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
+            <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} audio={this.audio}></Play>
+            <Footer state={this.state}></Footer>
+            <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
+            <Overlay state={this.state} overlay={this.state.overlay}></Overlay>
+            <Notices region={this.state.region} />
+          </LoadingContext.Provider>
         </AudioContext.Provider>
       </div>
     }

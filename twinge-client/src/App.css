@@ -149,7 +149,7 @@ a {
 }
 
 .lobbyButtons div {
-  border-radius: 0.5em;
+  border-radius: 0.25em;
   cursor: pointer;
 }
 
@@ -199,7 +199,7 @@ a {
   font-size: 1em;
   text-align: center;
   box-shadow: none;
-  border-radius: 0.5em;
+  border-radius: 0.25em;
   border: 0.1em solid lightgrey;
 }
 
@@ -208,7 +208,8 @@ a {
 }
 
 .clickedButton {
-  animation: clickedButton 0.25s 1;
+  pointer-events: none;
+  animation: clickedButton 1s 1;
 }
 
 @keyframes clickedButton {
