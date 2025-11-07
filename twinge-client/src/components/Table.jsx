@@ -413,11 +413,11 @@ class Hand extends React.Component {
             let bufferStyle = { position: "relative" };
             if (a.length === unplayedCards) {
               wrapperClass = 'autoCard';
-              borderStyle.bottom = this.state.cardBuffer < 150 ? (this.state.cardBuffer < 25 ? `${this.state.cardBuffer * (-0.2)}em` : "-5em") : 0;
+              borderStyle.bottom = this.state.cardBuffer < 150 ? (this.state.cardBuffer < 25 ? `${this.state.cardBuffer * (-0.08)}em` : "-2em") : 0;
               bufferStyle.background = `radial-gradient(circle, ${this.bufferColor(this.state.cardBuffer, 'royalblue')}, ${this.bufferColor(this.state.cardBuffer, 'royalblue')} ${4 * this.state.cardBuffer}%, white ${4 * this.state.cardBuffer}%, white)`;
             } else if (card === a[0] + i) {
               wrapperClass = 'nextCard';
-              borderStyle.bottom = this.state.cardBuffer < 150 ? (this.state.cardBuffer < 25 ? `${this.state.cardBuffer * (-0.2)}em` : "-5em") : 0;
+              borderStyle.bottom = this.state.cardBuffer < 150 ? (this.state.cardBuffer < 25 ? `${this.state.cardBuffer * (-0.08)}em` : "-2em") : 0;
               bufferStyle.background = `radial-gradient(circle, ${this.bufferColor(this.state.cardBuffer)}, ${this.bufferColor(this.state.cardBuffer)} ${4 * this.state.cardBuffer}%, white ${4 * this.state.cardBuffer}%, white)`;
             }
             return <div key={`h${card}`} className={`cardWrapper ${wrapperClass}`} style={{ ...borderStyle, 'zIndex': a.length - i }}>
@@ -444,7 +444,7 @@ class Hand extends React.Component {
                   {(this.state.cardBuffer > 25 && this.state.cardBuffer <= 150) &&
                     <div>
                       👋 RELEASE to Send or<br></br>
-                      keep HOLDING to Cancel 🙅
+                      KEEP HOLDING to Cancel 🙅
                     </div>
                   }
                 </div>
