@@ -85,7 +85,7 @@ class App extends React.Component {
         console.debug('Syncing State')
         this.sendMsg({ action: 'play', actionType: 'refresh', gameId: this.state.gameId, playerId: this.state.playerId })
       }
-    }, 30000);
+    }, 60000);
   }
 
   autoJoin = async () => {
@@ -280,12 +280,14 @@ class App extends React.Component {
     } else if ((!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed')) {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
-          <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
-          <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} ></Lobby>
-          <Footer state={this.state}></Footer>
-          <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
-          <Overlay overlay={this.state.overlay}></Overlay>
-          <Notices region={this.state.region} />
+          <LoadingContext.Provider value={this.state.loading}>
+            <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
+            <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} ></Lobby>
+            <Footer state={this.state}></Footer>
+            <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
+            <Overlay overlay={this.state.overlay}></Overlay>
+            <Notices region={this.state.region} />
+          </LoadingContext.Provider>
         </AudioContext.Provider>
       </div>
     } else {

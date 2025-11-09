@@ -1,4 +1,5 @@
 import React from 'react';
+import { LoadingContext } from '../context/LoadingContext';
 
 class Create extends React.Component {
   render() {
@@ -20,11 +21,14 @@ class Create extends React.Component {
 
 class Join extends React.Component {
   render() {
+    this.loading = this.context
     return <input id='inputBox' type='text' pattern='[A-Z]' maxLength="4" placeholder='or Join Game' className='Join centered' 
     onKeyUp={(event) => { 
       if (document.getElementById('inputBox').value.length === 4 && event.key !== 'Enter') {
-        this.props.sendMsg({ action: 'play', actionType: 'join', roomCode: document.getElementById('inputBox').value })
-        window.scrollTo(0, 0);
+        if (!this.loading) {
+          this.props.sendMsg({ action: 'play', actionType: 'join', roomCode: document.getElementById('inputBox').value })
+          window.scrollTo(0, 0);
+        }
       }
     }}
     onSelect={()=> {
@@ -33,6 +37,7 @@ class Join extends React.Component {
     </input>
   }
 }
+Join.contextType = LoadingContext
 
 class Rename extends React.Component {
   render() {
