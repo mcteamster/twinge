@@ -138,11 +138,18 @@ class App extends React.Component {
   }
 
   gamestateHandler = (data) => {
-    // Publish room code upon creation in Discord
-    if (localStorage.getItem('instance_id') && data.roomCode && data?.gamestate?.meta?.phase == 'open' && data?.gamestate?.players?.length == 1) {
-      fetch(`https://api.mcteamster.com/common/rooms/${localStorage.getItem('instance_id')}/${data.roomCode}?game=twinge`, {
-        method: "PUT",
-      })
+    // Publish room code upon creation
+    if (data.roomCode && data?.gamestate?.meta?.phase == 'open' && data?.gamestate?.players?.length == 1) {
+      // In Discord
+      if (localStorage.getItem('instance_id')) {
+        fetch(`https://api.mcteamster.com/common/rooms/${localStorage.getItem('instance_id')}/${data.roomCode}?game=twinge`, {
+          method: "PUT",
+        })
+      } else {
+        fetch(`https://api.mcteamster.com/common/rooms/${data.roomCode}/${data.roomCode}?game=twinge`, {
+          method: "PUT",
+        })
+      }
     }
 
     // Update Cursor 
