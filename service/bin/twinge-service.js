@@ -84,7 +84,7 @@ class TwingeServiceStack extends cdk.Stack {
 
     // Lambda Functions
     const connectHandler = new lambdaNodeJS.NodejsFunction(this, 'ConnectHandler', {
-      runtime: lambda.Runtime.NODEJS_22_X,
+      runtime: lambda.Runtime.NODEJS_24_X,
       entry: './src/handlers/connect.js',
       handler: 'handler',
       environment: {
@@ -94,7 +94,7 @@ class TwingeServiceStack extends cdk.Stack {
     });
 
     const playHandler = new lambdaNodeJS.NodejsFunction(this, 'PlayHandler', {
-      runtime: lambda.Runtime.NODEJS_22_X,
+      runtime: lambda.Runtime.NODEJS_24_X,
       entry: './src/handlers/play.js',
       handler: 'handler',
       environment: {

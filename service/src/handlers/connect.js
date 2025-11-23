@@ -1,6 +1,6 @@
 const connections = require('../helpers/connections');
 
-exports.handler = async (event, _, callback) => {
+export const handler = async (event, _) => {
   const connectionId = event.requestContext.connectionId;
   const eventType = event.requestContext.eventType;
   let statusCode = 200;
@@ -11,8 +11,7 @@ exports.handler = async (event, _, callback) => {
     statusCode = await connections.deleteConnection(connectionId);
   }
 
-  callback(null, {
-      statusCode: statusCode,
-    }
-  );
+  return {
+    statusCode: statusCode,
+  }
 }
