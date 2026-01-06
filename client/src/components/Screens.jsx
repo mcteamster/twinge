@@ -7,7 +7,7 @@ class Lobby extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      deckSize: 100,
+      deckSize: 67,
       maxLives: 5,
     }
   }
@@ -32,8 +32,12 @@ class Lobby extends React.Component {
       info = <div>
         <div>
           <div className='lobbyInfo'>{this.state.deckSize} Cards</div>
-          <input className='slider' id='deckSize' type="range" min="10" max="1000" defaultValue="100" onChange={(e) => {
-            e.target.value = e.target.value - (e.target.value % 5);
+          <input className='slider' id='deckSize' type="range" min="10" max="1000" defaultValue="67" onChange={(e) => {
+            if (e.target.value > 66 && e.target.value < 68) {
+              e.target.value = 67
+            } else {
+              e.target.value = e.target.value - (e.target.value % 5);
+            }
             this.setState({
               deckSize: e.target.value,
             })
