@@ -20,7 +20,7 @@ export const ENDPOINTS = {
   'UK': 'wss://uk.twinge.mcteamster.com',      // London UK 🇬🇧
   'BR': 'wss://br.twinge.mcteamster.com',      // Sao Paulo BR 🇧🇷
   'EAST': 'wss://use.twinge.mcteamster.com', // Washington D.C. US 🇺🇸
-  'WEST': 'wss://usw.twinge.mcteamster.com', // San Francisco US 🇺🇸
+  'WEST': 'wss://usw.twinge.mcteamster.com', // Portland US 🇺🇸
   'DEFAULT': 'wss://eu.twinge.mcteamster.com' // Default to EU as the most central server
 }
 
@@ -57,7 +57,7 @@ export const getRegionFromCode = (roomCode) => {
   } else if ('ST'.includes(lastLetter)) {
     region = 'EAST'; // Washington D.C. US 🇺🇸
   } else if ('VW'.includes(lastLetter)) {
-    region = 'WEST'; // San Francisco US 🇺🇸
+    region = 'WEST'; // Portland US 🇺🇸
   } else {
     region = 'DEFAULT';
   }

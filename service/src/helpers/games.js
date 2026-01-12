@@ -54,7 +54,7 @@ async function createGame(gameId, gamestate) {
         serverCode = 'ST'; // Washington D.C. US 🇺🇸
         break;
       case 'us-west-2':
-        serverCode = 'VW'; // San Francisco US 🇺🇸
+        serverCode = 'VW'; // Portland US 🇺🇸
         break;
       default:
         serverCode = 'XZ'; // Local or Fallback
