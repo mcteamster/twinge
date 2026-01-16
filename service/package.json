@@ -4,11 +4,6 @@
   "bin": {
     "twinge-service": "bin/twinge-service.js"
   },
-  "scripts": {
-    "deploy": "mcdeploy twinge",
-    "deploy:client": "mcdeploy twinge client",
-    "deploy:service": "mcdeploy twinge service"
-  },
   "devDependencies": {
     "aws-cdk": "^2.1033.0",
     "esbuild": "^0.25.5"
