@@ -6,7 +6,7 @@ export const ConnectionStatus = ({ isConnected }) => {
       className="connection-status"
       style={{
         position: 'fixed',
-        top: '10px',
+        bottom: '10px',
         right: '10px',
         width: '8px',
         height: '8px',

@@ -151,7 +151,7 @@ class Overlay extends React.Component {
       }
       let activePlayer = this.props.state.gamestate.players.find((player) => { return player.playerId === this.props.state.playerId });
       let lowestHand = <></>;
-      if (activePlayer.hand[0]) {
+      if (activePlayer?.hand?.[0]) {
         lowestHand = <div style={{ fontSize: '0.75em' }}>
           ✋&nbsp;{activePlayer.hand[0]}
         </div>

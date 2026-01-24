@@ -174,14 +174,17 @@ class App extends React.Component {
   }
 
   gamestateHandler = (data) => {
+    // Save session when game is created/joined (only if not already set)
+    const gameId = data.gameId;
+    const playerId = this.state.playerId;
+    
+    if (gameId && playerId && (!this.ws?.gameId || !this.ws?.playerId)) {
+      console.debug('📥 Setting up new game session', { gameId, playerId });
+      this.ws?.setGameSession(gameId, playerId);
+    }
+    
     // Publish room code upon creation
     if (data.roomCode && data?.gamestate?.meta?.phase == 'open' && data?.gamestate?.players?.length == 1) {
-      // Save session when game is created/joined
-      if (data.gamestate.gameId && data.playerId) {
-        this.ws?.setGameSession(data.gamestate.gameId, data.playerId);
-        this.ws?.startSyncPolling();
-      }
-      
       // In Discord
       if (localStorage.getItem('instance_id')) {
         fetch(`https://api.mcteamster.com/common/rooms/${localStorage.getItem('instance_id')}/${data.roomCode}?game=twinge`, {
@@ -203,13 +206,6 @@ class App extends React.Component {
     }
     localStorage.setItem('createTime', new Date().toISOString());
 
-    // Update state
-    this.setState(state => ({
-      ...state,
-      ...data,
-      overlay: { message: '' }
-    }));
-
     // Handle audio cues
     if (data?.gamestate?.public?.pile?.length > 0) {
       let latestCard = data.gamestate.public.pile[data.gamestate.public.pile.length - 1];
@@ -217,10 +213,6 @@ class App extends React.Component {
         this.audio.buzz.play();
       } else {
         this.audio.ring.play();
-      }
-    }
-  }
-        })
       }
     }
 
@@ -251,13 +243,14 @@ class App extends React.Component {
           game.gamestate.meta.phase = 'playing';
         }
         this.animations.push(setTimeout(() => {
-          this.setState({
+          this.setState(state => ({
+            ...state,
             overlay: { message: '' },
             ...game,
             playerId: game?.gamestate?.players?.reduce((playerId, player) => {
               return `${playerId}${player.playerId || ''}`
             }, ''),
-          });
+          }));
         }, 100 * (i - this.cursor)));
       }
       this.cursor = data?.gamestate?.public?.pile.length;
@@ -265,13 +258,14 @@ class App extends React.Component {
       this.animations.forEach((animation) => {
         clearTimeout(animation);
       })
-      this.setState({
+      this.setState(state => ({
+        ...state,
         overlay: { message: '' },
         ...data,
         playerId: data?.gamestate?.players?.reduce((playerId, player) => {
           return `${playerId}${player.playerId || ''}`
         }, ''),
-      });
+      }));
     }
 
     // Store game metadata

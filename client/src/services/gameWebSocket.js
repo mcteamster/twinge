@@ -143,18 +143,34 @@ export class GameWebSocket {
 
   startSyncPolling() {
     this.stopSyncPolling();
-    console.debug('🔄 Starting sync polling every 60 seconds');
+    console.debug('🔄 Starting sync polling every 10 seconds', { gameId: this.gameId, playerId: this.playerId });
+    
+    // Test immediate execution
+    if (this.gameId && this.playerId) {
+      console.debug('✅ Game session exists, setting up interval');
+    } else {
+      console.debug('❌ No game session, interval will not send requests');
+    }
+    
     this.syncIntervalId = setInterval(() => {
+      console.debug('⏰ Interval fired!');
       if (this.gameId && this.playerId) {
-        console.debug('⏰ Sync polling - sending refresh request');
-        this.send({
-          action: 'play',
-          actionType: 'refresh',
-          gameId: this.gameId,
-          playerId: this.playerId
-        });
+        console.debug('⏰ Sync polling - sending refresh request', { gameId: this.gameId, playerId: this.playerId });
+        // Send refresh directly without going through App's sendMsg to avoid loading state
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({
+            action: 'play',
+            actionType: 'refresh',
+            gameId: this.gameId,
+            playerId: this.playerId
+          }));
+        }
+      } else {
+        console.debug('⏰ Sync polling skipped - no game session', { gameId: this.gameId, playerId: this.playerId });
       }
-    }, 60000);
+    }, 10000);
+    
+    console.debug('🔄 Interval ID set:', this.syncIntervalId);
   }
 
   stopSyncPolling() {
@@ -185,6 +201,7 @@ export class GameWebSocket {
   }
 
   setGameSession(gameId, playerId) {
+    console.debug('🎮 Setting game session:', { gameId, playerId });
     this.gameId = gameId;
     this.playerId = playerId;
     
@@ -195,6 +212,10 @@ export class GameWebSocket {
       timestamp: Date.now()
     };
     localStorage.setItem('twinge-session', JSON.stringify(session));
+    
+    // Start sync polling when session is set
+    console.debug('🎮 About to start sync polling...');
+    this.startSyncPolling();
   }
 
   loadSession() {
@@ -204,9 +225,9 @@ export class GameWebSocket {
       
       const session = JSON.parse(stored);
       
-      // Check if session is older than 1 hour
+      // Check if session is older than 12 hours
       const sessionAge = Date.now() - (session.timestamp || 0);
-      if (sessionAge > 3600000) {
+      if (sessionAge > 43200000) {
         this.clearSession();
         return null;
       }
