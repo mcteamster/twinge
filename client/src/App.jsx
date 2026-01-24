@@ -1,9 +1,11 @@
 import './App.css';
 import { Header, Footer, Overlay, Modal, Notices } from './components/Banners';
 import { About, Lobby, Play, Legal } from './components/Screens'
+import { ConnectionStatus } from './components/ConnectionStatus';
 import { AWS_REGIONS, ENDPOINTS, getRegionFromCode } from './constants/constants';
 import { AudioContext, audioSettings } from './context/AudioContext';
 import { LoadingContext } from './context/LoadingContext';
+import { GameWebSocket } from './services/gameWebSocket';
 import React from 'react';
 import { Virgo2AWS } from '@mcteamster/virgo';
 
@@ -17,6 +19,7 @@ class App extends React.Component {
       createTime: localStorage.getItem('createTime'),
       audio: audioSettings.loud,
       loading: false,
+      isConnected: false,
       overlay: {
         message: '',
       },
@@ -30,6 +33,8 @@ class App extends React.Component {
       ring: new Audio("/audio/ring.mp3"),
       buzz: new Audio("/audio/buzz.mp3"),
     }
+    this.ws = null;
+    
     this.toggleMute = () => {
       this.setState(state => ({
         audio: state.audio === audioSettings.loud ? audioSettings.silent : audioSettings.loud,
@@ -43,27 +48,81 @@ class App extends React.Component {
       }));
     }
     this.setLoading = (loading) => {
-      this.setState((state) => {
-        state.loading = loading;
-        return state
-      });
+      this.setState(state => ({
+        ...state,
+        loading
+      }));
+    }
+    
+    this.clearSession = () => {
+      if (this.ws) {
+        this.ws.clearSession();
+      }
     }
     this.setRegion = (region, autoJoin) => {
       console.debug('Region:', region)
-      this.setState((state) => {
-        state.region = region
-        return state
-      });
+      this.setState(state => ({
+        ...state,
+        region
+      }));
       localStorage.setItem('region', region);
-      let ws = new WebSocket(ENDPOINTS[region])
-      ws.onopen = autoJoin != false ? this.autoJoin : () => {};
-      ws.onmessage = this.messageHandler;
-      this.ws = ws;
+      this.initializeWebSocket(autoJoin);
+    }
+    
+    this.initializeWebSocket = (autoJoin = true) => {
+      if (this.ws) {
+        this.ws.disconnect();
+      }
+      
+      this.ws = new GameWebSocket({
+        onConnectionStatus: (isConnected) => {
+          this.setState(state => ({
+            ...state,
+            isConnected
+          }));
+        },
+        onGameState: (data, isBackgroundSync = false) => {
+          this.setLoading(false);
+          this.gamestateHandler(data, isBackgroundSync);
+        },
+        onError: (data) => {
+          this.setLoading(false);
+          console.error(data.message);
+          // Clear session if rejoin fails (code 2 indicates game not found)
+          if (data.code === 2) {
+            this.ws?.clearSession();
+            // Clear reconnecting overlay
+            this.setState(state => ({
+              ...state,
+              overlay: { message: '' }
+            }));
+          }
+          this.errorHandler(data.code);
+        },
+        onMaxReconnectReached: () => {
+          this.setState(state => ({
+            ...state,
+            overlay: { message: '' }
+          }));
+        },
+        onSessionCleared: () => {
+          this.setState(state => ({
+            ...state,
+            overlay: { message: '' }
+          }));
+        }
+      });
+      
+      this.ws.connect().then(() => {
+        if (autoJoin) {
+          this.autoJoin();
+        }
+      }).catch(console.error);
     }
   }
   
   componentDidMount() {
-    this.setState({ overlay: { message: '' } });
+    this.setState(state => ({ ...state, overlay: { message: '' } }));
     let path = window.location.pathname.slice(1);
     if (path.match(/^[A-Z]{4}$/i)) {
       this.setRegion(getRegionFromCode(path));
@@ -79,28 +138,40 @@ class App extends React.Component {
         this.setRegion('DEFAULT')
       }
     }
-    
-    setInterval(() => {
-      if (this.state.gameId && this.state.playerId) {
-        console.debug('Syncing State')
-        this.sendMsg({ action: 'play', actionType: 'refresh', gameId: this.state.gameId, playerId: this.state.playerId })
-      }
-    }, 60000);
   }
 
   autoJoin = async () => {
+    // Try to restore session first
+    const session = this.ws?.loadSession();
+    if (session) {
+      console.debug('Restoring session:', session);
+      this.setState(state => ({ 
+        ...state, 
+        gameId: session.gameId, 
+        playerId: session.playerId,
+        overlay: { message: 'Reconnecting...' } 
+      }));
+      this.ws.setGameSession(session.gameId, session.playerId);
+      this.sendMsg({ 
+        action: 'play', 
+        actionType: 'rejoin', 
+        gameId: session.gameId, 
+        playerId: session.playerId 
+      });
+      return;
+    }
+
     // Join from Path, Memory, or Discord Channel's latest session
     let createTime = new Date(localStorage.getItem('createTime'));
-    console.debug(createTime)
     let currentTime = new Date();
     let path = window.location.pathname.slice(1);
 
     if (path.match(/^[A-Z]{4}$/i)) {
-      this.setState({ overlay: { message: 'Connecting...' } });
+      this.setState(state => ({ ...state, overlay: { message: 'Connecting...' } }));
       this.sendMsg({ action: 'play', actionType: 'join', roomCode: path });
       window.history.replaceState({}, document.title, "/");
     } else if (createTime > currentTime.setHours(currentTime.getHours() - 1)) {
-      this.setState({ overlay: { message: 'Connecting...' } });
+      this.setState(state => ({ ...state, overlay: { message: 'Connecting...' } }));
       this.sendMsg({ action: 'play', actionType: 'join', gameId: this.state.gameId, playerId: this.state.playerId });
     } else if (localStorage.getItem('instance_id')) {
       console.debug(`Checking room info for: ${localStorage.getItem('instance_id')}`)
@@ -108,10 +179,10 @@ class App extends React.Component {
       if (roomData.room) {
         if (getRegionFromCode(roomData.room) != this.state.region) {
           // Handle Region Mismatch
-          this.setState({ overlay: { message: 'Connecting...' } });
+          this.setState(state => ({ ...state, overlay: { message: 'Connecting...' } }));
           this.setRegion(getRegionFromCode(roomData.room));
         } else {
-          this.setState({ overlay: { message: 'Connecting...' } });
+          this.setState(state => ({ ...state, overlay: { message: 'Connecting...' } }));
           this.sendMsg({ action: 'play', actionType: 'join', roomCode: roomData.room });
         }
       }
@@ -119,25 +190,33 @@ class App extends React.Component {
   };
 
   messageHandler = (msg) => {
-    this.setLoading(false);
-    let data = JSON.parse(msg.data);
-    // Websocket Acknowlegements
-    if (data.code === 0 && data.message === 'ack') {
-      console.debug(new Date().toISOString());
-    }
-    // Handle Errors
-    else if (data.code) {
-      this.setState({ overlay: { message: '' } });
-      console.error(data.message);
-      this.errorHandler(data.code);
-    }
-    // Handle Gamestate Changes
-    else {
-      this.gamestateHandler(data);
-    }
+    // This method is now handled by the WebSocket service callbacks
+    // Keeping for compatibility but functionality moved to callbacks
   }
 
-  gamestateHandler = (data) => {
+  gamestateHandler = (data, isBackgroundSync = false) => {
+    // Save session when game is created/joined (only if not already set)
+    const gameId = data.gameId;
+    const playerId = this.state.playerId;
+    
+    if (gameId && playerId && (!this.ws?.gameId || !this.ws?.playerId)) {
+      console.debug('📥 Setting up new game session', { gameId, playerId });
+      this.ws?.setGameSession(gameId, playerId);
+    }
+    
+    // Clear session when game ends
+    if (data?.gamestate?.meta?.phase === 'won' || data?.gamestate?.meta?.phase === 'lost') {
+      console.debug('🎮 Game ended, clearing session');
+      this.ws?.clearSession();
+    }
+    
+    // Clear session if current player is no longer in the game (kicked)
+    const currentPlayer = data?.gamestate?.players?.find(p => p.playerId === this.state.playerId);
+    if (this.state.playerId && data?.gamestate?.players && !currentPlayer) {
+      console.debug('🎮 Player no longer in game, clearing session');
+      this.ws?.clearSession();
+    }
+    
     // Publish room code upon creation
     if (data.roomCode && data?.gamestate?.meta?.phase == 'open' && data?.gamestate?.players?.length == 1) {
       // In Discord
@@ -149,6 +228,25 @@ class App extends React.Component {
         fetch(`https://api.mcteamster.com/common/rooms/${data.roomCode}/${data.roomCode}?game=twinge`, {
           method: "PUT",
         })
+      }
+    }
+
+    // Store game session data
+    if (data.gamestate?.gameId) {
+      localStorage.setItem('gameId', data.gamestate.gameId);
+    }
+    if (data.playerId) {
+      localStorage.setItem('playerId', data.playerId);
+    }
+    localStorage.setItem('createTime', new Date().toISOString());
+
+    // Handle audio cues (skip for background sync)
+    if (!isBackgroundSync && data?.gamestate?.public?.pile?.length > 0) {
+      let latestCard = data.gamestate.public.pile[data.gamestate.public.pile.length - 1];
+      if (latestCard.missed) {
+        this.audio.buzz.play();
+      } else {
+        this.audio.ring.play();
       }
     }
 
@@ -179,13 +277,14 @@ class App extends React.Component {
           game.gamestate.meta.phase = 'playing';
         }
         this.animations.push(setTimeout(() => {
-          this.setState({
+          this.setState(state => ({
+            ...state,
             overlay: { message: '' },
             ...game,
             playerId: game?.gamestate?.players?.reduce((playerId, player) => {
               return `${playerId}${player.playerId || ''}`
             }, ''),
-          });
+          }));
         }, 100 * (i - this.cursor)));
       }
       this.cursor = data?.gamestate?.public?.pile.length;
@@ -193,13 +292,14 @@ class App extends React.Component {
       this.animations.forEach((animation) => {
         clearTimeout(animation);
       })
-      this.setState({
+      this.setState(state => ({
+        ...state,
         overlay: { message: '' },
         ...data,
         playerId: data?.gamestate?.players?.reduce((playerId, player) => {
           return `${playerId}${player.playerId || ''}`
         }, ''),
-      });
+      }));
     }
 
     // Store game metadata
@@ -245,25 +345,22 @@ class App extends React.Component {
   }
 
   sendMsg = async (msg) => {
+    // Handle Region Mismatch
     if (msg.roomCode && getRegionFromCode(msg.roomCode) != this.state.region) {
-      // Handle Region Mismatch
       this.setRegion(getRegionFromCode(msg.roomCode));
-      setTimeout(()=> {
+      setTimeout(() => {
         this.sendMsg(msg)
       }, 0)
-    } else if (this?.ws?.readyState == 0) {
-      // Retry every second until connected
-      this.setState({ ...this.state, overlay: { message: 'Connecting...' } });
-      setTimeout(()=> {
-        this.sendMsg(msg)
-      }, 1000)
-    } else if (!this.ws || this.ws.readyState !== 1) {
-      this.setState({ overlay: { message: 'Disconnected. Please Try Refreshing.' } });
-      this.setRegion(this.state.region)
-    } else {
-      this.setLoading(true);
-      this.ws.send(JSON.stringify(msg));
+      return;
     }
+    
+    if (!this.ws) {
+      console.error('WebSocket not initialized');
+      return;
+    }
+    
+    this.setLoading(true);
+    this.ws.send(msg);
   }
 
   render() {
@@ -288,12 +385,13 @@ class App extends React.Component {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
           <LoadingContext.Provider value={this.state.loading}>
-            <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
+            <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion} clearSession={this.clearSession}></Header>
             <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} ></Lobby>
             <Footer state={this.state}></Footer>
             <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
             <Overlay overlay={this.state.overlay}></Overlay>
             <Notices region={this.state.region} />
+            <ConnectionStatus isConnected={this.state.isConnected} />
           </LoadingContext.Provider>
         </AudioContext.Provider>
       </div>
@@ -301,12 +399,13 @@ class App extends React.Component {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
           <LoadingContext.Provider value={this.state.loading}>
-            <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
+            <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion} clearSession={this.clearSession}></Header>
             <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} audio={this.audio}></Play>
             <Footer state={this.state}></Footer>
             <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
             <Overlay state={this.state} overlay={this.state.overlay}></Overlay>
             <Notices region={this.state.region} />
+            <ConnectionStatus isConnected={this.state.isConnected} />
           </LoadingContext.Provider>
         </AudioContext.Provider>
       </div>

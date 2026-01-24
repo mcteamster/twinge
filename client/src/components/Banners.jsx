@@ -119,7 +119,13 @@ class Header extends React.Component {
         </div>
         {
           this.props.state.roomCode && this.props.state?.gameId ?
-            <div id='exit' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'leave', gameId: this.props.state.gameId, playerId: this.props.state.playerId, stateHash: this.props.state.stateHash }) }}>
+            <div id='exit' onClick={() => { 
+              this.props.sendMsg({ action: 'play', actionType: 'leave', gameId: this.props.state.gameId, playerId: this.props.state.playerId, stateHash: this.props.state.stateHash });
+              // Clear session when explicitly leaving
+              if (this.props.clearSession) {
+                this.props.clearSession();
+              }
+            }}>
               ❌
             </div>
             :
@@ -151,7 +157,7 @@ class Overlay extends React.Component {
       }
       let activePlayer = this.props.state.gamestate.players.find((player) => { return player.playerId === this.props.state.playerId });
       let lowestHand = <></>;
-      if (activePlayer.hand[0]) {
+      if (activePlayer?.hand?.[0]) {
         lowestHand = <div style={{ fontSize: '0.75em' }}>
           ✋&nbsp;{activePlayer.hand[0]}
         </div>

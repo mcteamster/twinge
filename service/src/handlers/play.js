@@ -21,6 +21,33 @@ async function newGame(payload) {
   await messages.send(payload.connectionId, payload.game);
 }
 
+async function rejoinGame(payload) {
+  let game = null;
+  if (payload.gameId && payload.playerId) {
+    game = await games.readGame(payload.gameId);
+    if (game && game.gamestate) {
+      let gamestate = new Gamestate(game.gamestate);
+      let player = await gamestate.findPlayer(payload.playerId);
+      if (player) {
+        // Update connection mapping for rejoining player
+        await connections.updateConnection(payload.connectionId, 'gameId', payload.gameId);
+        await connections.updateConnection(payload.connectionId, 'playerId', payload.playerId);
+        
+        // Update connection status and send current state
+        gamestate.checkConnections(await connections.findConnections('gameId', payload.gameId));
+        game = await games.updateGame(game.gameId, gamestate);
+        await messages.broadcastGame(game);
+      } else {
+        await messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
+      }
+    } else {
+      await messages.send(payload.connectionId, { code: 2, message: 'Game not found' });
+    }
+  } else {
+    await messages.send(payload.connectionId, { code: 1, message: 'Missing gameId or playerId' });
+  }
+}
+
 async function joinGame(payload) {
   // Find game
   let game = null;
@@ -335,6 +362,7 @@ async function endGame(payload) {
 const actionHandler = {
   new: newGame,
   join: joinGame,
+  rejoin: rejoinGame,
   rename: renamePlayer,
   kick: kickPlayer,
   leave: leaveGame,
