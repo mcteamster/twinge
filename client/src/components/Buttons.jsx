@@ -41,21 +41,22 @@ Join.contextType = LoadingContext
 
 class Rename extends React.Component {
   render() {
-    return <input id='inputBox' type='text' pattern='[A-Z]' maxLength="10" placeholder='Set Name' className='Rename centered' onKeyUp={(event) => { 
-      if (event.key !== 'Enter') {
+    return <input id='inputBox' type='text' maxLength="10" placeholder='Set Name' className='Rename centered' 
+      onChange={(event) => { 
         this.props.sendMsg({ 
           action: 'play', 
           actionType: 'rename', 
-          name: (document.getElementById('inputBox').value.length > 0 ? document.getElementById('inputBox').value : 'ANON' ), 
+          name: (event.target.value.length > 0 ? event.target.value : 'ANON' ), 
           gameId: this.props.state.gameId, 
           playerId: this.props.state.playerId 
         }) 
-      } else {
-        //document.getElementById('inputBox').blur();
-        window.scrollTo(0, 0);
-      }
-    }}>
-    </input>
+      }}
+      onKeyUp={(event) => {
+        if (event.key === 'Enter') {
+          window.scrollTo(0, 0);
+        }
+      }}
+    />
   }
 }
 
