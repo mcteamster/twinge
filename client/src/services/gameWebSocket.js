@@ -49,21 +49,23 @@ export class GameWebSocket {
 
       this.ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data);
-          console.debug('🔽 WebSocket received:', data);
+          const message = JSON.parse(event.data);
+          console.debug('🔽 WebSocket received:', message.type, message);
           
-          if (data.code === 0 && data.message === 'ack') {
+          if (message.code === 0 && message.message === 'ack') {
             console.debug('ACK received');
             return;
           }
           
-          if (data.code) {
+          if (message.code) {
             if (this.callbacks?.onError) {
-              this.callbacks.onError(data);
+              this.callbacks.onError(message);
             }
           } else {
+            // Check if this is a response to a background refresh
+            const isBackgroundRefresh = this.lastRefreshTime && (Date.now() - this.lastRefreshTime) < 2000;
             if (this.callbacks?.onGameState) {
-              this.callbacks.onGameState(data);
+              this.callbacks.onGameState(message, isBackgroundRefresh);
             }
           }
         } catch (error) {
@@ -99,8 +101,17 @@ export class GameWebSocket {
     console.debug(`🔄 Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
 
     this.reconnectTimeoutId = setTimeout(() => {
+      // Set a 10-second timeout for the connection attempt
+      const connectTimeout = setTimeout(() => {
+        console.error('🚫 Connection attempt timed out after 10 seconds');
+        // Exponential backoff and retry
+        this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
+        this.attemptReconnect();
+      }, 10000);
+
       this.connect()
         .then(() => {
+          clearTimeout(connectTimeout);
           console.debug('✅ Reconnected successfully');
           // Auto-rejoin game if we have session info
           if (this.gameId && this.playerId) {
@@ -115,6 +126,7 @@ export class GameWebSocket {
           }
         })
         .catch(() => {
+          clearTimeout(connectTimeout);
           // Exponential backoff with max cap
           this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
           this.attemptReconnect();
@@ -156,6 +168,8 @@ export class GameWebSocket {
       console.debug('⏰ Interval fired!');
       if (this.gameId && this.playerId) {
         console.debug('⏰ Sync polling - sending refresh request', { gameId: this.gameId, playerId: this.playerId });
+        // Track when we send a refresh for background detection
+        this.lastRefreshTime = Date.now();
         // Send refresh directly without going through App's sendMsg to avoid loading state
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
           this.ws.send(JSON.stringify({

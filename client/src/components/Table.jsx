@@ -406,6 +406,9 @@ class Hand extends React.Component {
           </div>
         } else {
           let activePlayer = this.props.state.gamestate.players.find((player) => { return player.playerId === this.props.state.playerId });
+          if (!activePlayer || !activePlayer.hand) {
+            return <div className='Hand'></div>;
+          }
           let hand = activePlayer.hand.map((card, i, a) => {
             // Check for consecutive next cards to be played together
             let wrapperClass = '';

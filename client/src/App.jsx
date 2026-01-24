@@ -75,9 +75,9 @@ class App extends React.Component {
             isConnected
           }));
         },
-        onGameState: (data) => {
+        onGameState: (data, isBackgroundSync = false) => {
           this.setLoading(false);
-          this.gamestateHandler(data);
+          this.gamestateHandler(data, isBackgroundSync);
         },
         onError: (data) => {
           this.setLoading(false);
@@ -173,7 +173,7 @@ class App extends React.Component {
     // Keeping for compatibility but functionality moved to callbacks
   }
 
-  gamestateHandler = (data) => {
+  gamestateHandler = (data, isBackgroundSync = false) => {
     // Save session when game is created/joined (only if not already set)
     const gameId = data.gameId;
     const playerId = this.state.playerId;
@@ -206,8 +206,8 @@ class App extends React.Component {
     }
     localStorage.setItem('createTime', new Date().toISOString());
 
-    // Handle audio cues
-    if (data?.gamestate?.public?.pile?.length > 0) {
+    // Handle audio cues (skip for background sync)
+    if (!isBackgroundSync && data?.gamestate?.public?.pile?.length > 0) {
       let latestCard = data.gamestate.public.pile[data.gamestate.public.pile.length - 1];
       if (latestCard.missed) {
         this.audio.buzz.play();
