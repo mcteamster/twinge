@@ -119,7 +119,13 @@ class Header extends React.Component {
         </div>
         {
           this.props.state.roomCode && this.props.state?.gameId ?
-            <div id='exit' onClick={() => { this.props.sendMsg({ action: 'play', actionType: 'leave', gameId: this.props.state.gameId, playerId: this.props.state.playerId, stateHash: this.props.state.stateHash }) }}>
+            <div id='exit' onClick={() => { 
+              this.props.sendMsg({ action: 'play', actionType: 'leave', gameId: this.props.state.gameId, playerId: this.props.state.playerId, stateHash: this.props.state.stateHash });
+              // Clear session when explicitly leaving
+              if (this.props.clearSession) {
+                this.props.clearSession();
+              }
+            }}>
               ❌
             </div>
             :

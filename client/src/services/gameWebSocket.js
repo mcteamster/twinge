@@ -91,6 +91,8 @@ export class GameWebSocket {
   attemptReconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('🚫 Max reconnection attempts reached');
+      // Clear session when reconnection fails completely
+      this.clearSession();
       if (this.callbacks?.onMaxReconnectReached) {
         this.callbacks.onMaxReconnectReached();
       }
@@ -104,6 +106,8 @@ export class GameWebSocket {
       // Set a 10-second timeout for the connection attempt
       const connectTimeout = setTimeout(() => {
         console.error('🚫 Connection attempt timed out after 10 seconds');
+        // Clear session on timeout
+        this.clearSession();
         // Exponential backoff and retry
         this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
         this.attemptReconnect();
@@ -127,6 +131,8 @@ export class GameWebSocket {
         })
         .catch(() => {
           clearTimeout(connectTimeout);
+          // Clear session on connection failure
+          this.clearSession();
           // Exponential backoff with max cap
           this.reconnectDelay = Math.min(this.reconnectDelay * 2, 30000);
           this.attemptReconnect();
@@ -254,5 +260,8 @@ export class GameWebSocket {
 
   clearSession() {
     localStorage.removeItem('twinge-session');
+    if (this.callbacks?.onSessionCleared) {
+      this.callbacks.onSessionCleared();
+    }
   }
 }

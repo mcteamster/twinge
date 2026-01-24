@@ -53,6 +53,12 @@ class App extends React.Component {
         loading
       }));
     }
+    
+    this.clearSession = () => {
+      if (this.ws) {
+        this.ws.clearSession();
+      }
+    }
     this.setRegion = (region, autoJoin) => {
       console.debug('Region:', region)
       this.setState(state => ({
@@ -82,12 +88,27 @@ class App extends React.Component {
         onError: (data) => {
           this.setLoading(false);
           console.error(data.message);
+          // Clear session if rejoin fails (code 2 indicates game not found)
+          if (data.code === 2) {
+            this.ws?.clearSession();
+            // Clear reconnecting overlay
+            this.setState(state => ({
+              ...state,
+              overlay: { message: '' }
+            }));
+          }
           this.errorHandler(data.code);
         },
         onMaxReconnectReached: () => {
           this.setState(state => ({
             ...state,
-            overlay: { message: 'Connection lost. Please refresh the page.' }
+            overlay: { message: '' }
+          }));
+        },
+        onSessionCleared: () => {
+          this.setState(state => ({
+            ...state,
+            overlay: { message: '' }
           }));
         }
       });
@@ -181,6 +202,19 @@ class App extends React.Component {
     if (gameId && playerId && (!this.ws?.gameId || !this.ws?.playerId)) {
       console.debug('📥 Setting up new game session', { gameId, playerId });
       this.ws?.setGameSession(gameId, playerId);
+    }
+    
+    // Clear session when game ends
+    if (data?.gamestate?.meta?.phase === 'won' || data?.gamestate?.meta?.phase === 'lost') {
+      console.debug('🎮 Game ended, clearing session');
+      this.ws?.clearSession();
+    }
+    
+    // Clear session if current player is no longer in the game (kicked)
+    const currentPlayer = data?.gamestate?.players?.find(p => p.playerId === this.state.playerId);
+    if (this.state.playerId && data?.gamestate?.players && !currentPlayer) {
+      console.debug('🎮 Player no longer in game, clearing session');
+      this.ws?.clearSession();
     }
     
     // Publish room code upon creation
@@ -351,7 +385,7 @@ class App extends React.Component {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
           <LoadingContext.Provider value={this.state.loading}>
-            <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
+            <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion} clearSession={this.clearSession}></Header>
             <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} ></Lobby>
             <Footer state={this.state}></Footer>
             <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
@@ -365,7 +399,7 @@ class App extends React.Component {
       return <div className='App unselectable'>
         <AudioContext.Provider value={this.state.audio}>
           <LoadingContext.Provider value={this.state.loading}>
-            <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion}></Header>
+            <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion} clearSession={this.clearSession}></Header>
             <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} audio={this.audio}></Play>
             <Footer state={this.state}></Footer>
             <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
