@@ -9,9 +9,9 @@
     "esbuild": "^0.25.5"
   },
   "dependencies": {
-    "@aws-sdk/client-apigatewaymanagementapi": "^3.398.0",
-    "@aws-sdk/client-dynamodb": "^3.398.0",
-    "@aws-sdk/lib-dynamodb": "^3.398.0",
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.984.0",
+    "@aws-sdk/client-dynamodb": "^3.984.0",
+    "@aws-sdk/lib-dynamodb": "^3.984.0",
     "aws-cdk-lib": "^2.227.0",
     "constructs": "^10.0.0",
     "object-hash": "^3.0.0",
