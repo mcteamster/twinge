@@ -13,6 +13,10 @@ export function initaliseDiscord() {
         prefix: '/api',
         target: 'api.mcteamster.com'
       },
+      {
+        prefix: '/clarity/{subdomain}',
+        target: '{subdomain}.clarity.ms'
+      },
       ...Object.keys(ENDPOINTS).map((endpoint) => {
         return {
           prefix: `/${endpoint.toLowerCase()}`,
