@@ -259,6 +259,10 @@ export class GameWebSocket {
   }
 
   clearSession() {
+    console.debug('🧹 Clearing game session');
+    this.gameId = null;
+    this.playerId = null;
+    this.stopSyncPolling();
     localStorage.removeItem('twinge-session');
     if (this.callbacks?.onSessionCleared) {
       this.callbacks.onSessionCleared();

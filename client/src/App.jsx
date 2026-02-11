@@ -321,8 +321,8 @@ class App extends React.Component {
         } catch (err) {
           console.error(err);
         }
-        localStorage.setItem('playerId', null);
-        localStorage.setItem('createTime', null);
+        localStorage.removeItem('playerId');
+        localStorage.removeItem('createTime');
         this.setState({
           gameId: null,
           playerId: null,

@@ -41,9 +41,9 @@ export function initaliseDiscord() {
       
       // Purge local state on new sessions
       if (!localStorage.getItem('instance_id') || (localStorage.getItem('instance_id') != discordSdk.instanceId)) {
-        localStorage.setItem('gameId', null);
-        localStorage.setItem('playerId', null);
-        localStorage.setItem('createTime', null);
+        localStorage.removeItem('gameId');
+        localStorage.removeItem('playerId');
+        localStorage.removeItem('createTime');
       }
       localStorage.setItem('instance_id', discordSdk.instanceId)
     });
