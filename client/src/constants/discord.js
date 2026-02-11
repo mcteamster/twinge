@@ -24,9 +24,13 @@ export function initaliseDiscord() {
         target: 'c.bing.com'
       },
       {
-        prefix: '/clarity/{subdomain}',
-        target: '{subdomain}.clarity.ms'
+        prefix: '/clarity',
+        target: 'www.clarity.ms'
       },
+      ...Array.from({ length: 26 }, (_, i) => ({
+        prefix: `/${String.fromCharCode(97 + i)}.clarity`,
+        target: `${String.fromCharCode(97 + i)}.clarity.ms`
+      })),
     ]
     patchUrlMappings(urlPatches);
 
