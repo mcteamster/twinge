@@ -32,7 +32,7 @@ export function initaliseDiscord() {
         target: `${String.fromCharCode(97 + i)}.clarity.ms`
       })),
     ]
-    patchUrlMappings(urlPatches);
+    patchUrlMappings(urlPatches, { patchSrcAttributes: true });
 
     // Setup SDK
     discordSdk = new DiscordSDK("1385639813268373587");
