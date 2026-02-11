@@ -10,8 +10,10 @@ const isDiscord = initaliseDiscord();
 
 // Initialize Clarity after patches are applied
 if (isDiscord) {
-  // Wait for patches to be applied before initializing Clarity
-  setTimeout(() => Clarity.init('qu6uzrb8ru'), 0);
+  // Wait for MutationObserver to be set up before initializing Clarity
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => Clarity.init('qu6uzrb8ru'));
+  });
 } else {
   Clarity.init('qu6uzrb8ru');
 }
