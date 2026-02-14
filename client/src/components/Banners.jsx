@@ -17,7 +17,7 @@ class Notices extends React.Component {
   }
 
   checkNotices = async () => {
-    const data = await (await fetch('https://api.mcteamster.com/common/notices/twinge')).json()
+    const data = await (await fetch('https://api.ohnomer.com/common/notices/twinge')).json()
     this.setState((state) => { 
       state.noticeMessage = data.message
       if (data.regions?.length > 0) {

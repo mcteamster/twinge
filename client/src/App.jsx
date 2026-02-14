@@ -175,7 +175,7 @@ class App extends React.Component {
       this.sendMsg({ action: 'play', actionType: 'join', gameId: this.state.gameId, playerId: this.state.playerId });
     } else if (localStorage.getItem('instance_id')) {
       console.debug(`Checking room info for: ${localStorage.getItem('instance_id')}`)
-      const roomData = await (await fetch(`https://api.mcteamster.com/common/rooms/${localStorage.getItem('instance_id')}`)).json()
+      const roomData = await (await fetch(`https://api.ohnomer.com/common/rooms/${localStorage.getItem('instance_id')}`)).json()
       if (roomData.room) {
         if (getRegionFromCode(roomData.room) != this.state.region) {
           // Handle Region Mismatch
@@ -221,11 +221,11 @@ class App extends React.Component {
     if (data.roomCode && data?.gamestate?.meta?.phase == 'open' && data?.gamestate?.players?.length == 1) {
       // In Discord
       if (localStorage.getItem('instance_id')) {
-        fetch(`https://api.mcteamster.com/common/rooms/${localStorage.getItem('instance_id')}/${data.roomCode}?game=twinge`, {
+        fetch(`https://api.ohnomer.com/common/rooms/${localStorage.getItem('instance_id')}/${data.roomCode}?game=twinge`, {
           method: "PUT",
         })
       } else {
-        fetch(`https://api.mcteamster.com/common/rooms/${data.roomCode}/${data.roomCode}?game=twinge`, {
+        fetch(`https://api.ohnomer.com/common/rooms/${data.roomCode}/${data.roomCode}?game=twinge`, {
           method: "PUT",
         })
       }
