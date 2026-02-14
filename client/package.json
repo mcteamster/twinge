@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "@discord/embedded-app-sdk": "^2.0.0",
-    "@mcteamster/virgo": "^0.2.2",
+    "@mcteamster/virgo": "^0.2.3",
     "@microsoft/clarity": "^1.0.0",
     "@testing-library/jest-dom": "^5.16.2",
     "@testing-library/react": "^12.1.4",
