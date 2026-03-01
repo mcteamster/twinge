@@ -5,14 +5,14 @@
     "twinge-service": "bin/twinge-service.js"
   },
   "devDependencies": {
-    "aws-cdk": "^2.1033.0",
+    "aws-cdk": "^2.1108.0",
     "esbuild": "^0.25.5"
   },
   "dependencies": {
-    "@aws-sdk/client-apigatewaymanagementapi": "^3.984.0",
-    "@aws-sdk/client-dynamodb": "^3.984.0",
-    "@aws-sdk/lib-dynamodb": "^3.984.0",
-    "aws-cdk-lib": "^2.227.0",
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.1000.0",
+    "@aws-sdk/client-dynamodb": "^3.1000.0",
+    "@aws-sdk/lib-dynamodb": "^3.1000.0",
+    "aws-cdk-lib": "^2.240.0",
     "constructs": "^10.0.0",
     "object-hash": "^3.0.0",
     "unique-names-generator": "^4.7.1",
