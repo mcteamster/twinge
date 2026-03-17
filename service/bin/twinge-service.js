@@ -147,7 +147,7 @@ const regions = [
 ]
 regions.forEach((region) => {
   new TwingeServiceStack(app, `twinge-service-${stage}-${region}`, { env: {
-    account: '922236493844',
+    account: process.env.CDK_DEFAULT_ACCOUNT,
     region: region 
   }});
 })
