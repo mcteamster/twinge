@@ -6,10 +6,7 @@ import { discordSdk } from '../constants/discord';
 class Notices extends React.Component {
   constructor(props) {
     super(props)
-    this.state = {
-      noticeRegions: [],
-      noticeMessage: '',
-    };
+    this.state = { noticeMessage: '' };
   }
 
   componentDidMount() {
@@ -18,21 +15,12 @@ class Notices extends React.Component {
 
   checkNotices = async () => {
     const data = await (await fetch('https://api.ohnomer.com/common/notices/twinge')).json()
-    this.setState((state) => { 
-      state.noticeMessage = data.message
-      if (data.regions?.length > 0) {
-        state.noticeRegions = data.regions
-      } else {
-        state.noticeRegions = []
-      }
-      return state
-    })
+    const message = data.messages?.[this.props.region] ?? data.messages?.ALL ?? ''
+    this.setState({ noticeMessage: message })
   }
   
   render() {
-    return <div className='Notice centered'>
-      {(this.state.noticeRegions.length == 0 || this.state.noticeRegions.includes(this.props.region)) ? this.state.noticeMessage : ''}
-    </div>
+    return <div className='Notice centered'>{this.state.noticeMessage}</div>
   }
 }
 
