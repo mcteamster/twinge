@@ -16,6 +16,6 @@
     "constructs": "^10.0.0",
     "object-hash": "^3.0.0",
     "unique-names-generator": "^4.7.1",
-    "uuid": "^11.1.0"
+    "uuid": "^14.0.0"
   }
 }
