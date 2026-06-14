@@ -13,7 +13,7 @@ The web client for Twinge is a static site hosted in S3 and served from Cloudfro
 
 The React app is relatively simple (there is literally one button you need to press) and was written using class components (which were still cool at the time). `Gamestate` is passed down through props to few layers of components as there was not enough complexity to warrant using a state management library. Audio is provided through an `AudioContext` wrapper using sounds recorded from everyday household objects.
 
-Twinge is now a global game with servers in regions around the world. To seamlessly connect players to the nearest server Twinge uses Virgo: https://github.com/mcteamster/virgo - a library for (very roughly) guessing client location.
+Twinge is now a global game with servers in regions around the world. To seamlessly connect players to the nearest server Twinge uses Virgo: https://github.com/tonzdev/virgo - a library for (very roughly) guessing client location.
 
 ## Twinge Service
 AWS CDK Serverless TypeScript
