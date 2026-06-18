@@ -6,310 +6,234 @@ import { AWS_REGIONS, ENDPOINTS, getRegionFromCode } from './constants/constants
 import { AudioContext, audioSettings } from './context/AudioContext';
 import { LoadingContext } from './context/LoadingContext';
 import { GameWebSocket } from './services/gameWebSocket';
-import React from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Virgo2AWS } from '@mcteamster/virgo';
 
-class App extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      region: localStorage.getItem('region'),
-      gameId: localStorage.getItem('gameId'),
-      playerId: localStorage.getItem('playerId'),
-      createTime: localStorage.getItem('createTime'),
-      audio: audioSettings.loud,
-      loading: false,
-      isConnected: false,
-      overlay: {
-        message: '',
-      },
-      modal: {
-        type: '',
-      }
+function App() {
+  const [region, setRegionState] = useState(localStorage.getItem('region'));
+  const [gameId, setGameId] = useState(localStorage.getItem('gameId'));
+  const [playerId, setPlayerId] = useState(localStorage.getItem('playerId'));
+  const [createTime, setCreateTime] = useState(localStorage.getItem('createTime'));
+  const [audio, setAudio] = useState(audioSettings.loud);
+  const [loading, setLoading] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [overlay, setOverlay] = useState({ message: '' });
+  const [modal, setModal] = useState({ type: '' });
+  const [gameData, setGameData] = useState(null);
+
+  const wsRef = useRef(null);
+  const cursorRef = useRef(0);
+  const animationsRef = useRef([]);
+  const audioRef = useRef({
+    ring: new Audio("/audio/ring.mp3"),
+    buzz: new Audio("/audio/buzz.mp3"),
+  });
+  // Ref mirrors for use inside closures
+  const regionRef = useRef(region);
+  const playerIdRef = useRef(playerId);
+  const gameIdRef = useRef(gameId);
+
+  useEffect(() => { regionRef.current = region; }, [region]);
+  useEffect(() => { playerIdRef.current = playerId; }, [playerId]);
+  useEffect(() => { gameIdRef.current = gameId; }, [gameId]);
+
+  const toggleMute = useCallback(() => {
+    setAudio(a => a === audioSettings.loud ? audioSettings.silent : audioSettings.loud);
+  }, []);
+
+  const toggleQR = useCallback(() => {
+    setModal(m => ({ type: m.type === 'qr' ? '' : 'qr' }));
+  }, []);
+
+  const clearSession = useCallback(() => {
+    wsRef.current?.clearSession();
+  }, []);
+
+  const debounce = useCallback((fn, delay) => {
+    let timer;
+    return function (...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), delay);
     };
-    this.cursor = 0;
-    this.animations = [];
-    this.audio = {
-      ring: new Audio("/audio/ring.mp3"),
-      buzz: new Audio("/audio/buzz.mp3"),
-    }
-    this.ws = null;
-    
-    this.toggleMute = () => {
-      this.setState(state => ({
-        audio: state.audio === audioSettings.loud ? audioSettings.silent : audioSettings.loud,
-      }));
-    }
-    this.toggleQR = () => {
-      this.setState(state => ({
-        modal: {
-          type: state.modal.type === 'qr' ? '' : 'qr',
+  }, []);
+
+  function initializeWebSocket(autoJoin = true) {
+    if (wsRef.current) wsRef.current.disconnect();
+    wsRef.current = new GameWebSocket({
+      onConnectionStatus: (connected) => setIsConnected(connected),
+      onGameState: (data, isBackgroundSync = false) => {
+        setLoading(false);
+        gamestateHandler(data, isBackgroundSync);
+      },
+      onError: (data) => {
+        setLoading(false);
+        console.error(data.message);
+        if (data.code === 2) {
+          wsRef.current?.clearSession();
+          setOverlay({ message: '' });
         }
-      }));
-    }
-    this.setLoading = (loading) => {
-      this.setState(state => ({
-        ...state,
-        loading
-      }));
-    }
-    
-    this.clearSession = () => {
-      if (this.ws) {
-        this.ws.clearSession();
-      }
-    }
-    this.setRegion = (region, autoJoin) => {
-      console.debug('Region:', region)
-      this.setState(state => ({
-        ...state,
-        region
-      }));
-      localStorage.setItem('region', region);
-      this.initializeWebSocket(autoJoin);
-    }
-    
-    this.initializeWebSocket = (autoJoin = true) => {
-      if (this.ws) {
-        this.ws.disconnect();
-      }
-      
-      this.ws = new GameWebSocket({
-        onConnectionStatus: (isConnected) => {
-          this.setState(state => ({
-            ...state,
-            isConnected
-          }));
-        },
-        onGameState: (data, isBackgroundSync = false) => {
-          this.setLoading(false);
-          this.gamestateHandler(data, isBackgroundSync);
-        },
-        onError: (data) => {
-          this.setLoading(false);
-          console.error(data.message);
-          // Clear session if rejoin fails (code 2 indicates game not found)
-          if (data.code === 2) {
-            this.ws?.clearSession();
-            // Clear reconnecting overlay
-            this.setState(state => ({
-              ...state,
-              overlay: { message: '' }
-            }));
-          }
-          this.errorHandler(data.code);
-        },
-        onMaxReconnectReached: () => {
-          this.setState(state => ({
-            ...state,
-            overlay: { message: '' }
-          }));
-        },
-        onSessionCleared: () => {
-          this.setState(state => ({
-            ...state,
-            overlay: { message: '' }
-          }));
-        }
-      });
-      
-      this.ws.connect().then(() => {
-        if (autoJoin) {
-          this.autoJoin();
-        }
-      }).catch(console.error);
-    }
-  }
-  
-  componentDidMount() {
-    this.setState(state => ({ ...state, overlay: { message: '' } }));
-    let path = window.location.pathname.slice(1);
-    if (path.match(/^[A-Z]{4}$/i)) {
-      this.setRegion(getRegionFromCode(path));
-    } else if (localStorage.getItem('region')) {
-      this.setRegion(localStorage.getItem('region'));
-    } else {
-      // Try to approximate the closest region using https://github.com/mcteamster/virgo
-      const { closestRegion } = Virgo2AWS.getClosestRegion({ regions: Object.keys(AWS_REGIONS) });
-      console.info(`Approximate Closest AWS Region: ${closestRegion}`)
-      if (AWS_REGIONS[closestRegion]) {
-        this.setRegion(AWS_REGIONS[closestRegion])
-      } else {
-        this.setRegion('DEFAULT')
-      }
-    }
+        errorHandler(data.code);
+      },
+      onMaxReconnectReached: () => setOverlay({ message: '' }),
+      onSessionCleared: () => setOverlay({ message: '' }),
+    });
+    wsRef.current.connect().then(() => {
+      if (autoJoin) autoJoin_();
+    }).catch(console.error);
   }
 
-  autoJoin = async () => {
-    // Try to restore session first
-    const session = this.ws?.loadSession();
+  function setRegion(newRegion, autoJoin) {
+    console.debug('Region:', newRegion);
+    setRegionState(newRegion);
+    regionRef.current = newRegion;
+    localStorage.setItem('region', newRegion);
+    initializeWebSocket(autoJoin);
+  }
+
+  async function autoJoin_() {
+    const session = wsRef.current?.loadSession();
     if (session) {
       console.debug('Restoring session:', session);
-      this.setState(state => ({ 
-        ...state, 
-        gameId: session.gameId, 
-        playerId: session.playerId,
-        overlay: { message: 'Reconnecting...' } 
-      }));
-      this.ws.setGameSession(session.gameId, session.playerId);
-      this.sendMsg({ 
-        action: 'play', 
-        actionType: 'rejoin', 
-        gameId: session.gameId, 
-        playerId: session.playerId 
-      });
+      setGameId(session.gameId);
+      setPlayerId(session.playerId);
+      gameIdRef.current = session.gameId;
+      playerIdRef.current = session.playerId;
+      setOverlay({ message: 'Reconnecting...' });
+      wsRef.current.setGameSession(session.gameId, session.playerId);
+      sendMsg({ action: 'play', actionType: 'rejoin', gameId: session.gameId, playerId: session.playerId });
       return;
     }
 
-    // Join from Path, Memory, or Discord Channel's latest session
     let createTime = new Date(localStorage.getItem('createTime'));
     let currentTime = new Date();
     let path = window.location.pathname.slice(1);
 
     if (path.match(/^[A-Z]{4}$/i)) {
-      this.setState(state => ({ ...state, overlay: { message: 'Connecting...' } }));
-      this.sendMsg({ action: 'play', actionType: 'join', roomCode: path });
+      setOverlay({ message: 'Connecting...' });
+      sendMsg({ action: 'play', actionType: 'join', roomCode: path });
       window.history.replaceState({}, document.title, "/");
     } else if (createTime > currentTime.setHours(currentTime.getHours() - 1)) {
-      this.setState(state => ({ ...state, overlay: { message: 'Connecting...' } }));
-      this.sendMsg({ action: 'play', actionType: 'join', gameId: this.state.gameId, playerId: this.state.playerId });
+      setOverlay({ message: 'Connecting...' });
+      sendMsg({ action: 'play', actionType: 'join', gameId: gameIdRef.current, playerId: playerIdRef.current });
     } else if (localStorage.getItem('instance_id')) {
-      console.debug(`Checking room info for: ${localStorage.getItem('instance_id')}`)
-      const roomData = await (await fetch(`https://api.ohnomer.com/common/rooms/${localStorage.getItem('instance_id')}`)).json()
+      console.debug(`Checking room info for: ${localStorage.getItem('instance_id')}`);
+      const roomData = await (await fetch(`https://api.ohnomer.com/common/rooms/${localStorage.getItem('instance_id')}`)).json();
       if (roomData.room) {
-        if (getRegionFromCode(roomData.room) != this.state.region) {
-          // Handle Region Mismatch
-          this.setState(state => ({ ...state, overlay: { message: 'Connecting...' } }));
-          this.setRegion(getRegionFromCode(roomData.room));
+        if (getRegionFromCode(roomData.room) != regionRef.current) {
+          setOverlay({ message: 'Connecting...' });
+          setRegion(getRegionFromCode(roomData.room));
         } else {
-          this.setState(state => ({ ...state, overlay: { message: 'Connecting...' } }));
-          this.sendMsg({ action: 'play', actionType: 'join', roomCode: roomData.room });
+          setOverlay({ message: 'Connecting...' });
+          sendMsg({ action: 'play', actionType: 'join', roomCode: roomData.room });
         }
       }
     }
-  };
-
-  messageHandler = (msg) => {
-    // This method is now handled by the WebSocket service callbacks
-    // Keeping for compatibility but functionality moved to callbacks
   }
 
-  gamestateHandler = (data, isBackgroundSync = false) => {
-    // Save session when game is created/joined (only if not already set)
-    const gameId = data.gameId;
-    const playerId = this.state.playerId;
-    
-    if (gameId && playerId && (!this.ws?.gameId || !this.ws?.playerId)) {
-      console.debug('📥 Setting up new game session', { gameId, playerId });
-      this.ws?.setGameSession(gameId, playerId);
+  useEffect(() => {
+    setOverlay({ message: '' });
+    let path = window.location.pathname.slice(1);
+    if (path.match(/^[A-Z]{4}$/i)) {
+      setRegion(getRegionFromCode(path));
+    } else if (localStorage.getItem('region')) {
+      setRegion(localStorage.getItem('region'));
+    } else {
+      const { closestRegion } = Virgo2AWS.getClosestRegion({ regions: Object.keys(AWS_REGIONS) });
+      console.info(`Approximate Closest AWS Region: ${closestRegion}`);
+      setRegion(AWS_REGIONS[closestRegion] || 'DEFAULT');
     }
-    
-    // Clear session when game ends
+  }, []);
+
+
+  function gamestateHandler(data, isBackgroundSync = false) {
+    const gId = data.gameId;
+    const pId = playerIdRef.current;
+
+    if (gId && pId && (!wsRef.current?.gameId || !wsRef.current?.playerId)) {
+      console.debug('📥 Setting up new game session', { gId, pId });
+      wsRef.current?.setGameSession(gId, pId);
+    }
+
     if (data?.gamestate?.meta?.phase === 'won' || data?.gamestate?.meta?.phase === 'lost') {
       console.debug('🎮 Game ended, clearing session');
-      this.ws?.clearSession();
+      wsRef.current?.clearSession();
     }
-    
-    // Clear session if current player is no longer in the game (kicked)
-    const currentPlayer = data?.gamestate?.players?.find(p => p.playerId === this.state.playerId);
-    if (this.state.playerId && data?.gamestate?.players && !currentPlayer) {
+
+    const currentPlayer = data?.gamestate?.players?.find(p => p.playerId === playerIdRef.current);
+    if (playerIdRef.current && data?.gamestate?.players && !currentPlayer) {
       console.debug('🎮 Player no longer in game, clearing session');
-      this.ws?.clearSession();
+      wsRef.current?.clearSession();
     }
-    
-    // Publish room code upon creation
+
     if (data.roomCode && data?.gamestate?.meta?.phase == 'open' && data?.gamestate?.players?.length == 1) {
-      // In Discord
       if (localStorage.getItem('instance_id')) {
-        fetch(`https://api.ohnomer.com/common/rooms/${localStorage.getItem('instance_id')}/${data.roomCode}?game=twinge`, {
-          method: "PUT",
-        })
+        fetch(`https://api.ohnomer.com/common/rooms/${localStorage.getItem('instance_id')}/${data.roomCode}?game=twinge`, { method: "PUT" });
       } else {
-        fetch(`https://api.ohnomer.com/common/rooms/${data.roomCode}/${data.roomCode}?game=twinge`, {
-          method: "PUT",
-        })
+        fetch(`https://api.ohnomer.com/common/rooms/${data.roomCode}/${data.roomCode}?game=twinge`, { method: "PUT" });
       }
     }
 
-    // Store game session data
-    if (data.gamestate?.gameId) {
-      localStorage.setItem('gameId', data.gamestate.gameId);
-    }
-    if (data.playerId) {
-      localStorage.setItem('playerId', data.playerId);
-    }
+    if (data.gamestate?.gameId) localStorage.setItem('gameId', data.gamestate.gameId);
+    if (data.playerId) localStorage.setItem('playerId', data.playerId);
     localStorage.setItem('createTime', new Date().toISOString());
 
-    // Handle audio cues (skip for background sync)
     if (!isBackgroundSync && data?.gamestate?.public?.pile?.length > 0) {
       let latestCard = data.gamestate.public.pile[data.gamestate.public.pile.length - 1];
       if (latestCard.missed) {
-        this.audio.buzz.play();
+        audioRef.current.buzz.play();
       } else {
-        this.audio.ring.play();
+        audioRef.current.ring.play();
       }
     }
 
-    // Update Cursor 
-    if ((data?.gamestate?.public?.pile && !this.cursor) || (data?.gamestate?.public?.pile[this?.cursor - 1]?.round !== data?.gamestate?.meta?.round)) {
-      this.cursor = 1 + data.gamestate.public.pile.map((card) => { return card.round }).lastIndexOf(data.gamestate.meta.round - 1);
-      if (this.cursor < 0) {
-        this.cursor = 0;
-      }
+    if ((data?.gamestate?.public?.pile && !cursorRef.current) || (data?.gamestate?.public?.pile[cursorRef.current - 1]?.round !== data?.gamestate?.meta?.round)) {
+      cursorRef.current = 1 + data.gamestate.public.pile.map((card) => card.round).lastIndexOf(data.gamestate.meta.round - 1);
+      if (cursorRef.current < 0) cursorRef.current = 0;
     }
 
-    // Animations if gamestate has progressed
-    if ((data?.gamestate?.public?.pile.length > this.cursor)) {
-      for (let i = this.cursor; i < (data?.gamestate?.public?.pile.length); i++) {
+    if (data?.gamestate?.public?.pile.length > cursorRef.current) {
+      for (let i = cursorRef.current; i < data?.gamestate?.public?.pile.length; i++) {
         let game = JSON.parse(JSON.stringify(data));
         game.gamestate.public.pile = data.gamestate.public.pile.slice(0, i + 1);
         let tempHand = [];
         data.gamestate.public.pile.slice(i + 1).forEach((card) => {
           let player = game.gamestate.players[card.playerIndex];
           player && player.handSize++;
-          player?.playerId === this.state.playerId && tempHand.push(card.card);
-        })
-        let activePlayer = game.gamestate.players.find((player) => { return player.playerId === this.state.playerId });
-        if (activePlayer) {
-          activePlayer.hand.unshift(...tempHand);
-        }
+          player?.playerId === playerIdRef.current && tempHand.push(card.card);
+        });
+        let activePlayer = game.gamestate.players.find((player) => player.playerId === playerIdRef.current);
+        if (activePlayer) activePlayer.hand.unshift(...tempHand);
         if (i !== (data?.gamestate?.public?.pile.length - 1) && (data.gamestate.meta.phase === 'won' || data.gamestate.meta.phase === 'lost')) {
           game.gamestate.meta.phase = 'playing';
         }
-        this.animations.push(setTimeout(() => {
-          this.setState(state => ({
-            ...state,
-            overlay: { message: '' },
-            ...game,
-            playerId: game?.gamestate?.players?.reduce((playerId, player) => {
-              return `${playerId}${player.playerId || ''}`
-            }, ''),
-          }));
-        }, 100 * (i - this.cursor)));
+        animationsRef.current.push(setTimeout(() => {
+          const newPlayerId = game?.gamestate?.players?.reduce((acc, player) => `${acc}${player.playerId || ''}`, '');
+          setOverlay({ message: '' });
+          setGameData({ ...game, playerId: newPlayerId });
+          setGameId(game.gamestate?.gameId || gameIdRef.current);
+          setPlayerId(newPlayerId);
+          playerIdRef.current = newPlayerId;
+        }, 100 * (i - cursorRef.current)));
       }
-      this.cursor = data?.gamestate?.public?.pile.length;
+      cursorRef.current = data?.gamestate?.public?.pile.length;
     } else {
-      this.animations.forEach((animation) => {
-        clearTimeout(animation);
-      })
-      this.setState(state => ({
-        ...state,
-        overlay: { message: '' },
-        ...data,
-        playerId: data?.gamestate?.players?.reduce((playerId, player) => {
-          return `${playerId}${player.playerId || ''}`
-        }, ''),
-      }));
+      animationsRef.current.forEach(clearTimeout);
+      animationsRef.current = [];
+      const newPlayerId = data?.gamestate?.players?.reduce((acc, player) => `${acc}${player.playerId || ''}`, '');
+      setOverlay({ message: '' });
+      setGameData({ ...data, playerId: newPlayerId });
+      setGameId(data.gamestate?.gameId || gameIdRef.current);
+      setPlayerId(newPlayerId);
+      playerIdRef.current = newPlayerId;
     }
 
-    // Store game metadata
-    localStorage.setItem('gameId', this.state.gameId);
-    localStorage.setItem('playerId', this.state.playerId);
-    localStorage.setItem('createTime', this.state.createTime);
+    localStorage.setItem('gameId', gameIdRef.current);
+    localStorage.setItem('playerId', playerIdRef.current);
   }
 
-  errorHandler = async (error) => {
-    let errorHandlers = {
+
+  function errorHandler(error) {
+    const handlers = {
       2: () => {
         try {
           let input = document.getElementById('inputBox');
@@ -323,93 +247,85 @@ class App extends React.Component {
         }
         localStorage.removeItem('playerId');
         localStorage.removeItem('createTime');
-        this.setState({
-          gameId: null,
-          playerId: null,
-          createTime: null,
-          roomCode: null,
-          gamestate: null,
-          stateHash: null,
-        });
+        setGameId(null);
+        setPlayerId(null);
+        setCreateTime(null);
+        setGameData(null);
       },
     };
-    errorHandlers[error] && errorHandlers[error]();
+    handlers[error] && handlers[error]();
   }
 
-  debounce = (fn, delay) => {
-    let timer
-    return function (...args) {
-      clearTimeout(timer)
-      timer = setTimeout(() => fn(...args), delay)
-    }
-  }
-
-  sendMsg = async (msg) => {
-    // Handle Region Mismatch
-    if (msg.roomCode && getRegionFromCode(msg.roomCode) != this.state.region) {
-      this.setRegion(getRegionFromCode(msg.roomCode));
-      setTimeout(() => {
-        this.sendMsg(msg)
-      }, 0)
+  function sendMsg(msg) {
+    if (msg.roomCode && getRegionFromCode(msg.roomCode) != regionRef.current) {
+      setRegion(getRegionFromCode(msg.roomCode));
+      setTimeout(() => sendMsg(msg), 0);
       return;
     }
-    
-    if (!this.ws) {
+    if (!wsRef.current) {
       console.error('WebSocket not initialized');
       return;
     }
-    
-    this.setLoading(true);
-    this.ws.send(msg);
+    setLoading(true);
+    wsRef.current.send(msg);
   }
 
-  render() {
-    // Check for In-App Browsers
-    if (navigator.userAgent.match(/FBAN|FBAV|Instagram/i)) {
-      console.warn('In-app browser detected');
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', textAlign: 'center', height: '60vh', width: 'calc(100vw - 2em)', padding: '1em', fontSize: '1.5em' }}>
-          <h1>😣 twinge</h1>
-          please open this page in your primary browser for the best gameplay experience
-        </div>
-      )
-    } else if (window.location.pathname.match('/about')) {
-      return <div className='App'>
-        <About></About>
+  // Build a state-compatible object for child components that expect the old `state` prop shape
+  const state = {
+    region,
+    gameId: gameData?.gamestate?.gameId || gameId,
+    playerId,
+    createTime,
+    audio,
+    loading,
+    isConnected,
+    overlay,
+    modal,
+    ...(gameData || {}),
+  };
+
+  const debouncedSendMsg = debounce(sendMsg, 50);
+
+  if (navigator.userAgent.match(/FBAN|FBAV|Instagram/i)) {
+    console.warn('In-app browser detected');
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', textAlign: 'center', height: '60vh', width: 'calc(100vw - 2em)', padding: '1em', fontSize: '1.5em' }}>
+        <h1>😣 twinge</h1>
+        please open this page in your primary browser for the best gameplay experience
       </div>
-    } else if (window.location.pathname.match('/legal')) {
-      return <div className='App'>
-        <Legal></Legal>
-      </div>
-    } else if ((!this.state?.gamestate?.meta?.phase || this.state?.gamestate?.meta?.phase === 'open' || this.state?.gamestate?.meta?.phase === 'closed')) {
-      return <div className='App unselectable'>
-        <AudioContext.Provider value={this.state.audio}>
-          <LoadingContext.Provider value={this.state.loading}>
-            <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion} clearSession={this.clearSession}></Header>
-            <Lobby state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} ></Lobby>
-            <Footer state={this.state}></Footer>
-            <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
-            <Overlay overlay={this.state.overlay}></Overlay>
-            <Notices region={this.state.region} />
-            <ConnectionStatus isConnected={this.state.isConnected} />
-          </LoadingContext.Provider>
-        </AudioContext.Provider>
-      </div>
-    } else {
-      return <div className='App unselectable'>
-        <AudioContext.Provider value={this.state.audio}>
-          <LoadingContext.Provider value={this.state.loading}>
-            <Header state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} toggleMute={this.toggleMute} toggleQR={this.toggleQR} region={this.state.region} setRegion={this.setRegion} clearSession={this.clearSession}></Header>
-            <Play state={this.state} sendMsg={this.debounce(this.sendMsg, 50)} audio={this.audio}></Play>
-            <Footer state={this.state}></Footer>
-            <Modal state={this.state} toggleQR={this.toggleQR}></Modal>
-            <Overlay state={this.state} overlay={this.state.overlay}></Overlay>
-            <Notices region={this.state.region} />
-            <ConnectionStatus isConnected={this.state.isConnected} />
-          </LoadingContext.Provider>
-        </AudioContext.Provider>
-      </div>
-    }
+    );
+  } else if (window.location.pathname.match('/about')) {
+    return <div className='App'><About></About></div>;
+  } else if (window.location.pathname.match('/legal')) {
+    return <div className='App'><Legal></Legal></div>;
+  } else if (!state?.gamestate?.meta?.phase || state?.gamestate?.meta?.phase === 'open' || state?.gamestate?.meta?.phase === 'closed') {
+    return <div className='App unselectable'>
+      <AudioContext.Provider value={audio}>
+        <LoadingContext.Provider value={loading}>
+          <Header state={state} sendMsg={debouncedSendMsg} toggleMute={toggleMute} toggleQR={toggleQR} region={region} setRegion={setRegion} clearSession={clearSession}></Header>
+          <Lobby state={state} sendMsg={debouncedSendMsg}></Lobby>
+          <Footer state={state}></Footer>
+          <Modal state={state} toggleQR={toggleQR}></Modal>
+          <Overlay overlay={overlay}></Overlay>
+          <Notices region={region} />
+          <ConnectionStatus isConnected={isConnected} />
+        </LoadingContext.Provider>
+      </AudioContext.Provider>
+    </div>;
+  } else {
+    return <div className='App unselectable'>
+      <AudioContext.Provider value={audio}>
+        <LoadingContext.Provider value={loading}>
+          <Header state={state} sendMsg={debouncedSendMsg} toggleMute={toggleMute} toggleQR={toggleQR} region={region} setRegion={setRegion} clearSession={clearSession}></Header>
+          <Play state={state} sendMsg={debouncedSendMsg} audio={audioRef.current}></Play>
+          <Footer state={state}></Footer>
+          <Modal state={state} toggleQR={toggleQR}></Modal>
+          <Overlay state={state} overlay={overlay}></Overlay>
+          <Notices region={region} />
+          <ConnectionStatus isConnected={isConnected} />
+        </LoadingContext.Provider>
+      </AudioContext.Provider>
+    </div>;
   }
 }
 
