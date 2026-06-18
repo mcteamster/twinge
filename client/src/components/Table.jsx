@@ -224,10 +224,14 @@ function Hand({ state, sendMsg, audio }) {
   const [endBuffer, setEndBuffer] = useState(0);
   const intervalRef = useRef(null);
   const stateHashRef = useRef(state.stateHash);
+  const stateRef = useRef(state);
   // Refs mirroring buffer state to avoid stale closures in keyboard handlers
   const cardBufferRef = useRef(0);
   const nextBufferRef = useRef(0);
   const replayBufferRef = useRef(0);
+
+  // Keep stateRef current on every render
+  stateRef.current = state;
 
   useEffect(() => { cardBufferRef.current = cardBuffer; }, [cardBuffer]);
   useEffect(() => { nextBufferRef.current = nextBuffer; }, [nextBuffer]);
@@ -236,10 +240,10 @@ function Hand({ state, sendMsg, audio }) {
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key == " ") {
-        if (state.gamestate.meta.phase === 'won' || state.gamestate.meta.phase === 'lost') {
+        if (stateRef.current.gamestate.meta.phase === 'won' || stateRef.current.gamestate.meta.phase === 'lost') {
           if (replayBufferRef.current == 0) startBuffer('replayBuffer');
         } else {
-          let unplayedCards = state.gamestate.players.reduce((playerCards, player) => { return playerCards += player.handSize }, 0);
+          let unplayedCards = stateRef.current.gamestate.players.reduce((playerCards, player) => { return playerCards += player.handSize }, 0);
           if (unplayedCards > 0) {
             if (cardBufferRef.current == 0) startBuffer('cardBuffer');
           } else {

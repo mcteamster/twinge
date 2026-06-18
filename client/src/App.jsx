@@ -49,13 +49,8 @@ function App() {
     wsRef.current?.clearSession();
   }, []);
 
-  const debounce = useCallback((fn, delay) => {
-    let timer;
-    return function (...args) {
-      clearTimeout(timer);
-      timer = setTimeout(() => fn(...args), delay);
-    };
-  }, []);
+  const sendMsgRef = useRef(null);
+  const debouncedSendMsgRef = useRef(null);
 
   function initializeWebSocket(autoJoin = true) {
     if (wsRef.current) wsRef.current.disconnect();
@@ -270,6 +265,16 @@ function App() {
     wsRef.current.send(msg);
   }
 
+  // Keep sendMsg and debounced version in refs so they're stable across renders
+  sendMsgRef.current = sendMsg;
+  if (!debouncedSendMsgRef.current) {
+    let timer;
+    debouncedSendMsgRef.current = (...args) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => sendMsgRef.current(...args), 50);
+    };
+  }
+
   // Build a state-compatible object for child components that expect the old `state` prop shape
   const state = {
     region,
@@ -284,7 +289,7 @@ function App() {
     ...(gameData || {}),
   };
 
-  const debouncedSendMsg = debounce(sendMsg, 50);
+  const debouncedSendMsg = debouncedSendMsgRef.current;
 
   if (navigator.userAgent.match(/FBAN|FBAV|Instagram/i)) {
     console.warn('In-app browser detected');
