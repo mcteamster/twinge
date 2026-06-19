@@ -36,6 +36,9 @@ const Player = React.memo(function Player(props) {
   const intervalRef = useRef(null);
   const handSizeRef = useRef(props.handSize);
   const stateHashRef = useRef(props.state.stateHash);
+  const kickBufferRef = useRef(0);
+  const propsRef = useRef(props);
+  propsRef.current = props;
 
   useEffect(() => {
     if (props.handSize !== handSizeRef.current && kickBuffer === 0) {
@@ -43,6 +46,8 @@ const Player = React.memo(function Player(props) {
     }
     handSizeRef.current = props.handSize;
   }, [props.handSize]);
+
+  useEffect(() => { kickBufferRef.current = kickBuffer; }, [kickBuffer]);
 
   function highlight() {
     try {
@@ -60,7 +65,7 @@ const Player = React.memo(function Player(props) {
   function startBuffer(buffer) {
     cancelBuffer();
     intervalRef.current = setInterval(() => {
-      if (stateHashRef.current !== props.state.stateHash) {
+      if (stateHashRef.current !== propsRef.current.state.stateHash) {
         cancelBuffer();
       } else if (buffer === 'kickBuffer') {
         setKickBuffer(prev => prev < 100 ? prev + 1 : prev);
@@ -69,19 +74,16 @@ const Player = React.memo(function Player(props) {
   }
 
   function triggerBuffer(buffer) {
-    setKickBuffer(prev => {
-      if (prev >= 100) {
-        props.sendMsg({
-          action: 'play',
-          gameId: props.state.gameId,
-          playerId: props.state.playerId,
-          actionType: 'kick',
-          target: (props.number - 1),
-          stateHash: props.state.stateHash,
-        });
-      }
-      return prev;
-    });
+    if (kickBufferRef.current >= 100) {
+      props.sendMsg({
+        action: 'play',
+        gameId: props.state.gameId,
+        playerId: props.state.playerId,
+        actionType: 'kick',
+        target: (props.number - 1),
+        stateHash: props.state.stateHash,
+      });
+    }
     cancelBuffer();
   }
 
@@ -178,8 +180,8 @@ function Latest({ event, round, audio }) {
             audio.ring.play();
           }
         }
-        lastCardRef.current = card || 0;
       }
+      lastCardRef.current = event[0]?.card || 0;
     }
   }, [event]);
 
@@ -282,7 +284,7 @@ function Hand({ state, sendMsg, audio }) {
       cancelBuffer();
       const setter = { cardBuffer: setCardBuffer, nextBuffer: setNextBuffer, replayBuffer: setReplayBuffer, endBuffer: setEndBuffer }[buffer];
       intervalRef.current = setInterval(() => {
-        if (buffer === 'cardBuffer' && stateHashRef.current !== state.stateHash) {
+        if (buffer === 'cardBuffer' && stateHashRef.current !== stateRef.current.stateHash) {
           cancelBuffer();
         } else {
           setter(prev => prev == 0 ? 10 : prev + 1);
