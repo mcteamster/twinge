@@ -7,11 +7,14 @@ function Notices({ region }) {
   const [noticeMessage, setNoticeMessage] = useState('');
 
   useEffect(() => {
-    fetch('https://api.ohnomer.com/common/notices/twinge')
+    const controller = new AbortController();
+    fetch('https://api.ohnomer.com/common/notices/twinge', { signal: controller.signal })
       .then(r => r.json())
       .then(data => {
         setNoticeMessage(data.messages?.[region] ?? data.messages?.ALL ?? '');
-      });
+      })
+      .catch(err => { if (err.name !== 'AbortError') console.error(err); });
+    return () => controller.abort();
   }, [region]);
 
   return <div className='Notice centered'>{noticeMessage}</div>;

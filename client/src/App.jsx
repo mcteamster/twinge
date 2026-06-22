@@ -137,6 +137,7 @@ function App() {
       console.info(`Approximate Closest AWS Region: ${closestRegion}`);
       setRegion(AWS_REGIONS[closestRegion] || 'DEFAULT');
     }
+    return () => { wsRef.current?.disconnect(); };
   }, []);
 
 

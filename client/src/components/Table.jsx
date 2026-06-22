@@ -181,8 +181,8 @@ function Latest({ event, round, audio }) {
           }
         }
       }
-      lastCardRef.current = event[0]?.card || 0;
     }
+    lastCardRef.current = event[0]?.card || 0;
   }, [event]);
 
   if (event[0]) {
@@ -272,8 +272,8 @@ function Hand({ state, sendMsg, audio }) {
   function sendMsg2(type) {
     sendMsg({
       action: 'play',
-      gameId: state.gameId,
-      playerId: state.playerId,
+      gameId: stateRef.current.gameId,
+      playerId: stateRef.current.playerId,
       actionType: type,
       stateHash: stateHashRef.current,
     });
