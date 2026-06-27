@@ -227,13 +227,15 @@ function Hand({ state, sendMsg, audio }) {
   const intervalRef = useRef(null);
   const stateHashRef = useRef(state.stateHash);
   const stateRef = useRef(state);
+  const loadingRef = useRef(loading);
   // Refs mirroring buffer state to avoid stale closures in keyboard handlers
   const cardBufferRef = useRef(0);
   const nextBufferRef = useRef(0);
   const replayBufferRef = useRef(0);
 
-  // Keep stateRef current on every render
+  // Keep stateRef and loadingRef current on every render
   stateRef.current = state;
+  loadingRef.current = loading;
 
   useEffect(() => { cardBufferRef.current = cardBuffer; }, [cardBuffer]);
   useEffect(() => { nextBufferRef.current = nextBuffer; }, [nextBuffer]);
@@ -280,7 +282,7 @@ function Hand({ state, sendMsg, audio }) {
   }
 
   function startBuffer(buffer) {
-    if (!loading) {
+    if (!loadingRef.current) {
       cancelBuffer();
       const setter = { cardBuffer: setCardBuffer, nextBuffer: setNextBuffer, replayBuffer: setReplayBuffer, endBuffer: setEndBuffer }[buffer];
       intervalRef.current = setInterval(() => {
@@ -302,7 +304,7 @@ function Hand({ state, sendMsg, audio }) {
   }
 
   function cancelBuffer() {
-    stateHashRef.current = state.stateHash;
+    stateHashRef.current = stateRef.current.stateHash;
     clearInterval(intervalRef.current);
     setCardBuffer(0);
     setNextBuffer(0);

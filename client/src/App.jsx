@@ -24,10 +24,13 @@ function App() {
   const wsRef = useRef(null);
   const cursorRef = useRef(0);
   const animationsRef = useRef([]);
-  const audioRef = useRef({
-    ring: new Audio("/audio/ring.mp3"),
-    buzz: new Audio("/audio/buzz.mp3"),
-  });
+  const audioRef = useRef(null);
+  if (!audioRef.current) {
+    audioRef.current = {
+      ring: new Audio("/audio/ring.mp3"),
+      buzz: new Audio("/audio/buzz.mp3"),
+    };
+  }
   // Ref mirrors for use inside closures
   const regionRef = useRef(region);
   const playerIdRef = useRef(playerId);
