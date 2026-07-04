@@ -50,16 +50,14 @@ const Player = React.memo(function Player(props) {
   useEffect(() => { kickBufferRef.current = kickBuffer; }, [kickBuffer]);
 
   function highlight() {
-    try {
-      if (props?.context !== 'lobby') {
-        document.getElementById(id).classList.add('playerHighlight');
-        setTimeout(() => {
-          document.getElementById(id).classList.remove('playerHighlight');
-        }, 500)
-      }
-    } catch (err) {
-      console.error(err);
-    }
+    if (props?.context === 'lobby') return;
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('playerHighlight');
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('playerHighlight');
+    }, 500);
   }
 
   function startBuffer(buffer) {

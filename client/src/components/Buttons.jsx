@@ -4,10 +4,12 @@ import { LoadingContext } from '../context/LoadingContext';
 function Create({ sendMsg }) {
   return <div className='Create centered' onClick={() => {
     let create = document.querySelector('.Create');
+    if (!create) return;
     create.classList.remove('clickedButton');
     create.classList.add('clickedButton');
     setTimeout(() => {
-      create.classList.remove('clickedButton');
+      let create = document.querySelector('.Create');
+      if (create) create.classList.remove('clickedButton');
     }, 1000);
     let deckSize = document.getElementById('deckSize').value;
     let maxLives = document.getElementById('maxLives').value;
@@ -54,10 +56,12 @@ function Rename({ state, sendMsg }) {
 function Start({ state, sendMsg }) {
   return <div className='Start centered' onClick={() => {
     let start = document.querySelector('.Start');
+    if (!start) return;
     start.classList.remove('clickedButton');
     start.classList.add('clickedButton');
     setTimeout(() => {
-      start.classList.remove('clickedButton');
+      let start = document.querySelector('.Start');
+      if (start) start.classList.remove('clickedButton');
     }, 1000);
     sendMsg({ action: 'play', actionType: 'start', gameId: state.gameId, playerId: state.playerId });
   }}>

@@ -125,9 +125,13 @@ function Overlay({ overlay, state }) {
 function Modal({ state, toggleQR }) {
   function copyToClipboard() {
     let code = document.getElementById('roomUrl');
+    if (!code) return;
     code.classList.remove('clickedLink');
     code.classList.add('clickedLink');
-    setTimeout(() => code.classList.remove('clickedLink'), 250);
+    setTimeout(() => {
+      let code = document.getElementById('roomUrl');
+      if (code) code.classList.remove('clickedLink');
+    }, 250);
     try {
       window.navigator.clipboard.writeText(`https://twinge.mcteamster.com/${state.roomCode}`);
     } catch (err) {
