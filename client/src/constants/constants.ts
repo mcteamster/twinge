@@ -1,5 +1,7 @@
+import type { Region } from '../types';
+
 // Enable Regions by uncommenting the flags
-export const FLAGS = {
+export const FLAGS: Record<string, string> = {
   'AU': '🇦🇺',
   'JP': '🇯🇵',
   'SG': '🇸🇬',
@@ -11,7 +13,7 @@ export const FLAGS = {
   'WEST': '🇺🇸',
 }
 
-export const ENDPOINTS = {
+export const ENDPOINTS: Record<Region, string> = {
   'AU': 'wss://au.twinge.mcteamster.com',      // Sydney AU 🇦🇺
   'JP': 'wss://jp.twinge.mcteamster.com',      // Tokyo JP 🇯🇵
   'SG': 'wss://sg.twinge.mcteamster.com',      // Singapore SG 🇸🇬
@@ -24,7 +26,7 @@ export const ENDPOINTS = {
   'DEFAULT': 'wss://eu.twinge.mcteamster.com' // Default to EU as the most central server
 }
 
-export const AWS_REGIONS = {
+export const AWS_REGIONS: Record<string, Region> = {
   'ap-southeast-2': 'AU',
   'ap-northeast-1': 'JP',
   'ap-southeast-1': 'SG',
@@ -36,9 +38,9 @@ export const AWS_REGIONS = {
   'us-west-2': 'WEST',
 }
 
-export const getRegionFromCode = (roomCode) => {
+export const getRegionFromCode = (roomCode: string): Region => {
   const lastLetter = roomCode[roomCode.length - 1].toUpperCase();
-  let region;
+  let region: Region;
 
   if ('BC'.includes(lastLetter)) {
     region = 'AU'; // Sydney AU 🇦🇺

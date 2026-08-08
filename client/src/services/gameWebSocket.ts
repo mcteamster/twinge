@@ -1,23 +1,27 @@
 import { ENDPOINTS } from '../constants/constants';
+import type { WebSocketCallbacks, ServerMessage, StoredSession } from '../types';
 
 export class GameWebSocket {
-  constructor(callbacks) {
-    this.ws = null;
-    this.gameId = null;
-    this.playerId = null;
+  ws: WebSocket | null = null;
+  gameId: string | null = null;
+  playerId: string | null = null;
+  private callbacks: WebSocketCallbacks;
+  private messageQueue: Record<string, unknown>[] = [];
+  reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number = 5;
+  private reconnectDelay: number = 1000;
+  private reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private syncIntervalId: ReturnType<typeof setInterval> | null = null;
+  private lastRefreshTime: number | undefined = undefined;
+
+  constructor(callbacks: WebSocketCallbacks) {
     this.callbacks = callbacks;
-    this.messageQueue = [];
-    this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
-    this.reconnectDelay = 1000;
-    this.reconnectTimeoutId = null;
-    this.syncIntervalId = null;
   }
 
-  connect() {
+  connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       const region = localStorage.getItem('region') || 'DEFAULT';
-      const wsUrl = ENDPOINTS[region];
+      const wsUrl = ENDPOINTS[region as keyof typeof ENDPOINTS];
       
       this.ws = new WebSocket(wsUrl);
       console.debug(`🟢 Connecting to Twinge WebSocket: ${wsUrl} (${region})`);
@@ -35,7 +39,7 @@ export class GameWebSocket {
         while (this.messageQueue.length > 0) {
           const message = this.messageQueue.shift();
           if (message) {
-            console.debug('🔼 Sending queued message:', message.action);
+            console.debug('🔼 Sending queued message:', message['action']);
             this.send(message);
           }
         }
@@ -47,10 +51,10 @@ export class GameWebSocket {
         reject(error);
       };
 
-      this.ws.onmessage = (event) => {
+      this.ws.onmessage = (event: MessageEvent) => {
         try {
-          const message = JSON.parse(event.data);
-          console.debug('🔽 WebSocket received:', message.type, message);
+          const message = JSON.parse(event.data as string) as ServerMessage;
+          console.debug('🔽 WebSocket received:', message.code, message);
           
           if (message.code === 0 && message.message === 'ack') {
             console.debug('ACK received');
@@ -63,7 +67,7 @@ export class GameWebSocket {
             }
           } else {
             // Check if this is a response to a background refresh
-            const isBackgroundRefresh = this.lastRefreshTime && (Date.now() - this.lastRefreshTime) < 2000;
+            const isBackgroundRefresh = this.lastRefreshTime !== undefined && (Date.now() - this.lastRefreshTime) < 2000;
             if (this.callbacks?.onGameState) {
               this.callbacks.onGameState(message, isBackgroundRefresh);
             }
@@ -73,7 +77,7 @@ export class GameWebSocket {
         }
       };
 
-      this.ws.onclose = (event) => {
+      this.ws.onclose = (event: CloseEvent) => {
         console.debug('🔴 WebSocket connection closed:', event.code, event.reason);
         
         if (this.callbacks?.onConnectionStatus) {
@@ -88,7 +92,7 @@ export class GameWebSocket {
     });
   }
 
-  attemptReconnect() {
+  attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('🚫 Max reconnection attempts reached');
       // Clear session when reconnection fails completely
@@ -140,8 +144,8 @@ export class GameWebSocket {
     }, this.reconnectDelay);
   }
 
-  send(message) {
-    console.debug('🔼 WebSocket sending:', message.action || message.actionType, message);
+  send(message: Record<string, unknown>): void {
+    console.debug('🔼 WebSocket sending:', message['action'] ?? message['actionType'], message);
     
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
@@ -159,11 +163,10 @@ export class GameWebSocket {
     }
   }
 
-  startSyncPolling() {
+  startSyncPolling(): void {
     this.stopSyncPolling();
     console.debug('🔄 Starting sync polling every 10 seconds', { gameId: this.gameId, playerId: this.playerId });
     
-    // Test immediate execution
     if (this.gameId && this.playerId) {
       console.debug('✅ Game session exists, setting up interval');
     } else {
@@ -193,16 +196,16 @@ export class GameWebSocket {
     console.debug('🔄 Interval ID set:', this.syncIntervalId);
   }
 
-  stopSyncPolling() {
-    if (this.syncIntervalId) {
+  stopSyncPolling(): void {
+    if (this.syncIntervalId !== null) {
       console.debug('🛑 Stopping sync polling');
       clearInterval(this.syncIntervalId);
       this.syncIntervalId = null;
     }
   }
 
-  disconnect() {
-    if (this.reconnectTimeoutId) {
+  disconnect(): void {
+    if (this.reconnectTimeoutId !== null) {
       clearTimeout(this.reconnectTimeoutId);
       this.reconnectTimeoutId = null;
     }
@@ -220,13 +223,13 @@ export class GameWebSocket {
     this.reconnectAttempts = 0;
   }
 
-  setGameSession(gameId, playerId) {
+  setGameSession(gameId: string, playerId: string): void {
     console.debug('🎮 Setting game session:', { gameId, playerId });
     this.gameId = gameId;
     this.playerId = playerId;
     
     // Save session to localStorage
-    const session = {
+    const session: StoredSession = {
       gameId,
       playerId,
       timestamp: Date.now()
@@ -238,12 +241,12 @@ export class GameWebSocket {
     this.startSyncPolling();
   }
 
-  loadSession() {
+  loadSession(): StoredSession | null {
     try {
       const stored = localStorage.getItem('twinge-session');
       if (!stored) return null;
       
-      const session = JSON.parse(stored);
+      const session = JSON.parse(stored) as StoredSession;
       
       // Check if session is older than 12 hours
       const sessionAge = Date.now() - (session.timestamp || 0);
@@ -258,7 +261,7 @@ export class GameWebSocket {
     }
   }
 
-  clearSession() {
+  clearSession(): void {
     console.debug('🧹 Clearing game session');
     this.gameId = null;
     this.playerId = null;
