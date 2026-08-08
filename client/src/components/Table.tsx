@@ -2,25 +2,79 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { AudioContext } from '../context/AudioContext';
 import { LoadingContext } from '../context/LoadingContext';
 import { discordSdk } from '../constants/discord';
+import type { AppState, GamePlayer, PileEvent, AudioRefs } from '../types';
 
-function Players({ players, state, sendMsg, context }) {
-  let playerElements = players.map((player, i) => {
+type SendMsg = (msg: Record<string, unknown>) => void;
+type BufferKey = 'cardBuffer' | 'nextBuffer' | 'replayBuffer' | 'endBuffer';
+
+interface PlayersProps {
+  players: GamePlayer[];
+  state: AppState;
+  sendMsg: SendMsg;
+  context?: 'lobby' | 'play';
+}
+
+interface PlayerProps {
+  state: AppState;
+  sendMsg: SendMsg;
+  number: number;
+  name: string;
+  handSize?: number;
+  strikes: number;
+  connected: boolean;
+  pin?: boolean;
+  style?: React.CSSProperties;
+  context?: 'lobby' | 'play';
+  hidden?: boolean;
+}
+
+interface StatusProps {
+  state: AppState;
+}
+
+interface LatestProps {
+  event: PileEvent[];
+  round: number;
+  audio: AudioRefs;
+}
+
+interface PileProps {
+  pile: PileEvent[] | undefined;
+  round: number | undefined;
+}
+
+interface HandProps {
+  state: AppState;
+  sendMsg: SendMsg;
+  audio: AudioRefs;
+}
+
+interface CardProps {
+  value: number;
+  missed?: boolean;
+  stale?: boolean;
+  style?: React.CSSProperties;
+  playerName?: string;
+}
+
+function Players({ players, state, sendMsg, context }: PlayersProps): React.ReactElement {
+  const playerElements = players.map((player, i) => {
     if (context === 'lobby') {
       if (i === 0 && !player.name.startsWith("⭐️")) {
         player.name = `⭐️ ${player.name}`
       }
-      return <Player key={`p${i + 1}`} state={state} sendMsg={sendMsg} context='lobby' number={i + 1} name={player.name} strikes={player.strikes} connected={player.connected} style={player.playerId && { border: '0.25em solid skyblue' }}></Player>
+      return <Player key={`p${i + 1}`} state={state} sendMsg={sendMsg} context='lobby' number={i + 1} name={player.name} strikes={player.strikes} connected={player.connected} style={player.playerId ? { border: '0.25em solid skyblue' } : undefined}></Player>
     } else {
       return <Player key={`p${i + 1}`} state={state} sendMsg={sendMsg} number={i + 1} name={player.name} handSize={player.handSize} strikes={player.strikes} connected={player.connected} pin={player.playerId === state.playerId}></Player>
     }
   });
-  let featuredPlayers = playerElements.sort((a, b) => {
+  const featuredPlayers = playerElements.sort((a, b) => {
     if (a.props.pin) {
       return -1
     } else if (b.props.pin) {
       return 1
     } else {
-      return b.props?.handSize - a.props.handSize
+      return (b.props?.handSize ?? 0) - (a.props?.handSize ?? 0)
     }
   })
   return <div className={`Players`} >
@@ -30,12 +84,12 @@ function Players({ players, state, sendMsg, context }) {
   </div>
 }
 
-const Player = React.memo(function Player(props) {
+const Player = React.memo(function Player(props: PlayerProps): React.ReactElement {
   const id = `p${props.number}`;
   const [kickBuffer, setKickBuffer] = useState(0);
-  const intervalRef = useRef(null);
-  const handSizeRef = useRef(props.handSize);
-  const stateHashRef = useRef(props.state.stateHash);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const handSizeRef = useRef<number | undefined>(props.handSize);
+  const stateHashRef = useRef<string | undefined>(props.state.stateHash);
   const kickBufferRef = useRef(0);
   const propsRef = useRef(props);
   propsRef.current = props;
@@ -49,7 +103,7 @@ const Player = React.memo(function Player(props) {
 
   useEffect(() => { kickBufferRef.current = kickBuffer; }, [kickBuffer]);
 
-  function highlight() {
+  function highlight(): void {
     if (props?.context === 'lobby') return;
     const el = document.getElementById(id);
     if (!el) return;
@@ -60,7 +114,7 @@ const Player = React.memo(function Player(props) {
     }, 500);
   }
 
-  function startBuffer(buffer) {
+  function startBuffer(buffer: string): void {
     cancelBuffer();
     intervalRef.current = setInterval(() => {
       if (stateHashRef.current !== propsRef.current.state.stateHash) {
@@ -71,7 +125,7 @@ const Player = React.memo(function Player(props) {
     }, 20)
   }
 
-  function triggerBuffer(buffer) {
+  function triggerBuffer(buffer: string): void {
     if (kickBufferRef.current >= 100) {
       props.sendMsg({
         action: 'play',
@@ -85,9 +139,9 @@ const Player = React.memo(function Player(props) {
     cancelBuffer();
   }
 
-  function cancelBuffer() {
+  function cancelBuffer(): void {
     stateHashRef.current = props.state.stateHash;
-    clearInterval(intervalRef.current);
+    if (intervalRef.current !== null) clearInterval(intervalRef.current);
     setKickBuffer(0);
   }
 
@@ -119,8 +173,8 @@ const Player = React.memo(function Player(props) {
   }
 });
 
-function Status({ state }) {
-  function calculateMaxRounds(currentRound, numPlayers, remainingCards) {
+function Status({ state }: StatusProps): React.ReactElement {
+  function calculateMaxRounds(currentRound: number, numPlayers: number, remainingCards: number): number | false {
     if (numPlayers > 0) {
       let remainingRounds = 0;
       while (remainingCards > 0) {
@@ -133,13 +187,13 @@ function Status({ state }) {
     }
   }
 
-  let round = Number(state?.gamestate?.meta?.round);
-  let numPlayers = Number(state?.gamestate?.players.length - state?.gamestate?.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
-  let remainingCards = Number(state?.gamestate?.public?.remaining);
+  const round = Number(state?.gamestate?.meta?.round);
+  const numPlayers = Number(state?.gamestate?.players.length ?? 0) - Number(state?.gamestate?.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
+  const remainingCards = Number(state?.gamestate?.public?.remaining);
 
   let lives = '';
-  let currentLives = state?.gamestate?.public?.lives;
-  let maxLives = state?.gamestate?.config?.maxLives;
+  const currentLives = state?.gamestate?.public?.lives ?? 0;
+  const maxLives = state?.gamestate?.config?.maxLives ?? 0;
   if (maxLives <= 10) {
     lives += '❤️'.repeat(currentLives);
     lives += '🤍'.repeat((maxLives - currentLives) > 0 ? (maxLives - currentLives) : 0);
@@ -147,15 +201,15 @@ function Status({ state }) {
     lives = `${currentLives} ❤️`
   }
 
-  let deck = `${(100*(state?.gamestate?.config?.deckSize - remainingCards)/state?.gamestate?.config?.deckSize).toFixed(1)}%`;
-  return <div className='Status' style={ (discordSdk && ((window.innerWidth/window.innerHeight) < 1)) ? { top: '6em' } : {} }>
-    <div style={{ width: '4em'}}>
+  const deck = `${(100 * ((state?.gamestate?.config?.deckSize ?? 0) - remainingCards) / (state?.gamestate?.config?.deckSize ?? 1)).toFixed(1)}%`;
+  return <div className='Status' style={(discordSdk && ((window.innerWidth / window.innerHeight) < 1)) ? { top: '6em' } : {}}>
+    <div style={{ width: '4em' }}>
       <b>Level</b>
       <br></br>
       {round} of {calculateMaxRounds(round, numPlayers, remainingCards) || "N/A"}
     </div>
     <div>{lives}</div>
-    <div style={{ width: '4em'}}>
+    <div style={{ width: '4em' }}>
       <b>Dealt</b>
       <br></br>
       {deck}
@@ -163,9 +217,9 @@ function Status({ state }) {
   </div>
 }
 
-function Latest({ event, round, audio }) {
+function Latest({ event, round, audio }: LatestProps): React.ReactElement {
   const audioContext = useContext(AudioContext);
-  const lastCardRef = useRef(0);
+  const lastCardRef = useRef<number>(0);
 
   useEffect(() => {
     if (event[0] && event[0].round === round) {
@@ -184,24 +238,24 @@ function Latest({ event, round, audio }) {
   }, [event]);
 
   if (event[0]) {
-    let e = event[0];
-    let card;
+    const e = event[0];
+    let card: React.ReactNode;
     if (e.round === round) {
       card = <Card value={e?.card} missed={e?.missed} playerName={e?.playerName}></Card>
     } else {
-      card = <Card value='0' stale={true}></Card>
+      card = <Card value={0} stale={true}></Card>
     }
     return <div className='Latest centered'>{card}</div>
   } else {
     return <div className='Latest centered'>
-      <Card value='0' stale={true}></Card>
+      <Card value={0} stale={true}></Card>
     </div>
   }
 }
 
-function Pile({ pile, round }) {
+function Pile({ pile, round }: PileProps): React.ReactElement | null {
   if (pile && round) {
-    let pileCards = pile.map((event, i) => {
+    const pileCards = pile.map((event, i) => {
       if (event.round === round) {
         return <Card key={`c${i + 1}`} value={event.card} missed={event.missed} playerName={event?.playerName}></Card>
       } else {
@@ -216,22 +270,20 @@ function Pile({ pile, round }) {
   }
 }
 
-function Hand({ state, sendMsg, audio }) {
+function Hand({ state, sendMsg, audio }: HandProps): React.ReactElement | null {
   const loading = useContext(LoadingContext);
   const [cardBuffer, setCardBuffer] = useState(0);
   const [nextBuffer, setNextBuffer] = useState(0);
   const [replayBuffer, setReplayBuffer] = useState(0);
   const [endBuffer, setEndBuffer] = useState(0);
-  const intervalRef = useRef(null);
-  const stateHashRef = useRef(state.stateHash);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stateHashRef = useRef<string | undefined>(state.stateHash);
   const stateRef = useRef(state);
   const loadingRef = useRef(loading);
-  // Refs mirroring buffer state to avoid stale closures in keyboard handlers
   const cardBufferRef = useRef(0);
   const nextBufferRef = useRef(0);
   const replayBufferRef = useRef(0);
 
-  // Keep stateRef and loadingRef current on every render
   stateRef.current = state;
   loadingRef.current = loading;
 
@@ -240,12 +292,12 @@ function Hand({ state, sendMsg, audio }) {
   useEffect(() => { replayBufferRef.current = replayBuffer; }, [replayBuffer]);
 
   useEffect(() => {
-    const onKeyDown = (e) => {
+    const onKeyDown = (e: KeyboardEvent) => {
       if (e.key == " ") {
-        if (stateRef.current.gamestate.meta.phase === 'won' || stateRef.current.gamestate.meta.phase === 'lost') {
+        if (stateRef.current.gamestate?.meta.phase === 'won' || stateRef.current.gamestate?.meta.phase === 'lost') {
           if (replayBufferRef.current == 0) startBuffer('replayBuffer');
         } else {
-          let unplayedCards = stateRef.current.gamestate.players.reduce((playerCards, player) => { return playerCards += player.handSize }, 0);
+          const unplayedCards = stateRef.current.gamestate?.players.reduce((playerCards, player) => { return playerCards += player.handSize }, 0) ?? 0;
           if (unplayedCards > 0) {
             if (cardBufferRef.current == 0) startBuffer('cardBuffer');
           } else {
@@ -254,7 +306,7 @@ function Hand({ state, sendMsg, audio }) {
         }
       }
     };
-    const onKeyUp = (e) => {
+    const onKeyUp = (e: KeyboardEvent) => {
       if (e.key == " ") {
         if (cardBufferRef.current > 0) triggerBuffer('cardBuffer', 'twinge');
         if (nextBufferRef.current > 0) triggerBuffer('nextBuffer', 'next');
@@ -269,7 +321,7 @@ function Hand({ state, sendMsg, audio }) {
     };
   }, []);
 
-  function sendMsg2(type) {
+  function sendMsg2(type: string): void {
     sendMsg({
       action: 'play',
       gameId: stateRef.current.gameId,
@@ -279,10 +331,16 @@ function Hand({ state, sendMsg, audio }) {
     });
   }
 
-  function startBuffer(buffer) {
+  function startBuffer(buffer: BufferKey): void {
     if (!loadingRef.current) {
       cancelBuffer();
-      const setter = { cardBuffer: setCardBuffer, nextBuffer: setNextBuffer, replayBuffer: setReplayBuffer, endBuffer: setEndBuffer }[buffer];
+      const setters: Record<BufferKey, React.Dispatch<React.SetStateAction<number>>> = {
+        cardBuffer: setCardBuffer,
+        nextBuffer: setNextBuffer,
+        replayBuffer: setReplayBuffer,
+        endBuffer: setEndBuffer,
+      };
+      const setter = setters[buffer];
       intervalRef.current = setInterval(() => {
         if (buffer === 'cardBuffer' && stateHashRef.current !== stateRef.current.stateHash) {
           cancelBuffer();
@@ -293,24 +351,30 @@ function Hand({ state, sendMsg, audio }) {
     }
   }
 
-  function triggerBuffer(buffer, msg) {
-    const val = { cardBuffer: cardBufferRef.current, nextBuffer: nextBufferRef.current, replayBuffer: replayBufferRef.current, endBuffer: endBuffer }[buffer];
+  function triggerBuffer(buffer: BufferKey, msg: string): void {
+    const vals: Record<BufferKey, number> = {
+      cardBuffer: cardBufferRef.current,
+      nextBuffer: nextBufferRef.current,
+      replayBuffer: replayBufferRef.current,
+      endBuffer: endBuffer,
+    };
+    const val = vals[buffer];
     if (val <= 150 && val > 25) {
       sendMsg2(msg);
     }
     cancelBuffer();
   }
 
-  function cancelBuffer() {
+  function cancelBuffer(): void {
     stateHashRef.current = stateRef.current.stateHash;
-    clearInterval(intervalRef.current);
+    if (intervalRef.current !== null) clearInterval(intervalRef.current);
     setCardBuffer(0);
     setNextBuffer(0);
     setReplayBuffer(0);
     setEndBuffer(0);
   }
 
-  function bufferColor(buffer, initial) {
+  function bufferColor(buffer: number, initial?: string): string {
     let [hue, saturation, lightness] = [197.4, 71.4, 72.5]
     if (initial === 'royalblue') {
       [hue, saturation, lightness] = [225, 72.7, 56.9]
@@ -335,7 +399,7 @@ function Hand({ state, sendMsg, audio }) {
 
   if (state.gamestate) {
     if (state.gamestate.meta.phase === 'won' || state.gamestate.meta.phase === 'lost') {
-      return <div className='Hand centered unselectable' style={{ opacity: loading && 0.5 }}>
+      return <div className='Hand centered unselectable' style={{ opacity: loading ? 0.5 : undefined }}>
         <div className='Button centered replay'
           style={{ background: `radial-gradient(circle, ${bufferColor(replayBuffer)}, ${bufferColor(replayBuffer)} ${4 * replayBuffer}%, white ${4 * replayBuffer}%, white)` }}
           onMouseDown={() => { startBuffer('replayBuffer') }}
@@ -358,12 +422,12 @@ function Hand({ state, sendMsg, audio }) {
         </div>
       </div>
     } else {
-      let unplayedCards = state.gamestate.players.reduce((playerCards, player) => { return playerCards += player.handSize }, 0);
-      let numPlayers = Number(state?.gamestate?.players.length - state?.gamestate?.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
+      const unplayedCards = state.gamestate.players.reduce((playerCards, player) => { return playerCards += player.handSize }, 0);
+      const numPlayers = Number(state?.gamestate?.players.length - state?.gamestate?.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
       if (unplayedCards === 0) {
         return <div className='Hand centered unselectable'
-          style={{ 
-            opacity: loading && 0.5,
+          style={{
+            opacity: loading ? 0.5 : undefined,
             background: `radial-gradient(circle, ${bufferColor(nextBuffer)}, ${bufferColor(nextBuffer)} ${4 * nextBuffer}%, white ${4 * nextBuffer}%, white)`
           }}
           onMouseDown={() => { startBuffer('nextBuffer') }}
@@ -375,14 +439,14 @@ function Hand({ state, sendMsg, audio }) {
           <div className='Button'>{numPlayers ? 'Next Level' : 'No Active Players'}</div>
         </div>
       } else {
-        let activePlayer = state.gamestate.players.find((player) => { return player.playerId === state.playerId });
+        const activePlayer = state.gamestate.players.find((player) => { return player.playerId === state.playerId });
         if (!activePlayer || !activePlayer.hand) {
           return <div className='Hand'></div>;
         }
-        let hand = activePlayer.hand.map((card, i, a) => {
+        const hand = activePlayer.hand.map((card, i, a) => {
           let wrapperClass = '';
-          let borderStyle = { position: "relative" };
-          let bufferStyle = { position: "relative" };
+          const borderStyle: React.CSSProperties = { position: "relative" };
+          const bufferStyle: React.CSSProperties = { position: "relative" };
           if (a.length === unplayedCards) {
             wrapperClass = 'autoCard';
             borderStyle.bottom = cardBuffer < 150 ? (cardBuffer < 25 ? `${cardBuffer * (-0.08)}em` : "-2em") : 0;
@@ -403,11 +467,11 @@ function Hand({ state, sendMsg, audio }) {
             onMouseLeave={() => { cancelBuffer() }}
             onTouchStart={() => { startBuffer('cardBuffer') }}
             onTouchEnd={() => { triggerBuffer('cardBuffer', 'twinge') }}
-            style={{ opacity: loading && 0.5 }}
+            style={{ opacity: loading ? 0.5 : undefined }}
           >
             {state.gamestate.meta.round <= 4 &&
               <div className='handTooltip'>
-                {(cardBuffer <= 25 || cardBuffer > 150) && 
+                {(cardBuffer <= 25 || cardBuffer > 150) &&
                   <div>
                     👇 PRESS to Start when you<br></br>
                      think you're the lowest ⬇️<br></br>
@@ -426,7 +490,7 @@ function Hand({ state, sendMsg, audio }) {
             </div>
           </div>
         } else {
-          return <div className='Hand centered unselectable' style={{ opacity: loading && 0.5 }}>
+          return <div className='Hand centered unselectable' style={{ opacity: loading ? 0.5 : undefined }}>
             <div className='Button'>{unplayedCards} Card{unplayedCards !== 1 ? 's' : ''} Remaining</div>
           </div>
         }
@@ -437,7 +501,7 @@ function Hand({ state, sendMsg, audio }) {
   }
 }
 
-function Card({ value, missed, stale, style, playerName }) {
+function Card({ value, missed, stale, style, playerName }: CardProps): React.ReactElement {
   return <>
     <div key={value} className={`Card column ${missed && 'missed'} ${stale && 'stale'}`} style={style}>
       <div>{value}</div>

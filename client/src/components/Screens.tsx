@@ -2,20 +2,34 @@ import React, { useState } from 'react';
 import { Players, Status, Latest, Pile, Hand } from './Table';
 import { Create, Join, Rename, Start } from './Buttons';
 import { discordSdk } from '../constants/discord';
+import type { AppState, AudioRefs } from '../types';
 
-function Lobby({ state, sendMsg }) {
+type SendMsg = (msg: Record<string, unknown>) => void;
+
+interface LobbyProps {
+  state: AppState;
+  sendMsg: SendMsg;
+}
+
+interface PlayProps {
+  state: AppState;
+  sendMsg: SendMsg;
+  audio: AudioRefs;
+}
+
+function Lobby({ state, sendMsg }: LobbyProps): React.ReactElement {
   const [deckSize, setDeckSize] = useState(67);
   const [maxLives, setMaxLives] = useState(5);
 
-  let inputs;
-  let info;
+  let inputs: React.ReactNode;
+  let info: React.ReactNode;
   if (state?.gameId && state?.roomCode) {
     inputs = <div className='lobbyButtons centered'>
       <Rename state={state} sendMsg={sendMsg}></Rename>
       {state?.gamestate?.players[0]?.playerId ? <Start state={state} sendMsg={sendMsg}></Start> : ""}
     </div>
     info = <div>
-      <div className='lobbyInfo'>{state?.gamestate?.config?.deckSize} Cards / {state?.gamestate?.config?.maxLives} {state?.gamestate?.config?.maxLives !== '1' ? 'Lives' : 'Life'}</div>
+      <div className='lobbyInfo'>{state?.gamestate?.config?.deckSize} Cards / {state?.gamestate?.config?.maxLives} {state?.gamestate?.config?.maxLives !== 1 ? 'Lives' : 'Life'}</div>
       <Players context='lobby' state={state} sendMsg={sendMsg} players={state?.gamestate?.players || []}></Players>
     </div>
   } else {
@@ -26,22 +40,22 @@ function Lobby({ state, sendMsg }) {
     info = <div>
       <div>
         <div className='lobbyInfo'>{deckSize} Cards</div>
-        <input className='slider' id='deckSize' type="range" min="10" max="1000" defaultValue="67" onChange={(e) => {
+        <input className='slider' id='deckSize' type="range" min="10" max="1000" defaultValue="67" onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           let val = Number(e.target.value);
           if (val > 66 && val < 68) {
-            e.target.value = 67;
+            e.target.value = '67';
             setDeckSize(67);
           } else {
             val = val - (val % 5);
-            e.target.value = val;
+            e.target.value = String(val);
             setDeckSize(val);
           }
         }}></input>
       </div>
       <div>
-        <div className='lobbyInfo'>{maxLives} {maxLives !== '1' ? 'Lives' : 'Life'}</div>
-        <input className='slider' id='maxLives' type="range" min="1" max="100" defaultValue="5" onChange={(e) => {
-          setMaxLives(e.target.value);
+        <div className='lobbyInfo'>{maxLives} {maxLives !== 1 ? 'Lives' : 'Life'}</div>
+        <input className='slider' id='maxLives' type="range" min="1" max="100" defaultValue="5" onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          setMaxLives(Number(e.target.value));
         }}></input>
       </div>
     </div>
@@ -60,17 +74,17 @@ function Lobby({ state, sendMsg }) {
   </div>
 }
 
-function Play({ state, sendMsg, audio }) {
+function Play({ state, sendMsg, audio }: PlayProps): React.ReactElement {
   return <div className='Play'>
     <Status state={state}></Status>
-    <Players className='Players centered' state={state} sendMsg={sendMsg} context='play' players={state?.gamestate?.players || []}></Players>
-    <Latest className='Latest centered' state={state} event={state?.gamestate?.public?.pile?.slice(-1) || []} round={state?.gamestate?.meta?.round || 0} audio={audio}></Latest>
-    <Pile state={state} pile={state?.gamestate?.public?.pile} round={state?.gamestate?.meta?.round || 0}></Pile>
+    <Players state={state} sendMsg={sendMsg} context='play' players={state?.gamestate?.players || []}></Players>
+    <Latest event={state?.gamestate?.public?.pile?.slice(-1) || []} round={state?.gamestate?.meta?.round || 0} audio={audio}></Latest>
+    <Pile pile={state?.gamestate?.public?.pile} round={state?.gamestate?.meta?.round || 0}></Pile>
     <Hand state={state} sendMsg={sendMsg} audio={audio}></Hand>
   </div>
 }
 
-function About() {
+function About(): React.ReactElement {
   return <div className='About'>
     <div className='aboutParagraph'>
       <p><b>twinge</b> by <a href='https://mcteamster.com' target='_blank' rel="noreferrer">mcteamster</a></p>
@@ -128,13 +142,13 @@ function About() {
         <a>Terms of Service</a> and <a>Privacy Policy</a>
       </p>
     </div>
-    <div className='back' style={ (discordSdk && ((window.innerWidth/window.innerHeight) < 1)) ? { top: '1em' } : {} } onClick={() => {
+    <div className='back' style={(discordSdk && ((window.innerWidth / window.innerHeight) < 1)) ? { top: '1em' } : {}} onClick={() => {
       window.location.pathname = '';
     }}>🔙</div>
   </div>
 }
 
-function Legal() {
+function Legal(): React.ReactElement {
   return <div className='About'>
     <div className='aboutParagraph'>
       <p><b>Terms of Service</b></p>
@@ -167,7 +181,7 @@ function Legal() {
         When we update our Privacy Policy, we will take steps to make sure that these changes are brought to your attention and posted on this page.
       </p>
     </div>
-    <div className='back' style={ (discordSdk && ((window.innerWidth/window.innerHeight) < 1)) ? { top: '1em' } : {} } onClick={() => {
+    <div className='back' style={(discordSdk && ((window.innerWidth / window.innerHeight) < 1)) ? { top: '1em' } : {}} onClick={() => {
       window.location.pathname = '';
     }}>🔙</div>
   </div>

@@ -2,8 +2,9 @@ import { DiscordSDK, patchUrlMappings } from "@discord/embedded-app-sdk";
 import { ENDPOINTS } from './constants';
 
 // Initialise Discord Integration
-export let discordSdk;
-export function initaliseDiscord() {
+export let discordSdk: DiscordSDK | undefined;
+
+export function initaliseDiscord(): boolean {
   const params = new URLSearchParams(window.location.href);
 
   if (params.get('frame_id')) {
@@ -16,7 +17,7 @@ export function initaliseDiscord() {
       ...Object.keys(ENDPOINTS).map((endpoint) => {
         return {
           prefix: `/region/${endpoint.toLowerCase()}`,
-          target: ENDPOINTS[endpoint].replace('wss://', '')
+          target: ENDPOINTS[endpoint as keyof typeof ENDPOINTS].replace('wss://', '')
         }
       }),
       {
@@ -34,18 +35,18 @@ export function initaliseDiscord() {
     discordSdk = new DiscordSDK("1385639813268373587");
     (async () => {
       // Configuration
-      await discordSdk.ready();
+      await discordSdk!.ready();
     })().then(async () => {
       // Usage
       console.info("Discord SDK is ready");
       
       // Purge local state on new sessions
-      if (!localStorage.getItem('instance_id') || (localStorage.getItem('instance_id') != discordSdk.instanceId)) {
+      if (!localStorage.getItem('instance_id') || (localStorage.getItem('instance_id') != discordSdk!.instanceId)) {
         localStorage.removeItem('gameId');
         localStorage.removeItem('playerId');
         localStorage.removeItem('createTime');
       }
-      localStorage.setItem('instance_id', discordSdk.instanceId)
+      localStorage.setItem('instance_id', discordSdk!.instanceId)
     });
     return true
   } else {
@@ -53,4 +54,3 @@ export function initaliseDiscord() {
     return false
   }
 }
-

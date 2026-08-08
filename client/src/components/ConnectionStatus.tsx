@@ -1,6 +1,10 @@
 import React from 'react';
 
-export const ConnectionStatus = ({ isConnected }) => {
+interface ConnectionStatusProps {
+  isConnected: boolean;
+}
+
+export const ConnectionStatus = ({ isConnected }: ConnectionStatusProps): React.ReactElement => {
   return (
     <div 
       className="connection-status"
