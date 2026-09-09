@@ -6,4 +6,3 @@ cdk.out
 test/
 vitest.config.js
 vitest.setup.js
-__mocks__/

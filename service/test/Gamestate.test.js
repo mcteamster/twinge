@@ -379,10 +379,9 @@ describe('Gamestate.restartGame', () => {
 
   it('resets phase to "open"', async () => {
     await gs.restartGame();
-    // restartGame calls setupGame (sets 'playing') then setupRound — still 'playing' after
-    // design.md says phase resets to 'open' but restartGame immediately calls setupGame+setupRound
-    // so after restart the phase will be 'playing' (setupGame sets it)
-    expect(['open', 'playing']).toContain(gs.meta.phase);
+    // restartGame resets meta to 'open' then calls setupGame (sets 'playing')
+    // followed by setupRound. The final observable phase is always 'playing'.
+    expect(gs.meta.phase).toBe('playing');
   });
 
   it('resets round to >= 1 (setupRound was called)', async () => {

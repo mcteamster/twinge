@@ -222,8 +222,8 @@ class Gamestate {
     this.players.forEach((player) => {
       player.hand = [];
     });
-    this.setupGame();
-    this.setupRound();
+    await this.setupGame();
+    await this.setupRound();
   }
 }
 

@@ -319,7 +319,7 @@ async function restartGame(payload) {
     if (game && game.gamestate && game.gamestate.meta.phase != 'open') {
       let gamestate = new _deps.Gamestate(game.gamestate);
       if (await gamestate.findPlayer(payload.playerId)) {
-        gamestate.restartGame();
+        await gamestate.restartGame();
         game = await _deps.games.updateGame(game.gameId, gamestate);
         await _deps.messages.broadcastGame(game);
       } else {
