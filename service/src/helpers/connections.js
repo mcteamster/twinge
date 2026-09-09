@@ -122,4 +122,7 @@ module.exports = {
   findConnections,
   updateConnection,
   deleteConnection,
+  // Exposed for unit testing only — allows tests to spy on the DynamoDB client
+  // without patching node_modules. Not used in production Lambda execution.
+  _testClient: dynamoDbClient,
 }

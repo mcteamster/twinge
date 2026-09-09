@@ -1,3 +1,9 @@
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+# Test files — excluded from Lambda bundle output
+test/
+vitest.config.js
+vitest.setup.js
+__mocks__/
