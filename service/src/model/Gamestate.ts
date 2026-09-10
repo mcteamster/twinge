@@ -71,9 +71,7 @@ class Gamestate {
     }
 
     // Rehydrate Gamestate
-    (Object.keys(gamestate) as (keyof GamestateData)[]).forEach((key) => {
-      (this as any)[key] = (gamestate as any)[key];
-    });
+    Object.assign(this, gamestate);
 
     // Rehydrate Players
     this.players = this.players.map((player) => {
@@ -94,7 +92,7 @@ class Gamestate {
   }
 
   async kickPlayer(playerId: string): Promise<Player[]> {
-    let playerIndex = this.players.findIndex((player) => {
+    const playerIndex = this.players.findIndex((player) => {
       return player.playerId == playerId;
     });
     return this.players.splice(playerIndex, 1);
@@ -105,9 +103,7 @@ class Gamestate {
     // Initialise Deck
     this.private.deck = Array.from({
       length: this.config.deckSize,
-    }, (_, index) => {
-      return ++index;
-    });
+    }, (_, i) => i + 1);
 
     // Shuffle
     this.private.deck.forEach((_, i, a) => {
@@ -120,7 +116,7 @@ class Gamestate {
 
   async setupRound(): Promise<void> {
     // Deal cards to players - subtract from the deck
-    let numberPlaying = (this.players.length - this.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
+    const numberPlaying = (this.players.length - this.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
     if (this.private.deck.length == 0) {
       // Not Enough Cards - End The Game Here! You WIN!
       this.public.pile.push({ time: new Date().toISOString(), card: 'You Win! 🥳', round: this.meta.round, playerIndex: -1 });
@@ -144,7 +140,7 @@ class Gamestate {
       } else {
         // Partial distrbution for final round
         this.meta.round++;
-        let quotient = this.private.deck.length / numberPlaying;
+        const quotient = this.private.deck.length / numberPlaying;
         let remainder = this.private.deck.length % numberPlaying;
         this.players.forEach((player) => {
           // Exclude Spectators
@@ -170,11 +166,11 @@ class Gamestate {
 
   async playCard(playerId: string): Promise<void> {
     // Find active player
-    let activePlayerIndex = this.players.findIndex((player) => {
+    const activePlayerIndex = this.players.findIndex((player) => {
       return player.playerId == playerId;
     });
-    let activePlayer = this.players[activePlayerIndex];
-    let lowestCards: PileEvent[] = [{ time: new Date().toISOString(), card: activePlayer.hand.shift() as number, round: this.meta.round, playerIndex: activePlayerIndex, playerName: activePlayer.name }];
+    const activePlayer = this.players[activePlayerIndex];
+    const lowestCards: PileEvent[] = [{ time: new Date().toISOString(), card: activePlayer.hand.shift() as number, round: this.meta.round, playerIndex: activePlayerIndex, playerName: activePlayer.name }];
     while (activePlayer.hand[0] == (lowestCards[lowestCards.length - 1].card as number) + 1) {
       lowestCards.push({ time: new Date().toISOString(), card: activePlayer.hand.shift() as number, round: this.meta.round, playerIndex: activePlayerIndex, playerName: activePlayer.name });
     }
@@ -182,7 +178,7 @@ class Gamestate {
     this.public.pile.push(...lowestCards);
 
     // Check for missed cards
-    let missedCards: PileEvent[] = [];
+    const missedCards: PileEvent[] = [];
     this.players.forEach((player, playerIndex) => {
       if (player.playerId != activePlayer.playerId) {
         while (player.hand[0] < (lowestCards[0].card as number)) {

@@ -69,7 +69,7 @@ export interface GameRecord {
   createTime?: string;
   expiryTimeEpoch?: number;
   roomCode?: string | null;
-  gamestate: GamestateData | Record<string, unknown>;
+  gamestate: GamestateData;
   stateHash?: string;
 }
 

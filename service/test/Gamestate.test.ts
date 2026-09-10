@@ -385,7 +385,6 @@ describe('Gamestate.restartGame', () => {
   });
 
   it('resets round to >= 1 (setupRound was called)', async () => {
-    const roundBefore = gs.meta.round;
     await gs.restartGame();
     // round resets to 0 then setupRound bumps it to 1
     expect(gs.meta.round).toBeGreaterThanOrEqual(1);

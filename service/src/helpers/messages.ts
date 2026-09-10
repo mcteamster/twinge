@@ -14,12 +14,19 @@ async function send(connectionId: string | undefined, payload: unknown): Promise
 }
 
 async function broadcastGame(game: GameRecord): Promise<void> {
-  let connectedPlayers = (await connections.findConnections('gameId', game.gameId)) as ConnectionRecord[];
-  // Only reveal relevant information to each player
-  delete (game.gamestate as any).private;
+  const connectedPlayers = (await connections.findConnections('gameId', game.gameId)) as ConnectionRecord[];
+  // Deep-copy so we can strip private state and per-player secrets without mutating the caller's object
+  const gameToSend = JSON.parse(JSON.stringify(game)) as {
+    gameId: string;
+    gamestate: {
+      private?: unknown;
+      players: Array<{ playerId?: string; hand?: number[] }>;
+    };
+  };
+  delete gameToSend.gamestate.private;
   const messagePromises = connectedPlayers.map((connectedPlayer) => {
-    let filteredGame = JSON.parse(JSON.stringify(game));
-    filteredGame.gamestate.players = filteredGame.gamestate.players.map((player: any) => {
+    const filteredGame = JSON.parse(JSON.stringify(gameToSend)) as typeof gameToSend;
+    filteredGame.gamestate.players = filteredGame.gamestate.players.map((player) => {
       if (player.playerId != connectedPlayer.playerId) {
         delete player.playerId;
         delete player.hand;

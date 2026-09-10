@@ -37,9 +37,7 @@ class Player {
     }
 
     // Rehydrate Player
-    (Object.keys(player) as (keyof PlayerData)[]).forEach((key) => {
-      (this as any)[key] = (player as any)[key];
-    });
+    Object.assign(this, player);
   }
 
   async rename(name: string): Promise<void> {

@@ -22,7 +22,7 @@ const GAME_TABLE = process.env.GAME_TABLE;
 async function createGame(gameId: string, gamestate: GamestateData | object): Promise<GameRecord | number> {
   function makeCode(): string {
     const alphabet = 'BCDFGHJKLMNPQRSTVWXZ'; // No vowels to avoid spelling words
-    let codeChars = [
+    const codeChars = [
       alphabet[Math.floor((Math.random() * 20))],
       alphabet[Math.floor((Math.random() * 20))],
       alphabet[Math.floor((Math.random() * 20))],
@@ -75,8 +75,8 @@ async function createGame(gameId: string, gamestate: GamestateData | object): Pr
     return 400;
   }
 
-  let currentTime = new Date();
-  let expiryTimeEpoch = new Date().setHours(currentTime.getHours() + 12) / 1000;
+  const currentTime = new Date();
+  const expiryTimeEpoch = new Date().setHours(currentTime.getHours() + 12) / 1000;
   const params = {
     TableName: GAME_TABLE,
     Item: {

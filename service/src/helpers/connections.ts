@@ -73,7 +73,7 @@ async function findConnections(queryKey: string, queryValue: string): Promise<Co
   }
 }
 
-async function updateConnection(connectionId: string, updateKey: string, updateValue: unknown): Promise<Record<string, any> | number | undefined> {
+async function updateConnection(connectionId: string, updateKey: string, updateValue: unknown): Promise<ConnectionRecord | number | undefined> {
   const params = {
     TableName: CONNECTION_TABLE,
     Key: {
@@ -90,7 +90,7 @@ async function updateConnection(connectionId: string, updateKey: string, updateV
   };
 
   try {
-    return (await dynamoDbClient.update(params)).Attributes;
+    return (await dynamoDbClient.update(params)).Attributes as ConnectionRecord | undefined;
   } catch (error) {
     console.log(error);
     return 500;

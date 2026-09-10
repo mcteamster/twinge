@@ -4,7 +4,7 @@ import messages from '../helpers/messages';
 import Gamestate from '../model/Gamestate';
 import Player from '../model/Player';
 import { v4 as uuidv4 } from 'uuid';
-import type { GameConfig, GameRecord, LambdaEvent, LambdaResult } from '../types';
+import type { ConnectionRecord, GameConfig, GameRecord, LambdaEvent, LambdaResult } from '../types';
 
 /** Fields extracted from the WebSocket message body plus connection metadata. */
 interface Payload {
@@ -24,11 +24,24 @@ interface Payload {
 // Access deps through this object in every action function so vi.spyOn works.
 const _deps = { connections, games, messages, Gamestate, Player, uuidv4 };
 
+/** Narrows a readGame/findGames result to a usable GameRecord with a gamestate. */
+function isGameRecord(game: GameRecord | number | undefined): game is GameRecord & { gamestate: NonNullable<GameRecord['gamestate']> } {
+  return typeof game === 'object' && game !== null && 'gamestate' in game && !!game.gamestate;
+}
+
+/** Casts updateGame/createGame result to GameRecord — only call when the game is known to exist. */
+function toRecord(game: GameRecord | number | undefined): GameRecord {
+  if (typeof game !== 'object' || game === null) {
+    throw new Error('Expected GameRecord but got error code');
+  }
+  return game;
+}
+
 // Lobby Handlers
 async function newGame(payload: Payload): Promise<void> {
   // Create new game
-  let gameId = _deps.uuidv4();
-  let gamestate = new _deps.Gamestate({ config: payload.config });
+  const gameId = _deps.uuidv4();
+  const gamestate = new _deps.Gamestate({ config: payload.config });
   payload.playerId = await gamestate.addPlayer(new _deps.Player());
   payload.game = await _deps.games.createGame(gameId, gamestate);
 
@@ -41,21 +54,21 @@ async function newGame(payload: Payload): Promise<void> {
 }
 
 async function rejoinGame(payload: Payload): Promise<void> {
-  let game: any = null;
+  let game: GameRecord | number | undefined;
   if (payload.gameId && payload.playerId) {
     game = await _deps.games.readGame(payload.gameId);
-    if (game && game.gamestate) {
-      let gamestate = new _deps.Gamestate(game.gamestate);
-      let player = await gamestate.findPlayer(payload.playerId);
+    if (isGameRecord(game)) {
+      const gamestate = new _deps.Gamestate(game.gamestate);
+      const player = await gamestate.findPlayer(payload.playerId);
       if (player) {
         // Update connection mapping for rejoining player
         await _deps.connections.updateConnection(payload.connectionId, 'gameId', payload.gameId);
         await _deps.connections.updateConnection(payload.connectionId, 'playerId', payload.playerId);
 
         // Update connection status and send current state
-        gamestate.checkConnections(await _deps.connections.findConnections('gameId', payload.gameId) as any);
-        game = await _deps.games.updateGame(game.gameId, gamestate);
-        await _deps.messages.broadcastGame(game);
+        const conns = await _deps.connections.findConnections('gameId', payload.gameId); gamestate.checkConnections(Array.isArray(conns) ? conns : []);
+        const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+        await _deps.messages.broadcastGame(toRecord(game));
       } else {
         await _deps.messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
@@ -69,16 +82,16 @@ async function rejoinGame(payload: Payload): Promise<void> {
 
 async function joinGame(payload: Payload): Promise<void> {
   // Find game
-  let game: any = null;
+  let game: GameRecord | number | undefined;
   if (payload.roomCode) {
-    game = (await _deps.games.findGames('roomCode', payload.roomCode.toUpperCase()) as any)[0];
+    const foundGames = await _deps.games.findGames('roomCode', payload.roomCode.toUpperCase()); game = Array.isArray(foundGames) ? foundGames[0] : undefined;
   } else if (payload.gameId) {
     game = await _deps.games.readGame(payload.gameId);
   }
 
-  if (game && game.gamestate) {
+  if (isGameRecord(game)) {
     // Rehydrate gamestate
-    let gamestate = new _deps.Gamestate(game.gamestate);
+    const gamestate = new _deps.Gamestate(game.gamestate);
     // Join
     if ((gamestate.meta.phase == 'open' || gamestate.meta.phase == 'playing') && (!payload.playerId || !(await gamestate.findPlayer(payload.playerId)))) {
       payload.playerId = await gamestate.addPlayer(new _deps.Player());
@@ -88,8 +101,8 @@ async function joinGame(payload: Payload): Promise<void> {
       await _deps.connections.updateConnection(payload.connectionId, 'gameId', game.gameId);
       await _deps.connections.updateConnection(payload.connectionId, 'playerId', payload.playerId);
       // Update gamestate
-      game = await _deps.games.updateGame(game.gameId, gamestate);
-      await _deps.messages.broadcastGame(game);
+      const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+      await _deps.messages.broadcastGame(toRecord(game));
     } else {
       await _deps.messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
     }
@@ -99,17 +112,17 @@ async function joinGame(payload: Payload): Promise<void> {
 }
 
 async function renamePlayer(payload: Payload): Promise<void> {
-  let game: any = null;
+  let game: GameRecord | number | undefined;
   if (payload.gameId) {
     game = await _deps.games.readGame(payload.gameId);
-    if (game && game.gamestate) {
-      let gamestate = new _deps.Gamestate(game.gamestate);
+    if (isGameRecord(game)) {
+      const gamestate = new _deps.Gamestate(game.gamestate);
       // Rename
       if (gamestate.meta.phase == 'open' && payload.playerId) {
-        let player = await gamestate.findPlayer(payload.playerId);
+        const player = await gamestate.findPlayer(payload.playerId);
         await player!.rename(String(payload.name).toUpperCase());
-        game = await _deps.games.updateGame(game.gameId, gamestate);
-        await _deps.messages.broadcastGame(game);
+        const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+        await _deps.messages.broadcastGame(toRecord(game));
       } else {
         await _deps.messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
@@ -120,29 +133,29 @@ async function renamePlayer(payload: Payload): Promise<void> {
 }
 
 async function kickPlayer(payload: Payload): Promise<void> {
-  let game: any = null;
+  let game: GameRecord | number | undefined;
   if (payload.gameId) {
     game = await _deps.games.readGame(payload.gameId);
-    if (game && game.gamestate) {
-      let gamestate = new _deps.Gamestate(game.gamestate);
+    if (isGameRecord(game)) {
+      const gamestate = new _deps.Gamestate(game.gamestate);
       // Kick
       if (payload.playerId) {
-        let targetPlayer = gamestate.players[payload.target as number];
+        const targetPlayer = gamestate.players[payload.target as number];
         if (targetPlayer.playerId) {
           if (targetPlayer.playerId !== payload.playerId) {
             // Two Strike Kick
             if (targetPlayer.strikes == 0) {
               targetPlayer.strikes++;
               if (game.stateHash === payload.stateHash) {
-                game = await _deps.games.updateGame(game.gameId, gamestate);
+                const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
               } else {
                 await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
               }
-              await _deps.messages.broadcastGame(game);
+              await _deps.messages.broadcastGame(toRecord(game));
             } else {
-              let newPayload = { ...payload };
+              const newPayload = { ...payload };
               newPayload.playerId = targetPlayer.playerId;
-              let connectedPlayers = await _deps.connections.findConnections('gameId', payload.gameId) as any[];
+              const connResult = await _deps.connections.findConnections('gameId', payload.gameId); const connectedPlayers = Array.isArray(connResult) ? connResult : [] as ConnectionRecord[];
               newPayload.connectionId = connectedPlayers.find((connectedPlayer) => {
                 if (connectedPlayer.playerId == targetPlayer.playerId) {
                   return true;
@@ -160,11 +173,11 @@ async function kickPlayer(payload: Payload): Promise<void> {
               targetPlayer.strikes = -1;
             }
             if (game.stateHash === payload.stateHash) {
-              game = await _deps.games.updateGame(game.gameId, gamestate);
+              const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
             } else {
               await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
             }
-            await _deps.messages.broadcastGame(game);
+            await _deps.messages.broadcastGame(toRecord(game));
           }
         } else {
           await _deps.messages.send(payload.connectionId, { code: 7, message: 'Target not found' });
@@ -179,11 +192,11 @@ async function kickPlayer(payload: Payload): Promise<void> {
 }
 
 async function leaveGame(payload: Payload): Promise<void> {
-  let game: any = null;
+  let game: GameRecord | number | undefined;
   if (payload.gameId) {
     game = await _deps.games.readGame(payload.gameId);
-    if (game && game.gamestate) {
-      let gamestate = new _deps.Gamestate(game.gamestate);
+    if (isGameRecord(game)) {
+      const gamestate = new _deps.Gamestate(game.gamestate);
       if (await gamestate.findPlayer(payload.playerId as string)) {
         await gamestate.kickPlayer(payload.playerId as string);
         if (payload.connectionId) {
@@ -192,11 +205,11 @@ async function leaveGame(payload: Payload): Promise<void> {
         }
         if (gamestate.players.length > 0) {
           if (game.stateHash === payload.stateHash) {
-            game = await _deps.games.updateGame(game.gameId, gamestate);
+            const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
           } else {
             await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
           }
-          await _deps.messages.broadcastGame(game);
+          await _deps.messages.broadcastGame(toRecord(game));
         } else {
           await _deps.games.deleteGame(game.gameId);
         }
@@ -223,16 +236,16 @@ async function leaveGame(payload: Payload): Promise<void> {
 }
 
 async function startGame(payload: Payload): Promise<void> {
-  let game: any = null;
+  let game: GameRecord | number | undefined;
   if (payload.gameId) {
     game = await _deps.games.readGame(payload.gameId);
-    if (game && game.gamestate && game.gamestate.meta.phase == 'open') {
-      let gamestate = new _deps.Gamestate(game.gamestate);
+    if (isGameRecord(game) && game.gamestate.meta.phase == 'open') {
+      const gamestate = new _deps.Gamestate(game.gamestate);
       if (await gamestate.findPlayer(payload.playerId as string)) {
         gamestate.setupGame();
         gamestate.setupRound();
-        game = await _deps.games.updateGame(game.gameId, gamestate);
-        await _deps.messages.broadcastGame(game);
+        const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+        await _deps.messages.broadcastGame(toRecord(game));
       } else {
         await _deps.messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
@@ -245,15 +258,15 @@ async function startGame(payload: Payload): Promise<void> {
 }
 
 async function refreshGame(payload: Payload): Promise<void> {
-  let game: any = null;
+  let game: GameRecord | number | undefined;
   if (payload.gameId) {
     game = await _deps.games.readGame(payload.gameId);
-    if (game && game.gamestate) {
-      let gamestate = new _deps.Gamestate(game.gamestate);
+    if (isGameRecord(game)) {
+      const gamestate = new _deps.Gamestate(game.gamestate);
       if (await gamestate.findPlayer(payload.playerId as string)) {
         // No-Op
-        game = await _deps.games.updateGame(game.gameId, gamestate);
-        await _deps.messages.broadcastGame(game);
+        const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+        await _deps.messages.broadcastGame(toRecord(game));
       } else {
         await _deps.messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
@@ -267,24 +280,24 @@ async function refreshGame(payload: Payload): Promise<void> {
 
 // In-Game Handlers
 async function twinge(payload: Payload): Promise<void> {
-  let game: any = null;
+  let game: GameRecord | number | undefined;
   if (payload.gameId) {
     game = await _deps.games.readGame(payload.gameId);
-    if (game && game.gamestate && ((game.gamestate.meta.phase == 'playing') || (game.gamestate.meta.phase == 'lost') || (game.gamestate.meta.phase == 'won'))) {
-      let gamestate = new _deps.Gamestate(game.gamestate);
-      let activePlayer = await gamestate.findPlayer(payload.playerId as string);
+    if (isGameRecord(game) && ((game.gamestate.meta.phase == 'playing') || (game.gamestate.meta.phase == 'lost') || (game.gamestate.meta.phase == 'won'))) {
+      const gamestate = new _deps.Gamestate(game.gamestate);
+      const activePlayer = await gamestate.findPlayer(payload.playerId as string);
       if (activePlayer) {
         if (activePlayer.handSize > 0) {
           gamestate.playCard(payload.playerId as string);
-          gamestate.checkConnections(await _deps.connections.findConnections('gameId', payload.gameId) as any);
+          const conns = await _deps.connections.findConnections('gameId', payload.gameId); gamestate.checkConnections(Array.isArray(conns) ? conns : []);
           // Read game to check stateHash matches before writing
           game = await _deps.games.readGame(payload.gameId);
-          if (game.stateHash === payload.stateHash) {
-            game = await _deps.games.updateGame(game.gameId, gamestate);
+          if (isGameRecord(game) && game.stateHash === payload.stateHash) {
+            const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
           } else {
             await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
           }
-          await _deps.messages.broadcastGame(game);
+          await _deps.messages.broadcastGame(toRecord(game));
         } else {
           await _deps.messages.send(payload.connectionId, { code: 4, message: 'Hand is empty' });
         }
@@ -300,18 +313,18 @@ async function twinge(payload: Payload): Promise<void> {
 }
 
 async function nextRound(payload: Payload): Promise<void> {
-  let game: any = null;
+  let game: GameRecord | number | undefined;
   if (payload.gameId) {
     game = await _deps.games.readGame(payload.gameId);
-    if (game && game.gamestate && game.gamestate.meta.phase == 'playing') {
-      let gamestate = new _deps.Gamestate(game.gamestate);
-      let activePlayer = await gamestate.findPlayer(payload.playerId as string);
+    if (isGameRecord(game) && game.gamestate.meta.phase == 'playing') {
+      const gamestate = new _deps.Gamestate(game.gamestate);
+      const activePlayer = await gamestate.findPlayer(payload.playerId as string);
       if (activePlayer) {
         // Check for remaining cards
-        if (gamestate.players.reduce((playerCards, player) => { return playerCards += player.hand.length }, 0) == 0) {
+        if (gamestate.players.reduce((playerCards, player) => { return playerCards + player.hand.length }, 0) == 0) {
           gamestate.setupRound();
-          game = await _deps.games.updateGame(game.gameId, gamestate);
-          await _deps.messages.broadcastGame(game);
+          const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+          await _deps.messages.broadcastGame(toRecord(game));
         } else {
           await _deps.messages.send(payload.connectionId, { code: 6, message: 'Round in progress' });
         }
@@ -327,15 +340,15 @@ async function nextRound(payload: Payload): Promise<void> {
 }
 
 async function restartGame(payload: Payload): Promise<void> {
-  let game: any = null;
+  let game: GameRecord | number | undefined;
   if (payload.gameId) {
     game = await _deps.games.readGame(payload.gameId);
-    if (game && game.gamestate && game.gamestate.meta.phase != 'open') {
-      let gamestate = new _deps.Gamestate(game.gamestate);
+    if (isGameRecord(game) && game.gamestate.meta.phase != 'open') {
+      const gamestate = new _deps.Gamestate(game.gamestate);
       if (await gamestate.findPlayer(payload.playerId as string)) {
         await gamestate.restartGame();
-        game = await _deps.games.updateGame(game.gameId, gamestate);
-        await _deps.messages.broadcastGame(game);
+        const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+        await _deps.messages.broadcastGame(toRecord(game));
       } else {
         await _deps.messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
@@ -348,25 +361,27 @@ async function restartGame(payload: Payload): Promise<void> {
 }
 
 async function endGame(payload: Payload): Promise<void> {
-  let game: any = null;
+  let game: GameRecord | number | undefined;
   if (payload.gameId) {
     game = await _deps.games.readGame(payload.gameId);
-    if (game && game.gamestate && game.gamestate.meta.phase != 'open') {
-      let gamestate = new _deps.Gamestate(game.gamestate);
+    if (isGameRecord(game) && game.gamestate.meta.phase != 'open') {
+      const gamestate = new _deps.Gamestate(game.gamestate);
       if (await gamestate.findPlayer(payload.playerId as string)) {
         await _deps.games.deleteGame(game.gameId);
         // Cleanse Game
-        game = {
-          gameId: payload.gameId,
+        const closedGame: GameRecord = {
+          gameId: payload.gameId ?? '',
           roomCode: null,
           gamestate: {
-            meta: {
-              phase: 'closed',
-            },
+            config: { deckSize: 0, maxLives: 0 },
+            meta: { phase: 'closed', round: 0 },
+            public: { pile: [], lives: 0, remaining: 0 },
             players: [],
+            private: { deck: [] },
           },
         };
-        await _deps.messages.broadcastGame(game);
+        game = closedGame;
+        await _deps.messages.broadcastGame(toRecord(game));
       } else {
         await _deps.messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
@@ -396,9 +411,18 @@ const actionHandler: Record<string, ActionFn> = {
 };
 
 const handler = async (event: LambdaEvent): Promise<LambdaResult> => {
-  const body = JSON.parse(event.body as string);
+  const body = JSON.parse(event.body as string) as {
+    actionType: string;
+    gameId?: string;
+    playerId?: string;
+    roomCode?: string;
+    stateHash?: string;
+    name?: string;
+    config?: GameConfig;
+    target?: number;
+  };
   const actionType = body.actionType;
-  let payload: Payload = {
+  const payload: Payload = {
     connectionId: event.requestContext.connectionId,
     gameId: body.gameId,
     playerId: body.playerId,

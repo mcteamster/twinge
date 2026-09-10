@@ -1,7 +1,7 @@
 import connections from '../helpers/connections';
 import type { LambdaEvent, LambdaResult } from '../types';
 
-const handler = async (event: LambdaEvent, _?: unknown): Promise<LambdaResult> => {
+const handler = async (event: LambdaEvent): Promise<LambdaResult> => {
   const connectionId = event.requestContext.connectionId;
   const eventType = event.requestContext.eventType;
   let statusCode = 200;
