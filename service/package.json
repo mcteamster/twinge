@@ -6,7 +6,11 @@
   },
   "devDependencies": {
     "aws-cdk": "^2.1136.0",
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "vitest": "^2.1.9"
+  },
+  "scripts": {
+    "test": "vitest run"
   },
   "dependencies": {
     "@aws-sdk/client-apigatewaymanagementapi": "^3.1000.0",

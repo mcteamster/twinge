@@ -67,7 +67,7 @@ async function createGame(gameId, gamestate) {
   let regenCount = 0;
   while (regenCount < 100 && (await findGames("roomCode", roomCode)).length > 0) {
     roomCode = makeCode();
-    retries++;
+    regenCount++;
   }
   if (regenCount >= 100) {
     return 400
@@ -178,4 +178,7 @@ module.exports = {
   findGames,
   updateGame,
   deleteGame,
+  // Exposed for unit testing only — allows tests to spy on the DynamoDB client
+  // without patching node_modules. Not used in production Lambda execution.
+  _testClient: dynamoDbClient,
 }
