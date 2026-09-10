@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-const Player = require('../src/model/Player');
+import Player from '../src/model/Player';
 
 describe('Player', () => {
   describe('default construction (no args)', () => {

@@ -5,8 +5,10 @@
     "twinge-service": "bin/twinge-service.js"
   },
   "devDependencies": {
+    "@types/object-hash": "^3.0.6",
     "aws-cdk": "^2.1136.0",
     "esbuild": "^0.28.1",
+    "typescript": "^5.9.3",
     "vitest": "^2.1.9"
   },
   "scripts": {

@@ -3,9 +3,9 @@
 // without needing to mock node_modules (which Vitest CJS cannot do reliably).
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import connections from '../src/helpers/connections.js';
+import connections from '../src/helpers/connections';
 
-const client = connections._testClient;
+const client: any = connections._testClient;
 
 describe('connections helper', () => {
   beforeEach(() => {
@@ -19,7 +19,7 @@ describe('connections helper', () => {
       const spy = vi.spyOn(client, 'put').mockResolvedValueOnce({});
       await connections.createConnection('conn-1');
       expect(spy).toHaveBeenCalledTimes(1);
-      const params = spy.mock.calls[0][0];
+      const params: any = spy.mock.calls[0][0];
       expect(params.Item.connectionId).toBe('conn-1');
     });
 
@@ -42,7 +42,7 @@ describe('connections helper', () => {
     it('calls delete with correct connectionId', async () => {
       const spy = vi.spyOn(client, 'delete').mockResolvedValueOnce({});
       await connections.deleteConnection('conn-2');
-      const params = spy.mock.calls[0][0];
+      const params: any = spy.mock.calls[0][0];
       expect(params.Key.connectionId).toBe('conn-2');
     });
 
@@ -65,21 +65,21 @@ describe('connections helper', () => {
     it('calls update with correct UpdateExpression', async () => {
       const spy = vi.spyOn(client, 'update').mockResolvedValueOnce({ Attributes: {} });
       await connections.updateConnection('conn-3', 'gameId', 'game-123');
-      const params = spy.mock.calls[0][0];
+      const params: any = spy.mock.calls[0][0];
       expect(params.UpdateExpression).toMatch(/set #updateKey = :updateValue/);
     });
 
     it('passes the updateKey via ExpressionAttributeNames', async () => {
       const spy = vi.spyOn(client, 'update').mockResolvedValueOnce({ Attributes: {} });
       await connections.updateConnection('conn-3', 'gameId', 'game-123');
-      const params = spy.mock.calls[0][0];
+      const params: any = spy.mock.calls[0][0];
       expect(params.ExpressionAttributeNames['#updateKey']).toBe('gameId');
     });
 
     it('passes the updateValue via ExpressionAttributeValues', async () => {
       const spy = vi.spyOn(client, 'update').mockResolvedValueOnce({ Attributes: {} });
       await connections.updateConnection('conn-3', 'gameId', 'game-123');
-      const params = spy.mock.calls[0][0];
+      const params: any = spy.mock.calls[0][0];
       expect(params.ExpressionAttributeValues[':updateValue']).toBe('game-123');
     });
 
@@ -96,14 +96,14 @@ describe('connections helper', () => {
     it('calls query with correct IndexName', async () => {
       const spy = vi.spyOn(client, 'query').mockResolvedValueOnce({ Items: [] });
       await connections.findConnections('gameId', 'game-abc');
-      const params = spy.mock.calls[0][0];
+      const params: any = spy.mock.calls[0][0];
       expect(params.IndexName).toBe('gameId');
     });
 
     it('calls query with correct key condition value', async () => {
       const spy = vi.spyOn(client, 'query').mockResolvedValueOnce({ Items: [] });
       await connections.findConnections('gameId', 'game-abc');
-      const params = spy.mock.calls[0][0];
+      const params: any = spy.mock.calls[0][0];
       expect(params.ExpressionAttributeValues[':queryValue']).toBe('game-abc');
     });
 
