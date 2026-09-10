@@ -1,9 +1,7 @@
-const {
-  DynamoDBDocument
-} = require("@aws-sdk/lib-dynamodb"),
-  {
-    DynamoDB
-  } = require("@aws-sdk/client-dynamodb");
+import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import type { ConnectionRecord } from '../types';
+
 const marshallOptions = {
   // Whether to automatically convert empty strings, blobs, and sets to `null`.
   convertEmptyValues: false, // false, by default.
@@ -20,7 +18,7 @@ const translateConfig = { marshallOptions, unmarshallOptions };
 const dynamoDbClient = DynamoDBDocument.from(new DynamoDB(), translateConfig);
 const CONNECTION_TABLE = process.env.CONNECTION_TABLE;
 
-async function createConnection(connectionId) {
+async function createConnection(connectionId: string): Promise<number> {
   const params = {
     TableName: CONNECTION_TABLE,
     Item: {
@@ -31,14 +29,14 @@ async function createConnection(connectionId) {
 
   try {
     await dynamoDbClient.put(params);
-    return 200
+    return 200;
   } catch (error) {
     console.log(error);
-    return 500
+    return 500;
   }
 }
 
-async function readConnection(connectionId) {
+async function readConnection(connectionId: string): Promise<ConnectionRecord | number | undefined> {
   const params = {
     TableName: CONNECTION_TABLE,
     Key: {
@@ -47,59 +45,59 @@ async function readConnection(connectionId) {
   };
 
   try {
-    return (await dynamoDbClient.get(params)).Item;
+    return (await dynamoDbClient.get(params)).Item as ConnectionRecord | undefined;
   } catch (error) {
     console.log(error);
-    return 500
+    return 500;
   }
 }
 
-async function findConnections(queryKey, queryValue) {
+async function findConnections(queryKey: string, queryValue: string): Promise<ConnectionRecord[] | number> {
   const params = {
     TableName: CONNECTION_TABLE,
     IndexName: queryKey,
-    KeyConditionExpression: "#queryKey = :queryValue",
+    KeyConditionExpression: '#queryKey = :queryValue',
     ExpressionAttributeNames: {
-      "#queryKey": queryKey,
+      '#queryKey': queryKey,
     },
     ExpressionAttributeValues: {
-      ":queryValue": queryValue,
-    }
+      ':queryValue': queryValue,
+    },
   };
 
   try {
-    return (await dynamoDbClient.query(params)).Items;
+    return (await dynamoDbClient.query(params)).Items as ConnectionRecord[];
   } catch (error) {
     console.log(error);
-    return 500
+    return 500;
   }
 }
 
-async function updateConnection(connectionId, updateKey, updateValue) {
+async function updateConnection(connectionId: string, updateKey: string, updateValue: unknown): Promise<ConnectionRecord | number | undefined> {
   const params = {
     TableName: CONNECTION_TABLE,
     Key: {
       connectionId: connectionId,
     },
-    UpdateExpression: "set #updateKey = :updateValue",
+    UpdateExpression: 'set #updateKey = :updateValue',
     ExpressionAttributeNames: {
-      "#updateKey": updateKey,
+      '#updateKey': updateKey,
     },
     ExpressionAttributeValues: {
-      ":updateValue": updateValue,
+      ':updateValue': updateValue,
     },
-    ReturnValues: "ALL_NEW"
+    ReturnValues: 'ALL_NEW' as const,
   };
 
   try {
-    return (await dynamoDbClient.update(params)).Attributes;
+    return (await dynamoDbClient.update(params)).Attributes as ConnectionRecord | undefined;
   } catch (error) {
     console.log(error);
-    return 500
+    return 500;
   }
 }
 
-async function deleteConnection(connectionId) {
+async function deleteConnection(connectionId: string): Promise<number> {
   const params = {
     TableName: CONNECTION_TABLE,
     Key: {
@@ -109,14 +107,14 @@ async function deleteConnection(connectionId) {
 
   try {
     await dynamoDbClient.delete(params);
-    return 200
+    return 200;
   } catch (error) {
     console.log(error);
-    return 500
+    return 500;
   }
 }
 
-module.exports = {
+export = {
   createConnection,
   readConnection,
   findConnections,
@@ -125,4 +123,4 @@ module.exports = {
   // Exposed for unit testing only — allows tests to spy on the DynamoDB client
   // without patching node_modules. Not used in production Lambda execution.
   _testClient: dynamoDbClient,
-}
+};

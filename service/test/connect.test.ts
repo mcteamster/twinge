@@ -4,7 +4,7 @@
 // pattern used in connections.test.js and games.test.js.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import connectHandlerModule from '../src/handlers/connect.js';
+import connectHandlerModule from '../src/handlers/connect';
 
 const { handler, _testDeps } = connectHandlerModule;
 const { connections } = _testDeps;

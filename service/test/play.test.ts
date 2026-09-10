@@ -7,13 +7,13 @@
 // that action functions (which read _deps.Gamestate at call time) get the spy.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import playHandlerModule from '../src/handlers/play.js';
+import playHandlerModule from '../src/handlers/play';
 
-const { handler, _testDeps } = playHandlerModule;
+const { handler, _testDeps } = playHandlerModule as { handler: typeof playHandlerModule.handler; _testDeps: any };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function makeGamestateSpy(overrides = {}) {
+function makeGamestateSpy(overrides: any = {}) {
   return {
     addPlayer: vi.fn().mockResolvedValue('new-player-id'),
     findPlayer: vi.fn().mockResolvedValue({ playerId: 'p1', handSize: 1, hand: [5] }),
@@ -32,7 +32,7 @@ function makeGamestateSpy(overrides = {}) {
   };
 }
 
-function makeEvent(actionType, body = {}) {
+function makeEvent(actionType: string, body: any = {}) {
   return {
     requestContext: { connectionId: 'conn-test' },
     body: JSON.stringify({

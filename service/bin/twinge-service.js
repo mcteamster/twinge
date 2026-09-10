@@ -86,7 +86,7 @@ class TwingeServiceStack extends cdk.Stack {
     const connectHandler = new lambdaNodeJS.NodejsFunction(this, 'ConnectHandler', {
       runtime: lambda.Runtime.NODEJS_24_X,
       memorySize: 512,
-      entry: './src/handlers/connect.js',
+      entry: './src/handlers/connect.ts',
       handler: 'handler',
       environment: {
         CONNECTION_TABLE: connectionTable.tableName,
@@ -97,7 +97,7 @@ class TwingeServiceStack extends cdk.Stack {
     const playHandler = new lambdaNodeJS.NodejsFunction(this, 'PlayHandler', {
       runtime: lambda.Runtime.NODEJS_24_X,
       memorySize: 512,
-      entry: './src/handlers/play.js',
+      entry: './src/handlers/play.ts',
       handler: 'handler',
       environment: {
         CONNECTION_TABLE: connectionTable.tableName,

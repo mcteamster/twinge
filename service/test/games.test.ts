@@ -3,9 +3,9 @@
 // without needing to mock node_modules (which Vitest CJS cannot do reliably).
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import games from '../src/helpers/games.js';
+import games from '../src/helpers/games';
 
-const client = games._testClient;
+const client: any = games._testClient;
 
 describe('games helper', () => {
   beforeEach(() => {
@@ -25,7 +25,7 @@ describe('games helper', () => {
       const gs = { config: { deckSize: 100, maxLives: 5 }, players: [] };
       await games.createGame('game-1', gs);
       const putSpy = vi.mocked(client.put);
-      const params = putSpy.mock.calls[0][0];
+      const params: any = putSpy.mock.calls[0][0];
       expect(params.Item.gameId).toBe('game-1');
     });
 
@@ -33,7 +33,7 @@ describe('games helper', () => {
       const gs = { config: { deckSize: 100, maxLives: 5 }, players: [] };
       await games.createGame('game-1', gs);
       const putSpy = vi.mocked(client.put);
-      const params = putSpy.mock.calls[0][0];
+      const params: any = putSpy.mock.calls[0][0];
       expect(typeof params.Item.roomCode).toBe('string');
       expect(params.Item.roomCode.length).toBeGreaterThan(0);
     });
@@ -42,7 +42,7 @@ describe('games helper', () => {
       const gs = { config: { deckSize: 100, maxLives: 5 }, players: [] };
       await games.createGame('game-1', gs);
       const putSpy = vi.mocked(client.put);
-      const params = putSpy.mock.calls[0][0];
+      const params: any = putSpy.mock.calls[0][0];
       expect(typeof params.Item.stateHash).toBe('string');
     });
 
@@ -50,7 +50,7 @@ describe('games helper', () => {
       const gs = { config: { deckSize: 100, maxLives: 5 }, players: [] };
       await games.createGame('game-1', gs);
       const putSpy = vi.mocked(client.put);
-      const params = putSpy.mock.calls[0][0];
+      const params: any = putSpy.mock.calls[0][0];
       expect(typeof params.Item.expiryTimeEpoch).toBe('number');
     });
 
@@ -74,7 +74,7 @@ describe('games helper', () => {
     it('calls get with the correct gameId key', async () => {
       const spy = vi.spyOn(client, 'get').mockResolvedValueOnce({ Item: { gameId: 'game-1' } });
       await games.readGame('game-1');
-      const params = spy.mock.calls[0][0];
+      const params: any = spy.mock.calls[0][0];
       expect(params.Key.gameId).toBe('game-1');
     });
 
@@ -99,7 +99,7 @@ describe('games helper', () => {
       const spy = vi.spyOn(client, 'update').mockResolvedValueOnce({ Attributes: { gameId: 'game-1' } });
       const gs = { config: { deckSize: 100, maxLives: 5 }, players: [] };
       await games.updateGame('game-1', gs);
-      const params = spy.mock.calls[0][0];
+      const params: any = spy.mock.calls[0][0];
       expect(params.Key.gameId).toBe('game-1');
     });
 
@@ -107,7 +107,7 @@ describe('games helper', () => {
       const spy = vi.spyOn(client, 'update').mockResolvedValueOnce({ Attributes: {} });
       const gs = { config: { deckSize: 100, maxLives: 5 }, players: [] };
       await games.updateGame('game-1', gs);
-      const params = spy.mock.calls[0][0];
+      const params: any = spy.mock.calls[0][0];
       expect(params.UpdateExpression).toMatch(/gamestate/);
       expect(params.UpdateExpression).toMatch(/stateHash/);
     });
@@ -134,7 +134,7 @@ describe('games helper', () => {
     it('calls delete with correct gameId key', async () => {
       const spy = vi.spyOn(client, 'delete').mockResolvedValueOnce({});
       await games.deleteGame('game-1');
-      const params = spy.mock.calls[0][0];
+      const params: any = spy.mock.calls[0][0];
       expect(params.Key.gameId).toBe('game-1');
     });
 

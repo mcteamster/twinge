@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-const Gamestate = require('../src/model/Gamestate');
-const Player = require('../src/model/Player');
+import Gamestate from '../src/model/Gamestate';
+import Player from '../src/model/Player';
 
 // ─── 3.2: Construction ───────────────────────────────────────────────────────
 
@@ -106,7 +106,7 @@ describe('Gamestate construction', () => {
 // ─── 3.3: addPlayer / findPlayer ─────────────────────────────────────────────
 
 describe('Gamestate.addPlayer / findPlayer', () => {
-  let gs;
+  let gs: Gamestate;
   beforeEach(() => { gs = new Gamestate({}); });
 
   it('addPlayer returns the playerId', async () => {
@@ -131,7 +131,7 @@ describe('Gamestate.addPlayer / findPlayer', () => {
 // ─── 3.4: kickPlayer ─────────────────────────────────────────────────────────
 
 describe('Gamestate.kickPlayer', () => {
-  let gs, p1, p2;
+  let gs: Gamestate, p1: Player, p2: Player;
   beforeEach(async () => {
     gs = new Gamestate({});
     p1 = new Player({ playerId: 'p1', connected: true, strikes: 0, name: 'CAT', hand: [], handSize: 0 });
@@ -161,7 +161,7 @@ describe('Gamestate.kickPlayer', () => {
 // ─── 3.5: setupGame ──────────────────────────────────────────────────────────
 
 describe('Gamestate.setupGame', () => {
-  let gs;
+  let gs: Gamestate;
   beforeEach(() => { gs = new Gamestate({}); });
 
   it('initialises deck to deckSize length', async () => {
@@ -197,7 +197,7 @@ describe('Gamestate.setupGame', () => {
 // ─── 3.6: setupRound ─────────────────────────────────────────────────────────
 
 describe('Gamestate.setupRound', () => {
-  let gs;
+  let gs: Gamestate;
   beforeEach(async () => {
     gs = new Gamestate({});
     const p1 = new Player({ playerId: 'p1', connected: true, strikes: 0, name: 'CAT', hand: [], handSize: 0 });
@@ -265,7 +265,7 @@ describe('Gamestate.setupRound', () => {
 // ─── 3.7: playCard ───────────────────────────────────────────────────────────
 
 describe('Gamestate.playCard', () => {
-  function makeGs(playerHands) {
+  function makeGs(playerHands: number[][]): Gamestate {
     const gs = new Gamestate({
       config: { deckSize: 100, maxLives: 5 },
       meta: { phase: 'playing', round: 1 },
@@ -335,7 +335,7 @@ describe('Gamestate.playCard', () => {
 // ─── 3.8: checkConnections ───────────────────────────────────────────────────
 
 describe('Gamestate.checkConnections', () => {
-  let gs;
+  let gs: Gamestate;
   beforeEach(async () => {
     gs = new Gamestate({
       config: { deckSize: 100, maxLives: 5 },
@@ -367,7 +367,7 @@ describe('Gamestate.checkConnections', () => {
 // ─── 3.9: restartGame ────────────────────────────────────────────────────────
 
 describe('Gamestate.restartGame', () => {
-  let gs;
+  let gs: Gamestate;
   beforeEach(async () => {
     gs = new Gamestate({ config: { deckSize: 20, maxLives: 3 } });
     const p1 = new Player({ playerId: 'p1', connected: true, strikes: 0, name: 'CAT', hand: [1, 2], handSize: 2 });
@@ -385,7 +385,6 @@ describe('Gamestate.restartGame', () => {
   });
 
   it('resets round to >= 1 (setupRound was called)', async () => {
-    const roundBefore = gs.meta.round;
     await gs.restartGame();
     // round resets to 0 then setupRound bumps it to 1
     expect(gs.meta.round).toBeGreaterThanOrEqual(1);

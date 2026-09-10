@@ -1,17 +1,25 @@
-const { v4: uuidv4 } = require('uuid');
-const { uniqueNamesGenerator, animals } = require('unique-names-generator');
+import { v4 as uuidv4 } from 'uuid';
+import { uniqueNamesGenerator, animals } from 'unique-names-generator';
+import type { PlayerData } from '../types';
 
 class Player {
-  constructor(player) {
+  playerId!: string;
+  connected!: boolean;
+  strikes!: number;
+  name!: string;
+  hand!: number[];
+  handSize!: number;
+
+  constructor(player?: Partial<PlayerData>) {
     // Default Player
     if (!player || !player.playerId) {
-      let playerName = uniqueNamesGenerator({ 
+      let playerName = uniqueNamesGenerator({
         dictionaries: [animals],
         style: 'upperCase',
         separator: ' ',
       });
       while (playerName.length > 10) {
-        playerName = uniqueNamesGenerator({ 
+        playerName = uniqueNamesGenerator({
           dictionaries: [animals],
           style: 'upperCase',
           separator: ' ',
@@ -27,14 +35,12 @@ class Player {
         handSize: 0,
       };
     }
-    
+
     // Rehydrate Player
-    Object.keys(player).forEach((key) => {
-      this[key] = player[key];
-    });
+    Object.assign(this, player);
   }
 
-  async rename(name) {
+  async rename(name: string): Promise<void> {
     if (name.length > 10) {
       name = name.substring(0, 10);
     }
@@ -42,4 +48,4 @@ class Player {
   }
 }
 
-module.exports = Player;
+export = Player;

@@ -23,6 +23,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Typecheck client
+        run: npm run tsc -w client
+
+      - name: Lint service
+        run: npm run lint -w service
+
+      - name: Typecheck service
+        run: npx tsc --project service/tsconfig.json --noEmit
+
       - name: Test service
         run: npm test -w service
 

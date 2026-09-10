@@ -1,7 +1,23 @@
-const Player = require('./Player');
+import Player from './Player';
+import type {
+  GameConfig,
+  GameMeta,
+  PublicState,
+  PrivateState,
+  PileEvent,
+  PlayerData,
+  GamestateData,
+  ConnectionRecord,
+} from '../types';
 
 class Gamestate {
-  constructor(gamestate) {
+  config!: GameConfig;
+  meta!: GameMeta;
+  public!: PublicState;
+  players!: Player[];
+  private!: PrivateState;
+
+  constructor(gamestate: Partial<GamestateData>) {
     // Default Gamestate
     if (!gamestate.config) {
       gamestate = {
@@ -10,10 +26,10 @@ class Gamestate {
           deckSize: 100,
           maxLives: 5,
         },
-        // Abstract stuff about the game 
+        // Abstract stuff about the game
         meta: {
           phase: 'open',
-          round: 0
+          round: 0,
         },
         // What's on the table
         public: {
@@ -34,10 +50,10 @@ class Gamestate {
           deckSize: (gamestate.config.deckSize <= 1000 && gamestate.config.deckSize >= 10) ? Math.ceil(gamestate.config.deckSize) : 100,
           maxLives: (gamestate.config.maxLives <= 100 && gamestate.config.maxLives > 0) ? Math.ceil(gamestate.config.maxLives) : 5,
         },
-        // Abstract stuff about the game 
+        // Abstract stuff about the game
         meta: {
           phase: 'open',
-          round: 0
+          round: 0,
         },
         // What's on the table
         public: {
@@ -55,43 +71,39 @@ class Gamestate {
     }
 
     // Rehydrate Gamestate
-    Object.keys(gamestate).forEach((key) => {
-      this[key] = gamestate[key];
-    });
+    Object.assign(this, gamestate);
 
     // Rehydrate Players
     this.players = this.players.map((player) => {
-      return new Player(player);
+      return new Player(player as Partial<PlayerData>);
     });
   }
 
   // Player Management
-  async addPlayer(player) {
+  async addPlayer(player: Player): Promise<string> {
     this.players.push(player);
     return player.playerId;
   }
 
-  async findPlayer(playerId) {
+  async findPlayer(playerId: string): Promise<Player | undefined> {
     return this.players.find((player) => {
       return player.playerId == playerId;
     });
   }
 
-  async kickPlayer(playerId) {
-    let playerIndex = this.players.findIndex((player) => {
+  async kickPlayer(playerId: string): Promise<Player[]> {
+    const playerIndex = this.players.findIndex((player) => {
       return player.playerId == playerId;
     });
     return this.players.splice(playerIndex, 1);
   }
 
   // Game Management
-  async setupGame() {
+  async setupGame(): Promise<void> {
     // Initialise Deck
     this.private.deck = Array.from({
       length: this.config.deckSize,
-    }, (_, index) => {
-      return ++index;
-    });
+    }, (_, i) => i + 1);
 
     // Shuffle
     this.private.deck.forEach((_, i, a) => {
@@ -102,9 +114,9 @@ class Gamestate {
     this.meta.phase = 'playing';
   }
 
-  async setupRound() {
+  async setupRound(): Promise<void> {
     // Deal cards to players - subtract from the deck
-    let numberPlaying = (this.players.length - this.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
+    const numberPlaying = (this.players.length - this.players.reduce((spectators, p) => { return p.strikes === -1 ? spectators + 1 : spectators }, 0));
     if (this.private.deck.length == 0) {
       // Not Enough Cards - End The Game Here! You WIN!
       this.public.pile.push({ time: new Date().toISOString(), card: 'You Win! 🥳', round: this.meta.round, playerIndex: -1 });
@@ -128,7 +140,7 @@ class Gamestate {
       } else {
         // Partial distrbution for final round
         this.meta.round++;
-        let quotient = this.private.deck.length / numberPlaying;
+        const quotient = this.private.deck.length / numberPlaying;
         let remainder = this.private.deck.length % numberPlaying;
         this.players.forEach((player) => {
           // Exclude Spectators
@@ -152,31 +164,31 @@ class Gamestate {
     }
   }
 
-  async playCard(playerId) {
+  async playCard(playerId: string): Promise<void> {
     // Find active player
-    let activePlayerIndex = this.players.findIndex((player) => {
+    const activePlayerIndex = this.players.findIndex((player) => {
       return player.playerId == playerId;
     });
-    let activePlayer = this.players[activePlayerIndex];
-    let lowestCards = [{ time: new Date().toISOString(), card: activePlayer.hand.shift(), round: this.meta.round, playerIndex: activePlayerIndex, playerName: activePlayer.name }];
-    while (activePlayer.hand[0] == lowestCards[lowestCards.length - 1].card + 1) {
-      lowestCards.push({ time: new Date().toISOString(), card: activePlayer.hand.shift(), round: this.meta.round, playerIndex: activePlayerIndex, playerName: activePlayer.name });
+    const activePlayer = this.players[activePlayerIndex];
+    const lowestCards: PileEvent[] = [{ time: new Date().toISOString(), card: activePlayer.hand.shift() as number, round: this.meta.round, playerIndex: activePlayerIndex, playerName: activePlayer.name }];
+    while (activePlayer.hand[0] == (lowestCards[lowestCards.length - 1].card as number) + 1) {
+      lowestCards.push({ time: new Date().toISOString(), card: activePlayer.hand.shift() as number, round: this.meta.round, playerIndex: activePlayerIndex, playerName: activePlayer.name });
     }
     activePlayer.handSize = activePlayer.hand.length;
     this.public.pile.push(...lowestCards);
 
     // Check for missed cards
-    let missedCards = [];
+    const missedCards: PileEvent[] = [];
     this.players.forEach((player, playerIndex) => {
       if (player.playerId != activePlayer.playerId) {
-        while (player.hand[0] < lowestCards[0].card) {
-          missedCards.push({ time: new Date().toISOString(), card: player.hand.shift(), round: this.meta.round, playerIndex: playerIndex, playerName: player.name, missed: true })
+        while (player.hand[0] < (lowestCards[0].card as number)) {
+          missedCards.push({ time: new Date().toISOString(), card: player.hand.shift() as number, round: this.meta.round, playerIndex: playerIndex, playerName: player.name, missed: true })
         }
         player.handSize = player.hand.length;
       }
     })
     if (missedCards.length > 0) {
-      missedCards.sort((a, b) => { return a.card - b.card });
+      missedCards.sort((a, b) => { return (a.card as number) - (b.card as number) });
       this.public.pile.push(...missedCards);
       this.public.lives -= missedCards.length;
       if (this.public.lives <= 0) {
@@ -190,7 +202,7 @@ class Gamestate {
     if (this.players.filter((player) => { return player.handSize > 0 }).length == 1) {
       this.players.forEach((player, playerIndex) => {
         if (player.handSize > 0) {
-          this.public.pile.push(...player.hand.splice(0).map((card) => {
+          this.public.pile.push(...player.hand.splice(0).map((card): PileEvent => {
             return { time: new Date().toISOString(), card: card, round: this.meta.round, playerIndex: playerIndex, playerName: player.name }
           }));
           player.handSize = 0;
@@ -199,7 +211,7 @@ class Gamestate {
     }
   }
 
-  async checkConnections(connections) {
+  async checkConnections(connections: ConnectionRecord[]): Promise<void> {
     this.players.forEach((player) => {
       if (connections.findIndex((connection) => { return connection.playerId == player.playerId }) > -1) {
         player.connected = true;
@@ -209,7 +221,7 @@ class Gamestate {
     })
   }
 
-  async restartGame() {
+  async restartGame(): Promise<void> {
     this.meta = {
       phase: 'open',
       round: 0,
@@ -227,4 +239,4 @@ class Gamestate {
   }
 }
 
-module.exports = Gamestate;
+export = Gamestate;

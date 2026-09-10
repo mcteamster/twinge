@@ -1,6 +1,8 @@
-const hash = require('object-hash');
-const { DynamoDBDocument } = require("@aws-sdk/lib-dynamodb");
-const { DynamoDB } = require("@aws-sdk/client-dynamodb");
+import hash from 'object-hash';
+import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
+import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import type { GameRecord, GamestateData } from '../types';
+
 const marshallOptions = {
   // Whether to automatically convert empty strings, blobs, and sets to `null`.
   convertEmptyValues: false, // false, by default.
@@ -17,16 +19,16 @@ const translateConfig = { marshallOptions, unmarshallOptions };
 const dynamoDbClient = DynamoDBDocument.from(new DynamoDB(), translateConfig);
 const GAME_TABLE = process.env.GAME_TABLE;
 
-async function createGame(gameId, gamestate) {
-  function makeCode() {
-    const alphabet = "BCDFGHJKLMNPQRSTVWXZ"; // No vowels to avoid spelling words
-    let codeChars = [
+async function createGame(gameId: string, gamestate: GamestateData | object): Promise<GameRecord | number> {
+  function makeCode(): string {
+    const alphabet = 'BCDFGHJKLMNPQRSTVWXZ'; // No vowels to avoid spelling words
+    const codeChars = [
       alphabet[Math.floor((Math.random() * 20))],
       alphabet[Math.floor((Math.random() * 20))],
-      alphabet[Math.floor((Math.random() * 20))]
-    ]
+      alphabet[Math.floor((Math.random() * 20))],
+    ];
 
-    let serverCode;
+    let serverCode: string;
     // From East to West
     switch (process.env.AWS_REGION) {
       case 'ap-southeast-2':
@@ -59,22 +61,22 @@ async function createGame(gameId, gamestate) {
       default:
         serverCode = 'XZ'; // Local or Fallback
     }
-    codeChars.push(serverCode.slice(Math.floor((Math.random() * serverCode.length)))[0]) // Allocate a random character from the corresponding server code
+    codeChars.push(serverCode.slice(Math.floor((Math.random() * serverCode.length)))[0]); // Allocate a random character from the corresponding server code
 
     return codeChars.join('');
   }
   let roomCode = makeCode();
   let regenCount = 0;
-  while (regenCount < 100 && (await findGames("roomCode", roomCode)).length > 0) {
+  while (regenCount < 100 && ((await findGames('roomCode', roomCode)) as GameRecord[]).length > 0) {
     roomCode = makeCode();
     regenCount++;
   }
   if (regenCount >= 100) {
-    return 400
+    return 400;
   }
 
-  let currentTime = new Date();
-  let expiryTimeEpoch = new Date().setHours(currentTime.getHours() + 12) / 1000;
+  const currentTime = new Date();
+  const expiryTimeEpoch = new Date().setHours(currentTime.getHours() + 12) / 1000;
   const params = {
     TableName: GAME_TABLE,
     Item: {
@@ -89,14 +91,14 @@ async function createGame(gameId, gamestate) {
 
   try {
     await dynamoDbClient.put(params);
-    return params.Item;
+    return params.Item as GameRecord;
   } catch (error) {
     console.log(error);
-    return 500
+    return 500;
   }
 }
 
-async function readGame(gameId) {
+async function readGame(gameId: string): Promise<GameRecord | number | undefined> {
   const params = {
     TableName: GAME_TABLE,
     Key: {
@@ -105,57 +107,57 @@ async function readGame(gameId) {
   };
 
   try {
-    return (await dynamoDbClient.get(params)).Item;
+    return (await dynamoDbClient.get(params)).Item as GameRecord | undefined;
   } catch (error) {
     console.log(error);
-    return 500
+    return 500;
   }
 }
 
-async function findGames(queryKey, queryValue) {
+async function findGames(queryKey: string, queryValue: string): Promise<GameRecord[] | number> {
   const params = {
     TableName: GAME_TABLE,
     IndexName: queryKey,
-    KeyConditionExpression: "#queryKey = :queryValue",
+    KeyConditionExpression: '#queryKey = :queryValue',
     ExpressionAttributeNames: {
-      "#queryKey": queryKey,
+      '#queryKey': queryKey,
     },
     ExpressionAttributeValues: {
-      ":queryValue": queryValue,
-    }
+      ':queryValue': queryValue,
+    },
   };
 
   try {
-    return (await dynamoDbClient.query(params)).Items;
+    return (await dynamoDbClient.query(params)).Items as GameRecord[];
   } catch (error) {
     console.log(error);
-    return 500
+    return 500;
   }
 }
 
-async function updateGame(gameId, gamestate) {
+async function updateGame(gameId: string, gamestate: GamestateData | object): Promise<GameRecord | number | undefined> {
   const params = {
     TableName: GAME_TABLE,
     Key: {
       gameId: gameId,
     },
-    UpdateExpression: "set gamestate = :gamestate, stateHash = :stateHash",
+    UpdateExpression: 'set gamestate = :gamestate, stateHash = :stateHash',
     ExpressionAttributeValues: {
-      ":gamestate": gamestate,
-      ":stateHash": hash.MD5(JSON.stringify(gamestate)),
+      ':gamestate': gamestate,
+      ':stateHash': hash.MD5(JSON.stringify(gamestate)),
     },
-    ReturnValues: "ALL_NEW",
+    ReturnValues: 'ALL_NEW' as const,
   };
 
   try {
-    return (await dynamoDbClient.update(params)).Attributes;
+    return (await dynamoDbClient.update(params)).Attributes as GameRecord | undefined;
   } catch (error) {
     console.log(error);
-    return 500
+    return 500;
   }
 }
 
-async function deleteGame(gameId) {
+async function deleteGame(gameId: string): Promise<number> {
   const params = {
     TableName: GAME_TABLE,
     Key: {
@@ -165,14 +167,14 @@ async function deleteGame(gameId) {
 
   try {
     await dynamoDbClient.delete(params);
-    return 200
+    return 200;
   } catch (error) {
     console.log(error);
-    return 500
+    return 500;
   }
 }
 
-module.exports = {
+export = {
   createGame,
   readGame,
   findGames,
@@ -181,4 +183,4 @@ module.exports = {
   // Exposed for unit testing only — allows tests to spy on the DynamoDB client
   // without patching node_modules. Not used in production Lambda execution.
   _testClient: dynamoDbClient,
-}
+};
