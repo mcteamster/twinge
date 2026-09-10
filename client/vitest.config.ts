@@ -13,5 +13,12 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.test.tsx', 'src/**/*.test.ts'],
+    poolOptions: {
+      forks: {
+        // Node 26 exposes an experimental localStorage that is undefined
+        // unless --localstorage-file is set, overriding jsdom's. Disable it.
+        execArgv: ['--no-experimental-webstorage'],
+      },
+    },
   },
 });
