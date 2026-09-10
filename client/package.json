@@ -2,6 +2,7 @@
   "name": "twinge-client",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@discord/embedded-app-sdk": "^2.0.0",
     "@mcteamster/virgo": "^0.2.5",
@@ -17,13 +18,18 @@
     "dev": "vite --host",
     "build": "vite build",
     "serve": "vite preview",
-    "tsc": "tsc --noEmit"
+    "tsc": "tsc --noEmit",
+    "test": "vitest run"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.8.0"
+    "jsdom": "^25.0.1",
+    "typescript": "^5.8.0",
+    "vitest": "^2.1.9"
   },
   "browserslist": {
     "production": [
