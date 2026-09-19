@@ -63,13 +63,13 @@ function RegionSelect({ region, setRegion }: RegionSelectProps): React.ReactElem
     {regionSelect ?
       <div className='Overlay centered' style={{ display: 'flex', flexDirection: 'column' }}>
         <div className="region-list" style={{
-          width: '15em', display: 'flex', flexDirection: 'row',
-          alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', fontSize: '0.4em',
+          display: 'grid', gridTemplateColumns: 'repeat(3, 4.5em)',
+          alignItems: 'center', justifyContent: 'center', fontSize: '0.4em', gap: '0.5em',
         }}>
           {Object.entries(FLAGS).reverse().map(([r, flag]) => (
             <div key={r} onClick={() => { setRegionSelect(false); setRegion(r, false); }}
               style={{
-                width: '4em', height: '4em', margin: '0.25em', padding: '0.25em',
+                width: '4em', height: '4em', padding: '0.25em',
                 backgroundColor: region == r ? 'skyblue' : '#ddd',
                 borderRadius: '0.5em', display: 'flex', textAlign: 'center',
                 justifyContent: 'center', alignItems: 'center',
