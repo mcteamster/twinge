@@ -6,6 +6,7 @@ const dynamodb = require('aws-cdk-lib/aws-dynamodb');
 const lambda = require('aws-cdk-lib/aws-lambda');
 const lambdaNodeJS = require('aws-cdk-lib/aws-lambda-nodejs');
 const route53 = require('aws-cdk-lib/aws-route53');
+const s3 = require('aws-cdk-lib/aws-s3');
 const wsintegrations = require('aws-cdk-lib/aws-apigatewayv2-integrations');
 const ENDPOINTS = require('./endpoints.json');
 
@@ -40,6 +41,19 @@ class TwingeServiceStack extends cdk.Stack {
       indexName: 'roomCode',
       partitionKey: { name: 'roomCode', type: dynamodb.AttributeType.STRING },
       projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    // Analytics S3 Bucket — stores terminal game-outcome records, one per game.
+    const analyticsBucket = new s3.Bucket(this, 'AnalyticsBucket', {
+      bucketName: `twinge-analytics-${stage}`,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      autoDeleteObjects: false,
+      lifecycleRules: [
+        {
+          expiration: cdk.Duration.days(365),
+        },
+      ],
     });
 
     // WebSocket API
@@ -103,6 +117,7 @@ class TwingeServiceStack extends cdk.Stack {
         CONNECTION_TABLE: connectionTable.tableName,
         GAME_TABLE: gameTable.tableName,
         GATEWAY_ENDPOINT: `${webSocketApi.apiEndpoint}/${stage}`,
+        ANALYTICS_BUCKET: analyticsBucket.bucketName,
       },
       initialPolicy: [
         new cdk.aws_iam.PolicyStatement({
@@ -130,6 +145,7 @@ class TwingeServiceStack extends cdk.Stack {
     connectionTable.grantReadWriteData(playHandler);
     gameTable.grantReadWriteData(connectHandler);
     gameTable.grantReadWriteData(playHandler);
+    analyticsBucket.grantPut(playHandler);
   }
 }
 

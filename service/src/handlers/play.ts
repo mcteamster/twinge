@@ -1,10 +1,11 @@
 import connections from '../helpers/connections';
 import games from '../helpers/games';
 import messages from '../helpers/messages';
+import analytics from '../helpers/analytics';
 import Gamestate from '../model/Gamestate';
 import Player from '../model/Player';
 import { v4 as uuidv4 } from 'uuid';
-import type { ConnectionRecord, GameConfig, GameRecord, LambdaEvent, LambdaResult } from '../types';
+import type { ConnectionRecord, GameConfig, GameRecord, GamestateData, LambdaEvent, LambdaResult } from '../types';
 
 /** Fields extracted from the WebSocket message body plus connection metadata. */
 interface Payload {
@@ -22,7 +23,12 @@ interface Payload {
 // Mutable deps object — allows unit tests to replace constructors and helpers
 // without patching node_modules. Production code always uses the real modules.
 // Access deps through this object in every action function so vi.spyOn works.
-const _deps = { connections, games, messages, Gamestate, Player, uuidv4 };
+const _deps = { connections, games, messages, analytics, Gamestate, Player, uuidv4 };
+
+/** Returns true when a game phase represents a terminal outcome (won or lost). */
+function isTerminalPhase(phase: string): boolean {
+  return phase === 'won' || phase === 'lost';
+}
 
 /** Narrows a readGame/findGames result to a usable GameRecord with a gamestate. */
 function isGameRecord(game: GameRecord | number | undefined): game is GameRecord & { gamestate: NonNullable<GameRecord['gamestate']> } {
@@ -298,6 +304,9 @@ async function twinge(payload: Payload): Promise<void> {
             await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
           }
           await _deps.messages.broadcastGame(toRecord(game));
+          if (isTerminalPhase(gamestate.meta.phase)) {
+            await _deps.analytics.writeAnalytics(toRecord(game).gameId, gamestate as unknown as GamestateData);
+          }
         } else {
           await _deps.messages.send(payload.connectionId, { code: 4, message: 'Hand is empty' });
         }
@@ -325,6 +334,9 @@ async function nextRound(payload: Payload): Promise<void> {
           gamestate.setupRound();
           const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
           await _deps.messages.broadcastGame(toRecord(game));
+          if (isTerminalPhase(gamestate.meta.phase)) {
+            await _deps.analytics.writeAnalytics(toRecord(game).gameId, gamestate as unknown as GamestateData);
+          }
         } else {
           await _deps.messages.send(payload.connectionId, { code: 6, message: 'Round in progress' });
         }
