@@ -2,8 +2,8 @@ import { S3 } from '@aws-sdk/client-s3';
 import type { GamestateData } from '../types';
 
 // S3 client for writing analytics records. Constructed once per Lambda
-// container; the region is inferred from the AWS_REGION env var.
-const s3Client = new S3({});
+// container; targets eu-central-1 where the single analytics bucket lives.
+const s3Client = new S3({ region: 'eu-central-1' });
 
 /** A single game-outcome analytics record written to S3 on terminal phase. */
 interface AnalyticsRecord {
@@ -44,12 +44,12 @@ async function writeAnalytics(gameId: string, gamestate: GamestateData): Promise
     timestamp,
   };
 
-  // Derive a date-partitioned key: YYYY/MM/DD/<gameId>.json (UTC).
+  // Derive a Hive-partitioned key: games/year=YYYY/month=MM/day=DD/<gameId>-<ts>.json (UTC).
   const date = new Date(timestamp);
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const day = String(date.getUTCDate()).padStart(2, '0');
-  const key = `${year}/${month}/${day}/${gameId}.json`;
+  const key = `games/year=${year}/month=${month}/day=${day}/${gameId}-${Date.now()}.json`;
 
   try {
     await s3Client.putObject({

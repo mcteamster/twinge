@@ -39,7 +39,7 @@ describe('analytics helper', () => {
     }
   });
 
-  it('writes to S3 with a YYYY/MM/DD/<gameId>.json key', async () => {
+  it('writes to S3 with a games/year=.../month=.../day=.../<gameId>-<ts>.json key', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2025-03-15T10:30:00.000Z'));
     const spy = vi.spyOn(client, 'putObject').mockResolvedValue({});
@@ -47,7 +47,7 @@ describe('analytics helper', () => {
     await analytics.writeAnalytics('abc-123', makeGamestate());
 
     const params: any = spy.mock.calls[0][0];
-    expect(params.Key).toBe('2025/03/15/abc-123.json');
+    expect(params.Key).toBe(`games/year=2025/month=03/day=15/abc-123-${Date.now()}.json`);
     expect(params.Bucket).toBe('twinge-analytics-test');
     vi.useRealTimers();
   });
