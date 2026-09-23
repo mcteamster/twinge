@@ -43,19 +43,6 @@ class TwingeServiceStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
-    // Analytics S3 Bucket — stores terminal game-outcome records, one per game.
-    const analyticsBucket = new s3.Bucket(this, 'AnalyticsBucket', {
-      bucketName: `twinge-analytics-${stage}`,
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      autoDeleteObjects: false,
-      lifecycleRules: [
-        {
-          expiration: cdk.Duration.days(365),
-        },
-      ],
-    });
-
     // WebSocket API
     const webSocketApi = new apigatewayv2.WebSocketApi(this, `twinge-service-websockets-${stage}`);
     const webSocketStage = new apigatewayv2.WebSocketStage(this, stage, {
@@ -117,12 +104,16 @@ class TwingeServiceStack extends cdk.Stack {
         CONNECTION_TABLE: connectionTable.tableName,
         GAME_TABLE: gameTable.tableName,
         GATEWAY_ENDPOINT: `${webSocketApi.apiEndpoint}/${stage}`,
-        ANALYTICS_BUCKET: analyticsBucket.bucketName,
+        ANALYTICS_BUCKET: 'twinge-analytics-prod',
       },
       initialPolicy: [
         new cdk.aws_iam.PolicyStatement({
           actions: ['execute-api:ManageConnections'],
           resources: [`${webSocketApi.arnForExecuteApiV2()}/*`],
+        }),
+        new cdk.aws_iam.PolicyStatement({
+          actions: ['s3:PutObject'],
+          resources: ['arn:aws:s3:::twinge-analytics-prod/*'],
         }),
       ],
     });
@@ -145,7 +136,6 @@ class TwingeServiceStack extends cdk.Stack {
     connectionTable.grantReadWriteData(playHandler);
     gameTable.grantReadWriteData(connectHandler);
     gameTable.grantReadWriteData(playHandler);
-    analyticsBucket.grantPut(playHandler);
   }
 }
 
@@ -167,3 +157,25 @@ regions.forEach((region) => {
     region: region 
   }});
 })
+
+class TwingeAnalyticsStack extends cdk.Stack {
+  constructor(scope, id, props) {
+    super(scope, id, props);
+
+    new s3.Bucket(this, 'AnalyticsBucket', {
+      bucketName: 'twinge-analytics-prod',
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      autoDeleteObjects: false,
+      lifecycleRules: [
+        {
+          expiration: cdk.Duration.days(365),
+        },
+      ],
+    });
+  }
+}
+
+new TwingeAnalyticsStack(app, 'twinge-analytics-prod', {
+  env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: 'eu-central-1' },
+});
