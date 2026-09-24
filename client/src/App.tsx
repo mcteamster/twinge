@@ -185,16 +185,6 @@ function App(): React.ReactElement {
     if (data.playerId) localStorage.setItem('playerId', data.playerId);
     localStorage.setItem('createTime', new Date().toISOString());
 
-    if (!isBackgroundSync && (data?.gamestate?.public?.pile?.length ?? 0) > 0) {
-      const pile = data.gamestate!.public.pile;
-      const latestCard = pile[pile.length - 1];
-      if (latestCard.missed) {
-        audioRef.current!.buzz.play();
-      } else {
-        audioRef.current!.ring.play();
-      }
-    }
-
     const pile = data?.gamestate?.public?.pile ?? [];
     if ((pile.length > 0 && !cursorRef.current) || (pile[cursorRef.current - 1]?.round !== data?.gamestate?.meta?.round)) {
       cursorRef.current = 1 + pile.map((card) => card.round).lastIndexOf((data?.gamestate?.meta?.round ?? 1) - 1);
