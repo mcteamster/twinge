@@ -69,7 +69,7 @@ describe('Latest — audio behaviour', () => {
     expect(audio.ring.play).not.toHaveBeenCalled();
   });
 
-  it('re-render with the same card value MUST NOT call play() again (deduplication via lastCardRef)', () => {
+  it('re-render with the same event reference MUST NOT call play() again', () => {
     const audio = makeAudio();
     const event = [makeEvent(5, 1, false)];
 
@@ -82,14 +82,37 @@ describe('Latest — audio behaviour', () => {
     // First render fires once
     expect(audio.ring.play).toHaveBeenCalledTimes(1);
 
-    // Re-render with the same event array reference — same card value, no new play
+    // Re-render with the same event array reference — React skips the effect entirely
     rerender(
       <AudioContext.Provider value={audioSettings.loud}>
         <Latest event={event} round={1} audio={audio} />
       </AudioContext.Provider>,
     );
 
-    // Still exactly one call — the deduplication via lastCardRef suppressed the second
+    expect(audio.ring.play).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-render with a NEW array carrying the same card value MUST NOT call play() again (lastCardRef dedup)', () => {
+    const audio = makeAudio();
+
+    const { rerender } = render(
+      <AudioContext.Provider value={audioSettings.loud}>
+        <Latest event={[makeEvent(5, 1, false)]} round={1} audio={audio} />
+      </AudioContext.Provider>,
+    );
+
+    // First render fires once
+    expect(audio.ring.play).toHaveBeenCalledTimes(1);
+
+    // Re-render with a fresh array but the same card value — the effect runs again but
+    // lastCardRef suppresses the second play() call
+    rerender(
+      <AudioContext.Provider value={audioSettings.loud}>
+        <Latest event={[makeEvent(5, 1, false)]} round={1} audio={audio} />
+      </AudioContext.Provider>,
+    );
+
+    // lastCardRef.current === 5, so the inner guard fires and no second play() is issued
     expect(audio.ring.play).toHaveBeenCalledTimes(1);
   });
 });
