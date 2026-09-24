@@ -16,7 +16,36 @@ import type {
   AppState,
   ServerMessage,
   AudioRefs,
+  PileEvent,
 } from './types';
+
+/**
+ * Decide which card-play sound (if any) a gamestate delivery should trigger.
+ *
+ * Sound plays only when ALL hold:
+ *  - the delivery is live (not a sync poll / rejoin / session restore),
+ *  - audio is not muted,
+ *  - the incoming pile is longer than the client's last known pile (i.e. at
+ *    least one genuinely new card).
+ *
+ * When it plays, the sound keys off the newest pile card's `missed` flag:
+ * 'buzz' for a missed card, 'ring' otherwise.
+ *
+ * Pure and side-effect free so it can be unit-tested in isolation.
+ */
+export function decideCardSound(params: {
+  pile: PileEvent[];
+  lastKnownPileLength: number;
+  isBackgroundSync: boolean;
+  muted: boolean;
+}): 'ring' | 'buzz' | null {
+  const { pile, lastKnownPileLength, isBackgroundSync, muted } = params;
+  if (isBackgroundSync || muted) return null;
+  if (pile.length <= lastKnownPileLength) return null;
+  const newestCard = pile[pile.length - 1];
+  return newestCard?.missed ? 'buzz' : 'ring';
+}
+
 function App(): React.ReactElement {
   const [region, setRegionState] = useState<Region | null>(localStorage.getItem('region') as Region | null);
   const [gameId, setGameId] = useState<string | null>(localStorage.getItem('gameId'));
@@ -43,10 +72,17 @@ function App(): React.ReactElement {
   const regionRef = useRef<Region | null>(region);
   const playerIdRef = useRef<string | null>(playerId);
   const gameIdRef = useRef<string | null>(gameId);
+  // Mute setting mirrored into a ref so gamestateHandler reads a stable, current
+  // value inside its closure.
+  const audioSettingRef = useRef<AudioSettings>(audio);
+  // The pile length the client last knew about, used to decide whether a live
+  // delivery genuinely introduces new cards (audio) vs. re-delivers known ones.
+  const lastKnownPileLengthRef = useRef<number>(0);
 
   useEffect(() => { regionRef.current = region; }, [region]);
   useEffect(() => { playerIdRef.current = playerId; }, [playerId]);
   useEffect(() => { gameIdRef.current = gameId; }, [gameId]);
+  useEffect(() => { audioSettingRef.current = audio; }, [audio]);
 
   const toggleMute = useCallback(() => {
     setAudio(a => a === audioSettings.loud ? audioSettings.silent : audioSettings.loud);
@@ -107,7 +143,10 @@ function App(): React.ReactElement {
       playerIdRef.current = session.playerId;
       setOverlay({ message: 'Reconnecting...' });
       wsRef.current?.setGameSession(session.gameId, session.playerId);
-      sendMsg({ action: 'play', actionType: 'rejoin', gameId: session.gameId, playerId: session.playerId });
+      // Session restore on reload: classify the resulting gamestate as non-live
+      // so already-present pile cards produce no card-play sound.
+      setLoading(true);
+      wsRef.current?.sendTagged({ action: 'play', actionType: 'rejoin', gameId: session.gameId, playerId: session.playerId }, true);
       return;
     }
 
@@ -184,6 +223,27 @@ function App(): React.ReactElement {
     if (data.gamestate?.gameId) localStorage.setItem('gameId', data.gamestate.gameId);
     if (data.playerId) localStorage.setItem('playerId', data.playerId);
     localStorage.setItem('createTime', new Date().toISOString());
+
+    const pileNow = data?.gamestate?.public?.pile ?? [];
+    // Play a card-play sound only for a LIVE delivery that introduces at least
+    // one card beyond the client's last known pile, and only while not muted.
+    // A background delivery (sync poll / rejoin / session restore) never plays,
+    // regardless of pile growth, and neither does a live delivery that only
+    // re-delivers already-known cards.
+    const sound = decideCardSound({
+      pile: pileNow,
+      lastKnownPileLength: lastKnownPileLengthRef.current,
+      isBackgroundSync,
+      muted: audioSettingRef.current.mute,
+    });
+    if (sound) {
+      audioRef.current![sound].play();
+    }
+    // Record the pile we now know about (including cards revealed by any
+    // delivery) so subsequent deliveries are judged against it.
+    if (pileNow.length > lastKnownPileLengthRef.current) {
+      lastKnownPileLengthRef.current = pileNow.length;
+    }
 
     const pile = data?.gamestate?.public?.pile ?? [];
     if ((pile.length > 0 && !cursorRef.current) || (pile[cursorRef.current - 1]?.round !== data?.gamestate?.meta?.round)) {
