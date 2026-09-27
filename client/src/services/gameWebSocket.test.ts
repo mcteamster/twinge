@@ -104,6 +104,72 @@ describe('GameWebSocket', () => {
     MockWebSocket.last()!.triggerMessage(state);
     expect(callbacks.onGameState).toHaveBeenCalledTimes(1);
     expect(callbacks.onGameState.mock.calls[0][0]).toMatchObject({ gameId: 'G1' });
+    // An untagged delivery is classified live (isBackgroundSync === false).
+    expect(callbacks.onGameState.mock.calls[0][1]).toBe(false);
+  });
+
+  // Explicit-intent classification (replaces the old 2s time-window heuristic).
+  it('flags a sync-poll refresh response as a background delivery', () => {
+    vi.useFakeTimers();
+    void service.connect();
+    const sock = MockWebSocket.last()!;
+    sock.triggerOpen();
+    // A session sets gameId/playerId and starts the 10s sync poll.
+    service.setGameSession('G1', 'P1');
+    sock.send.mockClear();
+
+    // Fire the poll interval; a refresh is sent and its response is tagged.
+    vi.advanceTimersByTime(10000);
+    expect(sock.send).toHaveBeenCalledTimes(1);
+    const sent = JSON.parse(sock.send.mock.calls[0][0] as string);
+    expect(sent).toMatchObject({ actionType: 'refresh' });
+
+    const state = { gameId: 'G1', gamestate: { public: { pile: [] } } };
+    sock.triggerMessage(state);
+    const lastCall = callbacks.onGameState.mock.calls.at(-1)!;
+    expect(lastCall[1]).toBe(true); // background
+  });
+
+  it('flags a reconnect rejoin response as a background delivery', async () => {
+    vi.useFakeTimers();
+    void service.connect();
+    const sock = MockWebSocket.last()!;
+    sock.triggerOpen();
+    service.setGameSession('G1', 'P1');
+
+    // Abnormal close schedules a reconnect; advance to open the new socket.
+    sock.triggerClose(1006, 'network');
+    vi.advanceTimersByTime(1000);
+    const sock2 = MockWebSocket.last()!;
+    sock2.send.mockClear();
+    sock2.triggerOpen();
+    // The rejoin is sent from connect().then(...); let that microtask flush.
+    await vi.advanceTimersByTimeAsync(0);
+
+    // The rejoin sent after reconnect must be tagged background.
+    const rejoinCall = sock2.send.mock.calls
+      .map((c) => JSON.parse(c[0] as string))
+      .find((m) => m.actionType === 'rejoin');
+    expect(rejoinCall).toBeDefined();
+
+    callbacks.onGameState.mockClear();
+    sock2.triggerMessage({ gameId: 'G1', gamestate: { public: { pile: [] } } });
+    expect(callbacks.onGameState.mock.calls.at(-1)![1]).toBe(true);
+  });
+
+  it('sendTagged classifies its response and defaults untagged deliveries to live', () => {
+    void service.connect();
+    const sock = MockWebSocket.last()!;
+    sock.triggerOpen();
+
+    // Tagged background request -> its response is background.
+    service.sendTagged({ action: 'play', actionType: 'rejoin' }, true);
+    sock.triggerMessage({ gameId: 'G1', gamestate: { public: { pile: [] } } });
+    expect(callbacks.onGameState.mock.calls.at(-1)![1]).toBe(true);
+
+    // A following untagged delivery falls back to live.
+    sock.triggerMessage({ gameId: 'G1', gamestate: { public: { pile: [] } } });
+    expect(callbacks.onGameState.mock.calls.at(-1)![1]).toBe(false);
   });
 
   it('ignores ack messages (code 0, message "ack")', () => {

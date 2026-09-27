@@ -12,10 +12,24 @@ export class GameWebSocket {
   private reconnectDelay: number = 1000;
   private reconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private syncIntervalId: ReturnType<typeof setInterval> | null = null;
-  private lastRefreshTime: number | undefined = undefined;
+  // Explicit intent queue: each entry is the background/live classification of
+  // an outstanding gamestate-producing request, in send order. The next
+  // gamestate delivery consumes the head. Replaces the old time-window race.
+  private pendingDeliveryTags: boolean[] = [];
 
   constructor(callbacks: WebSocketCallbacks) {
     this.callbacks = callbacks;
+  }
+
+  /**
+   * Send a gamestate-producing request and record how its response should be
+   * classified when it comes back. `isBackground = true` marks the response as
+   * a non-live re-sync (sync poll, reconnect rejoin, session restore) so the
+   * app can suppress card-play audio for it.
+   */
+  sendTagged(message: Record<string, unknown>, isBackground: boolean): void {
+    this.pendingDeliveryTags.push(isBackground);
+    this.send(message);
   }
 
   connect(): Promise<void> {
@@ -66,8 +80,10 @@ export class GameWebSocket {
               this.callbacks.onError(message);
             }
           } else {
-            // Check if this is a response to a background refresh
-            const isBackgroundRefresh = this.lastRefreshTime !== undefined && (Date.now() - this.lastRefreshTime) < 2000;
+            // Classify this delivery from explicit send-time intent, not
+            // elapsed time. A tagged request (sync poll / rejoin) enqueued a
+            // background flag; every other delivery defaults to live.
+            const isBackgroundRefresh = this.pendingDeliveryTags.shift() ?? false;
             if (this.callbacks?.onGameState) {
               this.callbacks.onGameState(message, isBackgroundRefresh);
             }
@@ -124,12 +140,12 @@ export class GameWebSocket {
           // Auto-rejoin game if we have session info
           if (this.gameId && this.playerId) {
             console.debug('🔄 Rejoining game after reconnect');
-            this.send({
+            this.sendTagged({
               action: 'play',
               actionType: 'rejoin',
               gameId: this.gameId,
               playerId: this.playerId
-            });
+            }, true);
             this.startSyncPolling();
           }
         })
@@ -177,10 +193,10 @@ export class GameWebSocket {
       console.debug('⏰ Interval fired!');
       if (this.gameId && this.playerId) {
         console.debug('⏰ Sync polling - sending refresh request', { gameId: this.gameId, playerId: this.playerId });
-        // Track when we send a refresh for background detection
-        this.lastRefreshTime = Date.now();
-        // Send refresh directly without going through App's sendMsg to avoid loading state
+        // Send refresh directly without going through App's sendMsg to avoid loading state.
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          // Tag the response as a background (non-live) delivery so audio is suppressed.
+          this.pendingDeliveryTags.push(true);
           this.ws.send(JSON.stringify({
             action: 'play',
             actionType: 'refresh',
@@ -220,6 +236,7 @@ export class GameWebSocket {
     this.gameId = null;
     this.playerId = null;
     this.messageQueue = [];
+    this.pendingDeliveryTags = [];
     this.reconnectAttempts = 0;
   }
 
