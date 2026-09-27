@@ -441,7 +441,11 @@ const handler = async (event: LambdaEvent): Promise<LambdaResult> => {
     // Guard against unknown or missing action types: calling
     // actionHandler[actionType] when it is undefined throws a TypeError that
     // would crash the Lambda invocation (see design.md).
-    if (!(actionType in actionHandler)) {
+    // Object.hasOwn is used instead of `in` to avoid matching prototype-chain
+    // keys (e.g. 'constructor', '__proto__', 'valueOf') which pass an `in`
+    // check but are not ActionFn entries — those would silently misfire or
+    // throw a wrong-code error rather than returning code 9 as required.
+    if (!Object.hasOwn(actionHandler, actionType)) {
       await _deps.messages.send(payload.connectionId, { code: 9, message: 'Unknown action type' });
       return {
         statusCode: 200,

@@ -331,6 +331,18 @@ describe('play handler', () => {
       });
       expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 9 }));
     });
+
+    it('returns { statusCode: 200 } and sends code 9 for a prototype-inherited key (e.g. constructor)', async () => {
+      // 'constructor' is inherited from Object.prototype and passes an `in` check on any plain
+      // object literal. The guard uses Object.hasOwn to exclude such keys; this test confirms
+      // the prototype-chain bypass is closed and the correct error code is returned.
+      const result = await handler(makeEvent('constructor'));
+      expect(result).toEqual({
+        statusCode: 200,
+        body: JSON.stringify({ code: 9, message: 'Unknown action type' }),
+      });
+      expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 9 }));
+    });
   });
 
   describe('internal error (code 8)', () => {
