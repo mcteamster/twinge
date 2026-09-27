@@ -92,8 +92,14 @@ async function joinGame(payload: Payload): Promise<void> {
   if (isGameRecord(game)) {
     // Rehydrate gamestate
     const gamestate = new _deps.Gamestate(game.gamestate);
-    // Join
-    if ((gamestate.meta.phase == 'open' || gamestate.meta.phase == 'playing') && (!payload.playerId || !(await gamestate.findPlayer(payload.playerId)))) {
+    // Join — always create a server-assigned player; any client-supplied
+    // playerId is ignored to prevent identity impersonation (IDOR).
+    if (gamestate.meta.phase == 'open' || gamestate.meta.phase == 'playing') {
+      // Enforce the active-player cap before adding a new player.
+      if (gamestate.activePlayerCount >= (gamestate.config.maxPlayers as number)) {
+        await _deps.messages.send(payload.connectionId, { code: 8, message: 'Game is full' });
+        return;
+      }
       payload.playerId = await gamestate.addPlayer(new _deps.Player());
     }
     if (await gamestate.findPlayer(payload.playerId as string)) {

@@ -25,6 +25,7 @@ class Gamestate {
         config: {
           deckSize: 100,
           maxLives: 5,
+          maxPlayers: 12,
         },
         // Abstract stuff about the game
         meta: {
@@ -49,6 +50,7 @@ class Gamestate {
         config: {
           deckSize: (gamestate.config.deckSize <= 1000 && gamestate.config.deckSize >= 10) ? Math.ceil(gamestate.config.deckSize) : 100,
           maxLives: (gamestate.config.maxLives <= 100 && gamestate.config.maxLives > 0) ? Math.ceil(gamestate.config.maxLives) : 5,
+          maxPlayers: (gamestate.config.maxPlayers !== undefined && gamestate.config.maxPlayers <= 100 && gamestate.config.maxPlayers >= 10) ? Math.ceil(gamestate.config.maxPlayers) : 12,
         },
         // Abstract stuff about the game
         meta: {
@@ -73,10 +75,23 @@ class Gamestate {
     // Rehydrate Gamestate
     Object.assign(this, gamestate);
 
+    // Ensure a maxPlayers cap exists for games persisted before this field
+    // was introduced (constructor default of 12).
+    if (this.config && (this.config.maxPlayers === undefined ||
+        !(this.config.maxPlayers <= 100 && this.config.maxPlayers >= 10))) {
+      this.config.maxPlayers = 12;
+    }
+
     // Rehydrate Players
     this.players = this.players.map((player) => {
       return new Player(player as Partial<PlayerData>);
     });
+  }
+
+  // Count of active (non-spectator) players. Spectators have strikes === -1
+  // and do not count toward the player cap.
+  get activePlayerCount(): number {
+    return this.players.filter((player) => player.strikes !== -1).length;
   }
 
   // Player Management

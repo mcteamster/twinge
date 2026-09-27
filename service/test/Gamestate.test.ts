@@ -73,6 +73,49 @@ describe('Gamestate construction', () => {
     });
   });
 
+  describe('maxPlayers config', () => {
+    it('stores maxPlayers within range (10–100) as-is', () => {
+      const gs = new Gamestate({ config: { deckSize: 50, maxLives: 3, maxPlayers: 40 } });
+      expect(gs.config.maxPlayers).toBe(40);
+    });
+
+    it('accepts the range boundaries 10 and 100', () => {
+      expect(new Gamestate({ config: { deckSize: 50, maxLives: 3, maxPlayers: 10 } }).config.maxPlayers).toBe(10);
+      expect(new Gamestate({ config: { deckSize: 50, maxLives: 3, maxPlayers: 100 } }).config.maxPlayers).toBe(100);
+    });
+
+    it('defaults maxPlayers to 12 when absent', () => {
+      const gs = new Gamestate({ config: { deckSize: 50, maxLives: 3 } });
+      expect(gs.config.maxPlayers).toBe(12);
+    });
+
+    it('defaults maxPlayers to 12 when below minimum (< 10)', () => {
+      const gs = new Gamestate({ config: { deckSize: 50, maxLives: 3, maxPlayers: 5 } });
+      expect(gs.config.maxPlayers).toBe(12);
+    });
+
+    it('defaults maxPlayers to 12 when above maximum (> 100)', () => {
+      const gs = new Gamestate({ config: { deckSize: 50, maxLives: 3, maxPlayers: 500 } });
+      expect(gs.config.maxPlayers).toBe(12);
+    });
+
+    it('defaults maxPlayers to 12 with no config at all', () => {
+      const gs = new Gamestate({});
+      expect(gs.config.maxPlayers).toBe(12);
+    });
+
+    it('defaults maxPlayers to 12 when rehydrating a config that lacks it', () => {
+      const gs = new Gamestate({
+        config: { deckSize: 100, maxLives: 5 } as any,
+        meta: { phase: 'playing', round: 2 },
+        public: { pile: [], lives: 4, remaining: 80 },
+        players: [],
+        private: { deck: [1, 2, 3] },
+      });
+      expect(gs.config.maxPlayers).toBe(12);
+    });
+  });
+
   describe('rehydration of existing gamestate', () => {
     it('preserves meta phase and round', () => {
       const data = {
@@ -141,6 +184,30 @@ describe('Gamestate.addPlayer / findPlayer', () => {
     await gs.addPlayer(p);
     const found = await gs.findPlayer(undefined as unknown as string);
     expect(found).toBeUndefined();
+  });
+});
+
+// ─── activePlayerCount getter ────────────────────────────────────────────────
+
+describe('Gamestate.activePlayerCount', () => {
+  it('counts only players whose strikes !== -1', () => {
+    const gs = new Gamestate({
+      config: { deckSize: 100, maxLives: 5, maxPlayers: 12 },
+      meta: { phase: 'open', round: 0 },
+      public: { pile: [], lives: 5, remaining: 100 },
+      players: [
+        { playerId: 'p1', connected: true, strikes: 0, name: 'A', hand: [], handSize: 0 },
+        { playerId: 'p2', connected: true, strikes: 2, name: 'B', hand: [], handSize: 0 },
+        { playerId: 's1', connected: true, strikes: -1, name: 'S', hand: [], handSize: 0 },
+      ],
+      private: { deck: [] },
+    });
+    expect(gs.activePlayerCount).toBe(2);
+  });
+
+  it('returns 0 for an empty roster', () => {
+    const gs = new Gamestate({});
+    expect(gs.activePlayerCount).toBe(0);
   });
 });
 

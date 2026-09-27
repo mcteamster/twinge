@@ -6,6 +6,7 @@
 export interface GameConfig {
   deckSize: number;
   maxLives: number;
+  maxPlayers?: number;
 }
 
 /** Abstract game progression state. */

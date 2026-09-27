@@ -149,6 +149,115 @@ describe('play handler', () => {
     });
   });
 
+  // ─── join — IDOR fix (server-assigned identity) ──────────────────────────
+
+  describe('"join" action — IDOR fix', () => {
+    it('joining with a playerId matching an existing player still creates a new player', async () => {
+      const spy = makeGamestateSpy({ meta: { phase: 'open', round: 0 }, activePlayerCount: 1 });
+      // Simulate a game that already contains the claimed player id.
+      spy.findPlayer.mockResolvedValue({ playerId: 'existing-player', handSize: 0, hand: [] });
+      spy.addPlayer.mockResolvedValue('server-assigned-id');
+      _testDeps.Gamestate = function() { return spy; };
+      _testDeps.Player = function() { return {}; };
+      const game = { gameId: 'game-1', gamestate: spy };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+
+      await handler(makeEvent('join', { gameId: 'game-1', playerId: 'existing-player' }));
+
+      // A fresh player is always created regardless of the supplied playerId.
+      expect(spy.addPlayer).toHaveBeenCalledTimes(1);
+      // The connection is linked to the server-assigned id, not the claimed one.
+      expect(_testDeps.connections.updateConnection).toHaveBeenCalledWith('conn-test', 'playerId', 'server-assigned-id');
+      expect(_testDeps.connections.updateConnection).not.toHaveBeenCalledWith('conn-test', 'playerId', 'existing-player');
+    });
+
+    it('joining without a playerId still creates a new player successfully', async () => {
+      const spy = makeGamestateSpy({ meta: { phase: 'open', round: 0 }, activePlayerCount: 0 });
+      spy.findPlayer.mockResolvedValue({ playerId: 'server-assigned-id', handSize: 0, hand: [] });
+      spy.addPlayer.mockResolvedValue('server-assigned-id');
+      _testDeps.Gamestate = function() { return spy; };
+      _testDeps.Player = function() { return {}; };
+      const game = { gameId: 'game-1', gamestate: spy };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+
+      await handler(makeEvent('join', { gameId: 'game-1', playerId: null }));
+
+      expect(spy.addPlayer).toHaveBeenCalledTimes(1);
+      expect(_testDeps.messages.broadcastGame).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // ─── join — player cap enforcement ───────────────────────────────────────
+
+  describe('"join" action — player cap', () => {
+    it('sends error code 8 and does not add a player when the game is full', async () => {
+      const spy = makeGamestateSpy({
+        meta: { phase: 'open', round: 0 },
+        config: { deckSize: 100, maxLives: 5, maxPlayers: 12 },
+        activePlayerCount: 12,
+      });
+      _testDeps.Gamestate = function() { return spy; };
+      _testDeps.Player = function() { return {}; };
+      const game = { gameId: 'game-1', gamestate: spy };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+
+      await handler(makeEvent('join', { gameId: 'game-1', playerId: null }));
+
+      expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 8 }));
+      expect(spy.addPlayer).not.toHaveBeenCalled();
+    });
+
+    it('adds a player when the game has capacity', async () => {
+      const spy = makeGamestateSpy({
+        meta: { phase: 'open', round: 0 },
+        config: { deckSize: 100, maxLives: 5, maxPlayers: 12 },
+        activePlayerCount: 11,
+      });
+      spy.findPlayer.mockResolvedValue({ playerId: 'new-player-id', handSize: 0, hand: [] });
+      _testDeps.Gamestate = function() { return spy; };
+      _testDeps.Player = function() { return {}; };
+      const game = { gameId: 'game-1', gamestate: spy };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+
+      await handler(makeEvent('join', { gameId: 'game-1', playerId: null }));
+
+      expect(spy.addPlayer).toHaveBeenCalledTimes(1);
+      expect(_testDeps.messages.send).not.toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 8 }));
+    });
+
+    it('does not count spectators (strikes === -1) toward the cap', async () => {
+      // Real Gamestate to exercise the activePlayerCount getter: 12 spectators
+      // plus 1 active player — activePlayerCount is 1, so a join succeeds.
+      const players = Array.from({ length: 12 }, (_, i) => ({
+        playerId: `spec-${i}`, connected: true, strikes: -1, name: `S${i}`, hand: [], handSize: 0,
+      }));
+      players.push({ playerId: 'active-1', connected: true, strikes: 0, name: 'A1', hand: [], handSize: 0 });
+      const gs = new OriginalGamestate({
+        config: { deckSize: 100, maxLives: 5, maxPlayers: 12 },
+        meta: { phase: 'open', round: 0 },
+        public: { pile: [], lives: 5, remaining: 100 },
+        players,
+        private: { deck: [] },
+      });
+      _testDeps.Gamestate = function() { return gs; };
+      _testDeps.Player = OriginalPlayer;
+      const game = { gameId: 'game-1', gamestate: gs };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+
+      const beforeCount = gs.players.length;
+      await handler(makeEvent('join', { gameId: 'game-1', playerId: null }));
+
+      // A new active player was added, not rejected as full.
+      expect(gs.players.length).toBe(beforeCount + 1);
+      expect(_testDeps.messages.send).not.toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 8 }));
+    });
+  });
+
   // ─── 5.6: start action ───────────────────────────────────────────────────
 
   describe('"start" action (5.6)', () => {
