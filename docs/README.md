@@ -37,7 +37,7 @@ When any player recieves a `game` from the service this is interpreted as the so
 
 ![contested_move](./contested_move.png)
 
-If a move is submitted but never recieved by the service (perhaps due to network issues) the acting player's gamestate will remain out of sync until they receive their next `game` message. To mitigate the risk of standoff drift, the client requests a refresh of the `game` every 360 seconds.
+If a move is submitted but never recieved by the service (perhaps due to network issues) the acting player's gamestate will remain out of sync until they receive their next `game` message. To mitigate the risk of standoff drift, the client requests a refresh of the `game` every 10 seconds.
 
 ![lost_move](./lost_move.png)
 
