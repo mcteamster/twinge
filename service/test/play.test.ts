@@ -187,6 +187,34 @@ describe('play handler', () => {
       expect(spy.addPlayer).toHaveBeenCalledTimes(1);
       expect(_testDeps.messages.broadcastGame).toHaveBeenCalledTimes(1);
     });
+
+    it('client-supplied playerId is discarded even when game is not in open/playing phase', async () => {
+      // A game in 'won' or 'lost' phase: addPlayer is NOT called (no new join),
+      // but the client-supplied playerId must NOT be used for findPlayer — it
+      // must have been nulled before the findPlayer call so the result is
+      // 'Player not found' (code 3) rather than silently linking the connection
+      // to the claimed identity.
+      const spy = makeGamestateSpy({ meta: { phase: 'won', round: 3 }, activePlayerCount: 2 });
+      // findPlayer: when called with null/undefined should return undefined (no match)
+      spy.findPlayer.mockImplementation(async (id: string | null) => {
+        if (id === 'existing-player') return { playerId: 'existing-player' };
+        return undefined;
+      });
+      _testDeps.Gamestate = function() { return spy; };
+      _testDeps.Player = function() { return {}; };
+      const game = { gameId: 'game-1', gamestate: spy };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+
+      await handler(makeEvent('join', { gameId: 'game-1', playerId: 'existing-player' }));
+
+      // addPlayer must NOT be called (game is not open/playing)
+      expect(spy.addPlayer).not.toHaveBeenCalled();
+      // The connection must NOT be linked to the claimed playerId
+      expect(_testDeps.connections.updateConnection).not.toHaveBeenCalledWith('conn-test', 'playerId', 'existing-player');
+      // Should have sent error code 3 (player not found) because playerId was nulled
+      expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 3 }));
+    });
   });
 
   // ─── join — player cap enforcement ───────────────────────────────────────

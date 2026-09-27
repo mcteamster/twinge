@@ -93,7 +93,10 @@ async function joinGame(payload: Payload): Promise<void> {
     // Rehydrate gamestate
     const gamestate = new _deps.Gamestate(game.gamestate);
     // Join — always create a server-assigned player; any client-supplied
-    // playerId is ignored to prevent identity impersonation (IDOR).
+    // playerId is discarded unconditionally to prevent identity impersonation
+    // (IDOR). Discard here, before any use, so it cannot be used even when
+    // the game is not in an open/playing phase.
+    payload.playerId = null;
     if (gamestate.meta.phase == 'open' || gamestate.meta.phase == 'playing') {
       // Enforce the active-player cap before adding a new player.
       if (gamestate.activePlayerCount >= (gamestate.config.maxPlayers as number)) {
