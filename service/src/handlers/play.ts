@@ -157,7 +157,7 @@ async function kickPlayer(payload: Payload): Promise<void> {
               newPayload.playerId = targetPlayer.playerId;
               const connResult = await _deps.connections.findConnections('gameId', payload.gameId); const connectedPlayers = Array.isArray(connResult) ? connResult : [] as ConnectionRecord[];
               newPayload.connectionId = connectedPlayers.find((connectedPlayer) => {
-                if (connectedPlayer.playerId == targetPlayer.playerId) {
+                if (connectedPlayer.playerId === targetPlayer.playerId) {
                   return true;
                 }
               })?.connectionId;

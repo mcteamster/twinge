@@ -168,7 +168,7 @@ class Gamestate {
   async playCard(playerId: string): Promise<void> {
     // Find active player
     const activePlayerIndex = this.players.findIndex((player) => {
-      return player.playerId == playerId;
+      return player.playerId === playerId;
     });
     const activePlayer = this.players[activePlayerIndex];
     const lowestCards: PileEvent[] = [{ time: new Date().toISOString(), card: activePlayer.hand.shift() as number, round: this.meta.round, playerIndex: activePlayerIndex, playerName: activePlayer.name }];
@@ -181,7 +181,7 @@ class Gamestate {
     // Check for missed cards
     const missedCards: PileEvent[] = [];
     this.players.forEach((player, playerIndex) => {
-      if (player.playerId != activePlayer.playerId) {
+      if (player.playerId !== activePlayer.playerId) {
         while (player.hand[0] < (lowestCards[0].card as number)) {
           missedCards.push({ time: new Date().toISOString(), card: player.hand.shift() as number, round: this.meta.round, playerIndex: playerIndex, playerName: player.name, missed: true })
         }
@@ -214,7 +214,7 @@ class Gamestate {
 
   async checkConnections(connections: ConnectionRecord[]): Promise<void> {
     this.players.forEach((player) => {
-      if (connections.findIndex((connection) => { return connection.playerId == player.playerId }) > -1) {
+      if (connections.findIndex((connection) => { return connection.playerId === player.playerId }) > -1) {
         player.connected = true;
       } else {
         player.connected = false;
