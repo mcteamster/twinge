@@ -367,4 +367,51 @@ describe('play handler', () => {
       expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 8 }));
     });
   });
+
+  // ─── 3.4: broadcastGame — null playerId must not match any player ─────────
+
+  describe('broadcastGame null playerId isolation (3.4)', () => {
+    it('a connection with playerId null does not receive any player hand or playerId', async () => {
+      // Restore beforeEach stubs so we can set up fresh spies for this test
+      vi.restoreAllMocks();
+
+      // messages.broadcastGame internally calls connections.findConnections.
+      // Because _testDeps.connections is the same imported module object,
+      // spying on it here mutates the property in place and is visible to messages.ts.
+      vi.spyOn(_testDeps.connections, 'findConnections').mockResolvedValue([
+        { connectionId: 'conn-null', playerId: null },
+      ]);
+
+      // Spy on the API Gateway client to capture what payload was posted
+      const sentPayloads: Array<{ connId: string; data: unknown }> = [];
+      vi.spyOn(_testDeps.messages._testClient, 'postToConnection').mockImplementation(({ ConnectionId, Data }: any) => {
+        sentPayloads.push({ connId: ConnectionId, data: JSON.parse(Data) });
+        return Promise.resolve({});
+      });
+
+      const fakeGame = {
+        gameId: 'game-1',
+        gamestate: {
+          private: { deck: [] },
+          players: [
+            { playerId: 'real-player', hand: [42, 99], handSize: 2, connected: true, strikes: 0, name: 'CAT' },
+          ],
+          meta: { phase: 'playing', round: 1 },
+          public: { pile: [], lives: 5, remaining: 80 },
+          config: { deckSize: 100, maxLives: 5 },
+        },
+      };
+
+      await _testDeps.messages.broadcastGame(fakeGame);
+
+      // One postToConnection call (one connection)
+      expect(sentPayloads.length).toBe(1);
+      expect(sentPayloads[0].connId).toBe('conn-null');
+      const sent = sentPayloads[0].data as any;
+      // null !== 'real-player' (strict), so the player's hand and playerId are stripped
+      const player = sent.gamestate.players[0];
+      expect(player.hand).toBeUndefined();
+      expect(player.playerId).toBeUndefined();
+    });
+  });
 });

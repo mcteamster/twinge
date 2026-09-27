@@ -87,14 +87,15 @@ class Gamestate {
 
   async findPlayer(playerId: string): Promise<Player | undefined> {
     return this.players.find((player) => {
-      return player.playerId == playerId;
+      return player.playerId === playerId;
     });
   }
 
   async kickPlayer(playerId: string): Promise<Player[]> {
     const playerIndex = this.players.findIndex((player) => {
-      return player.playerId == playerId;
+      return player.playerId === playerId;
     });
+    if (playerIndex === -1) return [];
     return this.players.splice(playerIndex, 1);
   }
 

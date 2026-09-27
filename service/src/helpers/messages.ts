@@ -27,7 +27,7 @@ async function broadcastGame(game: GameRecord): Promise<void> {
   const messagePromises = connectedPlayers.map((connectedPlayer) => {
     const filteredGame = JSON.parse(JSON.stringify(gameToSend)) as typeof gameToSend;
     filteredGame.gamestate.players = filteredGame.gamestate.players.map((player) => {
-      if (player.playerId != connectedPlayer.playerId) {
+      if (player.playerId !== connectedPlayer.playerId) {
         delete player.playerId;
         delete player.hand;
       }
@@ -41,4 +41,7 @@ async function broadcastGame(game: GameRecord): Promise<void> {
 export = {
   send: send,
   broadcastGame: broadcastGame,
+  // Exposed for unit testing only — allows tests to spy on the API Gateway client
+  // without patching node_modules. Not used in production Lambda execution.
+  _testClient: apigatewaymanagementapi,
 };

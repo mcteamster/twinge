@@ -126,6 +126,22 @@ describe('Gamestate.addPlayer / findPlayer', () => {
     const found = await gs.findPlayer('nonexistent-id');
     expect(found).toBeUndefined();
   });
+
+  // 3.1: null playerId (cast as string) must not match any player
+  it('findPlayer returns undefined when called with null (cast as string)', async () => {
+    const p = new Player();
+    await gs.addPlayer(p);
+    const found = await gs.findPlayer(null as unknown as string);
+    expect(found).toBeUndefined();
+  });
+
+  // 3.2: undefined playerId (cast as string) must not match any player
+  it('findPlayer returns undefined when called with undefined (cast as string)', async () => {
+    const p = new Player();
+    await gs.addPlayer(p);
+    const found = await gs.findPlayer(undefined as unknown as string);
+    expect(found).toBeUndefined();
+  });
 });
 
 // ─── 3.4: kickPlayer ─────────────────────────────────────────────────────────
@@ -155,6 +171,15 @@ describe('Gamestate.kickPlayer', () => {
     await gs.kickPlayer('p1');
     const remaining = await gs.findPlayer('p2');
     expect(remaining).toBeDefined();
+  });
+
+  // 3.3: null playerId (cast as string) must not splice a real player
+  it('kickPlayer with a null playerId (cast as string) does not splice a real player', async () => {
+    await gs.kickPlayer(null as unknown as string);
+    // Both real players must still be present
+    expect(gs.players.length).toBe(2);
+    expect(await gs.findPlayer('p1')).toBeDefined();
+    expect(await gs.findPlayer('p2')).toBeDefined();
   });
 });
 
