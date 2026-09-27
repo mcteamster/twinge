@@ -305,4 +305,54 @@ describe('play handler', () => {
       expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 1 }));
     });
   });
+
+  // ─── twg-14: handler-level error handling ────────────────────────────────
+
+  describe('unknown / missing action type (code 9)', () => {
+    it('returns { statusCode: 200 } and sends code 9 for an unknown actionType', async () => {
+      const result = await handler(makeEvent('bogus'));
+      expect(result).toEqual({
+        statusCode: 200,
+        body: JSON.stringify({ code: 9, message: 'Unknown action type' }),
+      });
+      expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 9 }));
+    });
+
+    it('returns { statusCode: 200 } and sends code 9 when actionType is undefined', async () => {
+      // Build an event whose parsed body has no actionType field.
+      const event = {
+        requestContext: { connectionId: 'conn-test' },
+        body: JSON.stringify({ gameId: 'game-1', playerId: 'p1' }),
+      };
+      const result = await handler(event as any);
+      expect(result).toEqual({
+        statusCode: 200,
+        body: JSON.stringify({ code: 9, message: 'Unknown action type' }),
+      });
+      expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 9 }));
+    });
+  });
+
+  describe('internal error (code 8)', () => {
+    it('returns { statusCode: 200 } and sends code 8 when a known action handler throws', async () => {
+      // A valid "start" action that reaches broadcastGame, which is made to reject.
+      const spy = makeGamestateSpy({ meta: { phase: 'open', round: 0 } });
+      spy.findPlayer.mockResolvedValue({ playerId: 'p1' });
+      _testDeps.Gamestate = function() { return spy; };
+      const game = { gameId: 'game-1', gamestate: { meta: { phase: 'open' } } };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+      // Silence the intentional console.error from the catch block.
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      // broadcastGame rejects unexpectedly for an otherwise-valid action.
+      (_testDeps.messages.broadcastGame as any).mockRejectedValue(new Error('boom'));
+
+      const result = await handler(makeEvent('start'));
+      expect(result).toEqual({
+        statusCode: 200,
+        body: JSON.stringify({ code: 8, message: 'Internal server error' }),
+      });
+      expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 8 }));
+    });
+  });
 });

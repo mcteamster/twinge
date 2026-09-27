@@ -395,6 +395,10 @@ async function endGame(payload: Payload): Promise<void> {
 
 type ActionFn = (payload: Payload) => Promise<void>;
 
+// Codes 8 and 9 are RESERVED for handler-level errors and MUST NOT be reused by
+// action functions: 8 = unexpected internal error (top-level catch),
+// 9 = unknown or missing action type (dispatch guard). Codes 1–7 remain the
+// per-action error semantics owned by the action functions above.
 const actionHandler: Record<string, ActionFn> = {
   new: newGame,
   join: joinGame,
@@ -411,32 +415,54 @@ const actionHandler: Record<string, ActionFn> = {
 };
 
 const handler = async (event: LambdaEvent): Promise<LambdaResult> => {
-  const body = JSON.parse(event.body as string) as {
-    actionType: string;
-    gameId?: string;
-    playerId?: string;
-    roomCode?: string;
-    stateHash?: string;
-    name?: string;
-    config?: GameConfig;
-    target?: number;
-  };
-  const actionType = body.actionType;
-  const payload: Payload = {
-    connectionId: event.requestContext.connectionId,
-    gameId: body.gameId,
-    playerId: body.playerId,
-    roomCode: body.roomCode,
-    stateHash: body.stateHash,
-    name: body.name,
-    config: body.config,
-    target: body.target,
-  };
-  await actionHandler[actionType](payload);
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ code: 0, message: 'ack' }),
-  };
+  let payload: Payload | undefined;
+  try {
+    const body = JSON.parse(event.body as string) as {
+      actionType: string;
+      gameId?: string;
+      playerId?: string;
+      roomCode?: string;
+      stateHash?: string;
+      name?: string;
+      config?: GameConfig;
+      target?: number;
+    };
+    const actionType = body.actionType;
+    payload = {
+      connectionId: event.requestContext.connectionId,
+      gameId: body.gameId,
+      playerId: body.playerId,
+      roomCode: body.roomCode,
+      stateHash: body.stateHash,
+      name: body.name,
+      config: body.config,
+      target: body.target,
+    };
+    // Guard against unknown or missing action types: calling
+    // actionHandler[actionType] when it is undefined throws a TypeError that
+    // would crash the Lambda invocation (see design.md).
+    if (!(actionType in actionHandler)) {
+      await _deps.messages.send(payload.connectionId, { code: 9, message: 'Unknown action type' });
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ code: 9, message: 'Unknown action type' }),
+      };
+    }
+    await actionHandler[actionType](payload);
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ code: 0, message: 'ack' }),
+    };
+  } catch (error) {
+    // Preserve the stack trace in CloudWatch, then return a structured error
+    // instead of letting the exception propagate to the Lambda runtime.
+    console.error(error);
+    await _deps.messages.send(payload?.connectionId ?? event.requestContext.connectionId, { code: 8, message: 'Internal server error' });
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ code: 8, message: 'Internal server error' }),
+    };
+  }
 };
 
 export = {
