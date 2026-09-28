@@ -55,6 +55,16 @@ async function newGame(payload: Payload): Promise<void> {
 
 async function rejoinGame(payload: Payload): Promise<void> {
   let game: GameRecord | number | undefined;
+  // Resolve playerId from the connection record rather than trusting the
+  // client-supplied body value. A client who observed another player's UUID
+  // could otherwise impersonate them on rejoin (IDOR). If the connection has
+  // no stored playerId, fall back to the body value so a brand-new connection
+  // can still provide one on first rejoin; subsequent reconnects will always
+  // use the server-stored value.
+  const connectionRecord = await _deps.connections.readConnection(payload.connectionId);
+  if (typeof connectionRecord === 'object' && connectionRecord?.playerId && connectionRecord.playerId !== '-1') {
+    payload.playerId = connectionRecord.playerId;
+  }
   if (payload.gameId && payload.playerId) {
     game = await _deps.games.readGame(payload.gameId);
     if (isGameRecord(game)) {
@@ -157,10 +167,10 @@ async function kickPlayer(payload: Payload): Promise<void> {
               targetPlayer.strikes++;
               if (game.stateHash === payload.stateHash) {
                 const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+                await _deps.messages.broadcastGame(toRecord(game));
               } else {
                 await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
               }
-              await _deps.messages.broadcastGame(toRecord(game));
             } else {
               const newPayload = { ...payload };
               newPayload.playerId = targetPlayer.playerId;
@@ -183,10 +193,10 @@ async function kickPlayer(payload: Payload): Promise<void> {
             }
             if (game.stateHash === payload.stateHash) {
               const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+              await _deps.messages.broadcastGame(toRecord(game));
             } else {
               await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
             }
-            await _deps.messages.broadcastGame(toRecord(game));
           }
         } else {
           await _deps.messages.send(payload.connectionId, { code: 7, message: 'Target not found' });
@@ -303,10 +313,12 @@ async function twinge(payload: Payload): Promise<void> {
           game = await _deps.games.readGame(payload.gameId);
           if (isGameRecord(game) && game.stateHash === payload.stateHash) {
             const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+            await _deps.messages.broadcastGame(toRecord(game));
           } else {
+            // Do not broadcast stale state — the client will receive the
+            // current game state on its next refresh or from another player's move.
             await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
           }
-          await _deps.messages.broadcastGame(toRecord(game));
         } else {
           await _deps.messages.send(payload.connectionId, { code: 4, message: 'Hand is empty' });
         }
