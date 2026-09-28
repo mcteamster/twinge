@@ -221,8 +221,9 @@ function Latest({ event, round }: LatestProps): React.ReactElement {
   useEffect(() => {
     // Audio for card-play events is owned exclusively by gamestateHandler in
     // App.tsx (the authoritative delivery path). Latest is a display-only
-    // component and MUST NOT drive audio — it only tracks the last card so
-    // dedup/visual logic stays intact.
+    // component and MUST NOT drive audio.
+    // lastCardRef is retained here for future use (e.g. dedup/visual logic)
+    // but is not currently read by anything downstream.
     lastCardRef.current = event[0]?.card || 0;
   }, [event]);
 
