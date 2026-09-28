@@ -849,6 +849,9 @@ describe('play handler', () => {
 
       expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 5 }));
       expect(_testDeps.games.updateGame).not.toHaveBeenCalled();
+      // Stale-hash must not broadcast the pre-kick state to remaining players (same
+      // guard applied by commit 4171ffe in kickPlayer / twinge but missed here).
+      expect(_testDeps.messages.broadcastGame).not.toHaveBeenCalled();
     });
 
     it('sends code 2 when readGame does not return a valid GameRecord (4.5)', async () => {

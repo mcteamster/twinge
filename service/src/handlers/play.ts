@@ -225,10 +225,12 @@ async function leaveGame(payload: Payload): Promise<void> {
         if (gamestate.players.length > 0) {
           if (game.stateHash === payload.stateHash) {
             const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+            await _deps.messages.broadcastGame(toRecord(game));
           } else {
+            // Do not broadcast stale state — consistent with the same guard
+            // in kickPlayer and twinge (see commit 4171ffe).
             await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
           }
-          await _deps.messages.broadcastGame(toRecord(game));
         } else {
           await _deps.games.deleteGame(game.gameId);
         }
