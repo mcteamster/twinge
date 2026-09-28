@@ -237,6 +237,9 @@ function App(): React.ReactElement {
       muted: audioSettingRef.current.mute,
     });
     if (sound) {
+      // Reset to the start so a rapid second play of the same clip restarts
+      // cleanly rather than resuming mid-file or being skipped.
+      audioRef.current![sound].currentTime = 0;
       audioRef.current![sound].play();
     }
     // Record the pile we now know about (including cards revealed by any

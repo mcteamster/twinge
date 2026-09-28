@@ -78,7 +78,7 @@ function Play({ state, sendMsg, audio }: PlayProps): React.ReactElement {
   return <div className='Play'>
     <Status state={state}></Status>
     <Players state={state} sendMsg={sendMsg} context='play' players={state?.gamestate?.players || []}></Players>
-    <Latest event={state?.gamestate?.public?.pile?.slice(-1) || []} round={state?.gamestate?.meta?.round || 0} audio={audio}></Latest>
+    <Latest event={state?.gamestate?.public?.pile?.slice(-1) || []} round={state?.gamestate?.meta?.round || 0}></Latest>
     <Pile pile={state?.gamestate?.public?.pile} round={state?.gamestate?.meta?.round || 0}></Pile>
     <Hand state={state} sendMsg={sendMsg} audio={audio}></Hand>
   </div>
