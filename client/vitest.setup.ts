@@ -9,6 +9,27 @@ import { afterEach, beforeEach, vi } from 'vitest';
 HTMLAudioElement.prototype.play = vi.fn().mockResolvedValue(undefined);
 HTMLAudioElement.prototype.pause = vi.fn();
 
+// jsdom does not implement Web Audio API; provide a minimal stub so
+// AudioContext-based code can run in tests.
+export const mockAudioContext = {
+  resume: vi.fn().mockResolvedValue(undefined),
+  decodeAudioData: vi.fn().mockResolvedValue({} as AudioBuffer),
+  createBufferSource: vi.fn(() => ({
+    buffer: null as AudioBuffer | null,
+    connect: vi.fn(),
+    start: vi.fn(),
+  })),
+  destination: {},
+};
+
+// Use a regular function (not an arrow) so `new AudioContext()` works.
+// Each call returns the same shared mockAudioContext so tests can assert on it.
+const AudioContextStub = vi.fn(function (this: unknown) {
+  Object.assign(this as object, mockAudioContext);
+});
+
+vi.stubGlobal('AudioContext', AudioContextStub);
+
 // jsdom does not implement scrollTo; several components call it in handlers.
 window.scrollTo = vi.fn();
 
@@ -88,6 +109,10 @@ beforeEach(() => {
   MockWebSocket.reset();
   localStorage.clear();
   sessionStorage.clear();
+  // Reset Web Audio API mock state between tests.
+  mockAudioContext.resume.mockClear();
+  mockAudioContext.decodeAudioData.mockClear();
+  mockAudioContext.createBufferSource.mockClear();
 });
 
 afterEach(() => {

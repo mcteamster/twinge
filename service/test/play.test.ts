@@ -294,7 +294,7 @@ describe('play handler', () => {
       spy = makeGamestateSpy({ meta: { phase: 'open', round: 0 } });
       spy.findPlayer.mockResolvedValue({ playerId: 'p1' });
       _testDeps.Gamestate = function() { return spy; };
-      const game = { gameId: 'game-1', gamestate: { meta: { phase: 'open' } } };
+      const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: { meta: { phase: 'open' } } };
       vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
       vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
     });
@@ -332,7 +332,7 @@ describe('play handler', () => {
       _testDeps.Gamestate = function() { return spy; };
     });
 
-    describe('valid play (matching stateHash)', () => {
+    describe('valid play (matching stateHash — atomic write succeeds)', () => {
       beforeEach(() => {
         const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: { meta: { phase: 'playing' } } };
         vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
@@ -348,17 +348,45 @@ describe('play handler', () => {
         await handler(makeEvent('twinge', { stateHash: 'hash-abc' }));
         expect(_testDeps.messages.broadcastGame).toHaveBeenCalledTimes(1);
       });
-    });
 
-    describe('stale stateHash (5.7)', () => {
-      beforeEach(() => {
-        const game = { gameId: 'game-1', stateHash: 'different-hash', gamestate: { meta: { phase: 'playing' } } };
-        vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      it('passes stateHash as expectedHash to updateGame', async () => {
+        await handler(makeEvent('twinge', { stateHash: 'hash-abc' }));
+        expect(_testDeps.games.updateGame).toHaveBeenCalledWith(
+          'game-1',
+          expect.anything(),
+          'hash-abc',
+        );
       });
 
-      it('sends error code 5 when stateHash does not match', async () => {
+      it('does NOT call readGame a second time after the initial read', async () => {
         await handler(makeEvent('twinge', { stateHash: 'hash-abc' }));
+        // Only one readGame call: the initial game fetch. The second redundant
+        // readGame that used to be present has been removed.
+        expect(_testDeps.games.readGame).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('stale stateHash — atomic write rejected (409 from updateGame) (5.7)', () => {
+      beforeEach(() => {
+        const game = { gameId: 'game-1', stateHash: 'current-hash', gamestate: { meta: { phase: 'playing' } } };
+        vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+        // updateGame returns 409 to signal ConditionalCheckFailedException
+        vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(409);
+      });
+
+      it('sends error code 5 when updateGame returns 409', async () => {
+        await handler(makeEvent('twinge', { stateHash: 'stale-hash' }));
         expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 5 }));
+      });
+
+      it('does NOT call broadcastGame when write is rejected', async () => {
+        await handler(makeEvent('twinge', { stateHash: 'stale-hash' }));
+        expect(_testDeps.messages.broadcastGame).not.toHaveBeenCalled();
+      });
+
+      it('does NOT call readGame a second time', async () => {
+        await handler(makeEvent('twinge', { stateHash: 'stale-hash' }));
+        expect(_testDeps.games.readGame).toHaveBeenCalledTimes(1);
       });
     });
 
@@ -396,7 +424,7 @@ describe('play handler', () => {
       beforeEach(() => {
         spy.findPlayer.mockResolvedValue({ playerId: 'p1' });
         spy.players = [{ playerId: 'p1', hand: [], handSize: 0 }];
-        const game = { gameId: 'game-1', gamestate: { meta: { phase: 'playing' }, players: [{ hand: [] }] } };
+        const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: { meta: { phase: 'playing' }, players: [{ hand: [] }] } };
         vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
         vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
       });
@@ -488,7 +516,7 @@ describe('play handler', () => {
       const spy = makeGamestateSpy({ meta: { phase: 'open', round: 0 } });
       spy.findPlayer.mockResolvedValue({ playerId: 'p1' });
       _testDeps.Gamestate = function() { return spy; };
-      const game = { gameId: 'game-1', gamestate: { meta: { phase: 'open' } } };
+      const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: { meta: { phase: 'open' } } };
       vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
       vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
       // Silence the intentional console.error from the catch block.
@@ -636,7 +664,7 @@ describe('play handler', () => {
     it('happy path — open phase, player.rename and broadcastGame called (2.2)', async () => {
       const player = { playerId: 'p1', rename: vi.fn().mockResolvedValue(undefined) };
       spy.findPlayer.mockResolvedValue(player);
-      const game = { gameId: 'game-1', gamestate: spy };
+      const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: spy };
       vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
       vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
 
@@ -921,7 +949,7 @@ describe('play handler', () => {
     });
 
     it('happy path — not open phase, player found; restartGame + broadcastGame (6.2)', async () => {
-      const game = { gameId: 'game-1', gamestate: { meta: { phase: 'won' } } };
+      const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: { meta: { phase: 'won' } } };
       vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
       vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
 
@@ -1007,6 +1035,148 @@ describe('play handler', () => {
       vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
       await handler(makeEvent('end', { gameId: 'game-1', playerId: 'p1' }));
       expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 3 }));
+    });
+  });
+
+  // ─── twg-20: stateHash guards on mutating handlers ────────────────────────
+
+  describe('"rename" stateHash guard (twg-20)', () => {
+    let spy;
+    beforeEach(() => {
+      spy = makeGamestateSpy({ meta: { phase: 'open', round: 0 } });
+      _testDeps.Gamestate = function() { return spy; };
+    });
+
+    it('stale hash — sends code 5, does NOT call updateGame', async () => {
+      const player = { playerId: 'p1', rename: vi.fn().mockResolvedValue(undefined) };
+      spy.findPlayer.mockResolvedValue(player);
+      const game = { gameId: 'game-1', stateHash: 'server-hash', gamestate: spy };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+      // payload stateHash from makeEvent defaults to 'hash-abc', differs from 'server-hash'
+
+      await handler(makeEvent('rename', { name: 'newname' }));
+
+      expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 5 }));
+      expect(_testDeps.games.updateGame).not.toHaveBeenCalled();
+      expect(_testDeps.messages.broadcastGame).not.toHaveBeenCalled();
+    });
+
+    it('matching hash — calls updateGame and broadcastGame', async () => {
+      const player = { playerId: 'p1', rename: vi.fn().mockResolvedValue(undefined) };
+      spy.findPlayer.mockResolvedValue(player);
+      const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: spy };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+
+      await handler(makeEvent('rename', { name: 'newname' }));
+
+      expect(_testDeps.games.updateGame).toHaveBeenCalledTimes(1);
+      expect(_testDeps.messages.broadcastGame).toHaveBeenCalledTimes(1);
+      expect(_testDeps.messages.send).not.toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 5 }));
+    });
+  });
+
+  describe('"start" stateHash guard (twg-20)', () => {
+    let spy;
+    beforeEach(() => {
+      spy = makeGamestateSpy({ meta: { phase: 'open', round: 0 } });
+      spy.findPlayer.mockResolvedValue({ playerId: 'p1' });
+      _testDeps.Gamestate = function() { return spy; };
+    });
+
+    it('stale hash — sends code 5, does NOT call updateGame', async () => {
+      const game = { gameId: 'game-1', stateHash: 'server-hash', gamestate: { meta: { phase: 'open' } } };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+      // payload stateHash defaults to 'hash-abc', differs from 'server-hash'
+
+      await handler(makeEvent('start'));
+
+      expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 5 }));
+      expect(_testDeps.games.updateGame).not.toHaveBeenCalled();
+      expect(_testDeps.messages.broadcastGame).not.toHaveBeenCalled();
+    });
+
+    it('matching hash — calls updateGame and broadcastGame', async () => {
+      const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: { meta: { phase: 'open' } } };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+
+      await handler(makeEvent('start'));
+
+      expect(_testDeps.games.updateGame).toHaveBeenCalledTimes(1);
+      expect(_testDeps.messages.broadcastGame).toHaveBeenCalledTimes(1);
+      expect(_testDeps.messages.send).not.toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 5 }));
+    });
+  });
+
+  describe('"next" stateHash guard (twg-20)', () => {
+    let spy;
+    beforeEach(() => {
+      spy = makeGamestateSpy({ meta: { phase: 'playing', round: 1 } });
+      spy.findPlayer.mockResolvedValue({ playerId: 'p1' });
+      spy.players = [{ playerId: 'p1', hand: [], handSize: 0 }];
+      _testDeps.Gamestate = function() { return spy; };
+    });
+
+    it('stale hash — sends code 5, does NOT call updateGame', async () => {
+      const game = { gameId: 'game-1', stateHash: 'server-hash', gamestate: { meta: { phase: 'playing' }, players: [{ hand: [] }] } };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+      // payload stateHash defaults to 'hash-abc', differs from 'server-hash'
+
+      await handler(makeEvent('next'));
+
+      expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 5 }));
+      expect(_testDeps.games.updateGame).not.toHaveBeenCalled();
+      expect(_testDeps.messages.broadcastGame).not.toHaveBeenCalled();
+    });
+
+    it('matching hash — calls updateGame and broadcastGame', async () => {
+      const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: { meta: { phase: 'playing' }, players: [{ hand: [] }] } };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+
+      await handler(makeEvent('next'));
+
+      expect(_testDeps.games.updateGame).toHaveBeenCalledTimes(1);
+      expect(_testDeps.messages.broadcastGame).toHaveBeenCalledTimes(1);
+      expect(_testDeps.messages.send).not.toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 5 }));
+    });
+  });
+
+  describe('"restart" stateHash guard (twg-20)', () => {
+    let spy;
+    beforeEach(() => {
+      spy = makeGamestateSpy({ meta: { phase: 'won', round: 3 } });
+      spy.findPlayer.mockResolvedValue({ playerId: 'p1' });
+      _testDeps.Gamestate = function() { return spy; };
+    });
+
+    it('stale hash — sends code 5, does NOT call updateGame', async () => {
+      const game = { gameId: 'game-1', stateHash: 'server-hash', gamestate: { meta: { phase: 'won' } } };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+      // payload stateHash defaults to 'hash-abc', differs from 'server-hash'
+
+      await handler(makeEvent('restart'));
+
+      expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 5 }));
+      expect(_testDeps.games.updateGame).not.toHaveBeenCalled();
+      expect(_testDeps.messages.broadcastGame).not.toHaveBeenCalled();
+    });
+
+    it('matching hash — calls updateGame and broadcastGame', async () => {
+      const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: { meta: { phase: 'won' } } };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+
+      await handler(makeEvent('restart'));
+
+      expect(_testDeps.games.updateGame).toHaveBeenCalledTimes(1);
+      expect(_testDeps.messages.broadcastGame).toHaveBeenCalledTimes(1);
+      expect(_testDeps.messages.send).not.toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 5 }));
     });
   });
 });

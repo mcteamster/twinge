@@ -1,6 +1,6 @@
 import hash from 'object-hash';
 import { DynamoDBDocument } from '@aws-sdk/lib-dynamodb';
-import { DynamoDB } from '@aws-sdk/client-dynamodb';
+import { DynamoDB, ConditionalCheckFailedException } from '@aws-sdk/client-dynamodb';
 import type { GameRecord, GamestateData } from '../types';
 
 const marshallOptions = {
@@ -135,8 +135,16 @@ async function findGames(queryKey: string, queryValue: string): Promise<GameReco
   }
 }
 
-async function updateGame(gameId: string, gamestate: GamestateData | object): Promise<GameRecord | number | undefined> {
-  const params = {
+async function updateGame(gameId: string, gamestate: GamestateData | object, expectedHash?: string): Promise<GameRecord | number | undefined> {
+  const newHash = hash.MD5(JSON.stringify(gamestate));
+  const params: {
+    TableName: typeof GAME_TABLE;
+    Key: { gameId: string };
+    UpdateExpression: string;
+    ConditionExpression?: string;
+    ExpressionAttributeValues: Record<string, unknown>;
+    ReturnValues: 'ALL_NEW';
+  } = {
     TableName: GAME_TABLE,
     Key: {
       gameId: gameId,
@@ -144,14 +152,25 @@ async function updateGame(gameId: string, gamestate: GamestateData | object): Pr
     UpdateExpression: 'set gamestate = :gamestate, stateHash = :stateHash',
     ExpressionAttributeValues: {
       ':gamestate': gamestate,
-      ':stateHash': hash.MD5(JSON.stringify(gamestate)),
+      ':stateHash': newHash,
     },
     ReturnValues: 'ALL_NEW' as const,
   };
 
+  // When the caller supplies an expectedHash, add a ConditionExpression so the
+  // write is atomic: DynamoDB will reject it with ConditionalCheckFailedException
+  // if the stored stateHash no longer matches (a concurrent write won the race).
+  if (expectedHash !== undefined) {
+    params.ConditionExpression = 'stateHash = :expectedHash';
+    params.ExpressionAttributeValues[':expectedHash'] = expectedHash;
+  }
+
   try {
     return (await dynamoDbClient.update(params)).Attributes as GameRecord | undefined;
   } catch (error) {
+    if (error instanceof ConditionalCheckFailedException) {
+      return 409;
+    }
     console.log(error);
     return 500;
   }

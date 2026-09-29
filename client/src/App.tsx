@@ -3,7 +3,7 @@ import { Header, Footer, Overlay, Modal, Notices } from './components/Banners';
 import { About, Lobby, Play, Legal } from './components/Screens'
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { AWS_REGIONS, ENDPOINTS, getRegionFromCode } from './constants/constants';
-import { AudioContext, audioSettings } from './context/AudioContext';
+import { AudioContext as AudioSettingsContext, audioSettings } from './context/AudioContext';
 import { LoadingContext } from './context/LoadingContext';
 import { GameWebSocket } from './services/gameWebSocket';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -46,6 +46,25 @@ export function decideCardSound(params: {
   return newestCard?.missed ? 'buzz' : 'ring';
 }
 
+/**
+ * Play a sound using the Web Audio API.
+ *
+ * Lazily fetches and decodes the mp3 on first call for each key, then caches
+ * the decoded `AudioBuffer` on `refs` for subsequent plays (instant). Creates
+ * a new `BufferSourceNode` per play (nodes are single-use in the Web Audio API).
+ */
+export async function playSound(refs: AudioRefs, key: 'ring' | 'buzz'): Promise<void> {
+  if (!refs[key]) {
+    const resp = await fetch(`/audio/${key}.mp3`);
+    const arrayBuffer = await resp.arrayBuffer();
+    refs[key] = await refs.ctx.decodeAudioData(arrayBuffer);
+  }
+  const src = refs.ctx.createBufferSource();
+  src.buffer = refs[key]!;
+  src.connect(refs.ctx.destination);
+  src.start();
+}
+
 function App(): React.ReactElement {
   const [region, setRegionState] = useState<Region | null>(localStorage.getItem('region') as Region | null);
   const [gameId, setGameId] = useState<string | null>(localStorage.getItem('gameId'));
@@ -63,10 +82,24 @@ function App(): React.ReactElement {
   const animationsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const audioRef = useRef<AudioRefs | null>(null);
   if (!audioRef.current) {
-    audioRef.current = {
-      ring: new Audio("/audio/ring.mp3"),
-      buzz: new Audio("/audio/buzz.mp3"),
-    };
+    try {
+      // Resolve the Web Audio API constructor from the browser global.
+      // Note: the React AudioSettings context is imported above as
+      // `AudioSettingsContext`, so the bare `AudioContext`/`webkitAudioContext`
+      // globals are the Web Audio API, not the React context.
+      const Ctor =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (Ctor) {
+        audioRef.current = {
+          ctx: new Ctor(),
+          ring: null,
+          buzz: null,
+        };
+      }
+    } catch {
+      // AudioContext unsupported — audio will be silently skipped
+    }
   }
   // Ref mirrors for use inside closures
   const regionRef = useRef<Region | null>(region);
@@ -85,6 +118,7 @@ function App(): React.ReactElement {
   useEffect(() => { audioSettingRef.current = audio; }, [audio]);
 
   const toggleMute = useCallback(() => {
+    audioRef.current?.ctx.resume();
     setAudio(a => a === audioSettings.loud ? audioSettings.silent : audioSettings.loud);
   }, []);
 
@@ -236,11 +270,14 @@ function App(): React.ReactElement {
       isBackgroundSync,
       muted: audioSettingRef.current.mute,
     });
-    if (sound) {
-      // Reset to the start so a rapid second play of the same clip restarts
-      // cleanly rather than resuming mid-file or being skipped.
-      audioRef.current![sound].currentTime = 0;
-      audioRef.current![sound].play();
+    if (sound && audioRef.current) {
+      // Resume the AudioContext on restart/replay so audio is not left
+      // suspended between game sessions. This also covers the first live
+      // play after a game ends (won/lost -> open transition).
+      if (data?.gamestate?.meta?.phase === 'open') {
+        void audioRef.current.ctx.resume();
+      }
+      void playSound(audioRef.current, sound);
     }
     // Record the pile we now know about (including cards revealed by any
     // delivery) so subsequent deliveries are judged against it.
@@ -378,7 +415,7 @@ function App(): React.ReactElement {
     return <div className='App'><Legal></Legal></div>;
   } else if (!state?.gamestate?.meta?.phase || state?.gamestate?.meta?.phase === 'open' || state?.gamestate?.meta?.phase === 'closed') {
     return <div className='App unselectable'>
-      <AudioContext.Provider value={audio}>
+      <AudioSettingsContext.Provider value={audio}>
         <LoadingContext.Provider value={loading}>
           <Header state={state} sendMsg={debouncedSendMsg} toggleMute={toggleMute} toggleQR={toggleQR} region={region} setRegion={setRegion} clearSession={clearSession}></Header>
           <Lobby state={state} sendMsg={debouncedSendMsg}></Lobby>
@@ -388,11 +425,11 @@ function App(): React.ReactElement {
           <Notices region={region} />
           <ConnectionStatus isConnected={isConnected} />
         </LoadingContext.Provider>
-      </AudioContext.Provider>
+      </AudioSettingsContext.Provider>
     </div>;
   } else {
     return <div className='App unselectable'>
-      <AudioContext.Provider value={audio}>
+      <AudioSettingsContext.Provider value={audio}>
         <LoadingContext.Provider value={loading}>
           <Header state={state} sendMsg={debouncedSendMsg} toggleMute={toggleMute} toggleQR={toggleQR} region={region} setRegion={setRegion} clearSession={clearSession}></Header>
           <Play state={state} sendMsg={debouncedSendMsg} audio={audioRef.current!}></Play>
@@ -402,7 +439,7 @@ function App(): React.ReactElement {
           <Notices region={region} />
           <ConnectionStatus isConnected={isConnected} />
         </LoadingContext.Provider>
-      </AudioContext.Provider>
+      </AudioSettingsContext.Provider>
     </div>;
   }
 }
