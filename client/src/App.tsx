@@ -3,7 +3,7 @@ import { Header, Footer, Overlay, Modal, Notices } from './components/Banners';
 import { About, Lobby, Play, Legal } from './components/Screens'
 import { ConnectionStatus } from './components/ConnectionStatus';
 import { AWS_REGIONS, ENDPOINTS, getRegionFromCode } from './constants/constants';
-import { AudioContext, audioSettings } from './context/AudioContext';
+import { AudioContext as AudioSettingsContext, audioSettings } from './context/AudioContext';
 import { LoadingContext } from './context/LoadingContext';
 import { GameWebSocket } from './services/gameWebSocket';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -83,11 +83,20 @@ function App(): React.ReactElement {
   const audioRef = useRef<AudioRefs | null>(null);
   if (!audioRef.current) {
     try {
-      audioRef.current = {
-        ctx: new AudioContext(),
-        ring: null,
-        buzz: null,
-      };
+      // Resolve the Web Audio API constructor from the browser global.
+      // Note: the React AudioSettings context is imported above as
+      // `AudioSettingsContext`, so the bare `AudioContext`/`webkitAudioContext`
+      // globals are the Web Audio API, not the React context.
+      const Ctor =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (Ctor) {
+        audioRef.current = {
+          ctx: new Ctor(),
+          ring: null,
+          buzz: null,
+        };
+      }
     } catch {
       // AudioContext unsupported — audio will be silently skipped
     }
@@ -406,7 +415,7 @@ function App(): React.ReactElement {
     return <div className='App'><Legal></Legal></div>;
   } else if (!state?.gamestate?.meta?.phase || state?.gamestate?.meta?.phase === 'open' || state?.gamestate?.meta?.phase === 'closed') {
     return <div className='App unselectable'>
-      <AudioContext.Provider value={audio}>
+      <AudioSettingsContext.Provider value={audio}>
         <LoadingContext.Provider value={loading}>
           <Header state={state} sendMsg={debouncedSendMsg} toggleMute={toggleMute} toggleQR={toggleQR} region={region} setRegion={setRegion} clearSession={clearSession}></Header>
           <Lobby state={state} sendMsg={debouncedSendMsg}></Lobby>
@@ -416,11 +425,11 @@ function App(): React.ReactElement {
           <Notices region={region} />
           <ConnectionStatus isConnected={isConnected} />
         </LoadingContext.Provider>
-      </AudioContext.Provider>
+      </AudioSettingsContext.Provider>
     </div>;
   } else {
     return <div className='App unselectable'>
-      <AudioContext.Provider value={audio}>
+      <AudioSettingsContext.Provider value={audio}>
         <LoadingContext.Provider value={loading}>
           <Header state={state} sendMsg={debouncedSendMsg} toggleMute={toggleMute} toggleQR={toggleQR} region={region} setRegion={setRegion} clearSession={clearSession}></Header>
           <Play state={state} sendMsg={debouncedSendMsg} audio={audioRef.current!}></Play>
@@ -430,7 +439,7 @@ function App(): React.ReactElement {
           <Notices region={region} />
           <ConnectionStatus isConnected={isConnected} />
         </LoadingContext.Provider>
-      </AudioContext.Provider>
+      </AudioSettingsContext.Provider>
     </div>;
   }
 }
