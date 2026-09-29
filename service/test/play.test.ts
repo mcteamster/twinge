@@ -332,7 +332,7 @@ describe('play handler', () => {
       _testDeps.Gamestate = function() { return spy; };
     });
 
-    describe('valid play (matching stateHash)', () => {
+    describe('valid play (matching stateHash — atomic write succeeds)', () => {
       beforeEach(() => {
         const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: { meta: { phase: 'playing' } } };
         vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
@@ -348,17 +348,45 @@ describe('play handler', () => {
         await handler(makeEvent('twinge', { stateHash: 'hash-abc' }));
         expect(_testDeps.messages.broadcastGame).toHaveBeenCalledTimes(1);
       });
-    });
 
-    describe('stale stateHash (5.7)', () => {
-      beforeEach(() => {
-        const game = { gameId: 'game-1', stateHash: 'different-hash', gamestate: { meta: { phase: 'playing' } } };
-        vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      it('passes stateHash as expectedHash to updateGame', async () => {
+        await handler(makeEvent('twinge', { stateHash: 'hash-abc' }));
+        expect(_testDeps.games.updateGame).toHaveBeenCalledWith(
+          'game-1',
+          expect.anything(),
+          'hash-abc',
+        );
       });
 
-      it('sends error code 5 when stateHash does not match', async () => {
+      it('does NOT call readGame a second time after the initial read', async () => {
         await handler(makeEvent('twinge', { stateHash: 'hash-abc' }));
+        // Only one readGame call: the initial game fetch. The second redundant
+        // readGame that used to be present has been removed.
+        expect(_testDeps.games.readGame).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe('stale stateHash — atomic write rejected (409 from updateGame) (5.7)', () => {
+      beforeEach(() => {
+        const game = { gameId: 'game-1', stateHash: 'current-hash', gamestate: { meta: { phase: 'playing' } } };
+        vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+        // updateGame returns 409 to signal ConditionalCheckFailedException
+        vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(409);
+      });
+
+      it('sends error code 5 when updateGame returns 409', async () => {
+        await handler(makeEvent('twinge', { stateHash: 'stale-hash' }));
         expect(_testDeps.messages.send).toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 5 }));
+      });
+
+      it('does NOT call broadcastGame when write is rejected', async () => {
+        await handler(makeEvent('twinge', { stateHash: 'stale-hash' }));
+        expect(_testDeps.messages.broadcastGame).not.toHaveBeenCalled();
+      });
+
+      it('does NOT call readGame a second time', async () => {
+        await handler(makeEvent('twinge', { stateHash: 'stale-hash' }));
+        expect(_testDeps.games.readGame).toHaveBeenCalledTimes(1);
       });
     });
 

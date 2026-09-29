@@ -126,6 +126,41 @@ describe('games helper', () => {
       const result = await games.updateGame('game-1', gs);
       expect(result).toBe(500);
     });
+
+    // ── conditional write (TWG-19) ────────────────────────────────────────────
+
+    it('omits ConditionExpression when expectedHash is not supplied', async () => {
+      const spy = vi.spyOn(client, 'update').mockResolvedValueOnce({ Attributes: {} });
+      const gs = { config: { deckSize: 100, maxLives: 5 }, players: [] };
+      await games.updateGame('game-1', gs);
+      const params: any = spy.mock.calls[0][0];
+      expect(params.ConditionExpression).toBeUndefined();
+    });
+
+    it('includes ConditionExpression and :expectedHash when expectedHash is supplied', async () => {
+      const spy = vi.spyOn(client, 'update').mockResolvedValueOnce({ Attributes: {} });
+      const gs = { config: { deckSize: 100, maxLives: 5 }, players: [] };
+      await games.updateGame('game-1', gs, 'old-hash');
+      const params: any = spy.mock.calls[0][0];
+      expect(params.ConditionExpression).toBeTruthy();
+      expect(params.ExpressionAttributeValues[':expectedHash']).toBe('old-hash');
+    });
+
+    it('returns 409 when DynamoDB throws ConditionalCheckFailedException', async () => {
+      const { ConditionalCheckFailedException } = await import('@aws-sdk/client-dynamodb');
+      const err = new ConditionalCheckFailedException({ message: 'The conditional request failed', $metadata: {} });
+      vi.spyOn(client, 'update').mockRejectedValueOnce(err);
+      const gs = { config: { deckSize: 100, maxLives: 5 }, players: [] };
+      const result = await games.updateGame('game-1', gs, 'stale-hash');
+      expect(result).toBe(409);
+    });
+
+    it('returns 500 (not 409) for a non-conditional DynamoDB error', async () => {
+      vi.spyOn(client, 'update').mockRejectedValueOnce(new Error('ProvisionedThroughputExceeded'));
+      const gs = { config: { deckSize: 100, maxLives: 5 }, players: [] };
+      const result = await games.updateGame('game-1', gs, 'hash-abc');
+      expect(result).toBe(500);
+    });
   });
 
   // ── deleteGame ──────────────────────────────────────────────────────────────

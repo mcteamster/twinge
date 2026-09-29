@@ -311,15 +311,16 @@ async function twinge(payload: Payload): Promise<void> {
         if (activePlayer.handSize > 0) {
           gamestate.playCard(payload.playerId as string);
           const conns = await _deps.connections.findConnections('gameId', payload.gameId); gamestate.checkConnections(Array.isArray(conns) ? conns : []);
-          // Read game to check stateHash matches before writing
-          game = await _deps.games.readGame(payload.gameId);
-          if (isGameRecord(game) && game.stateHash === payload.stateHash) {
-            const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
-            await _deps.messages.broadcastGame(toRecord(game));
-          } else {
-            // Do not broadcast stale state — the client will receive the
-            // current game state on its next refresh or from another player's move.
+          // Attempt an atomic conditional write: updateGame will only succeed if
+          // the stored stateHash still matches the client-supplied value. A 409
+          // return means a concurrent write changed the state first — treat it
+          // as a stale-state conflict (same user-visible semantics as code 5).
+          const updatedGame = await _deps.games.updateGame(game.gameId, gamestate, payload.stateHash);
+          if (updatedGame === 409) {
             await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
+          } else {
+            game = updatedGame;
+            await _deps.messages.broadcastGame(toRecord(game));
           }
         } else {
           await _deps.messages.send(payload.connectionId, { code: 4, message: 'Hand is empty' });
