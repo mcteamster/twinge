@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decideCardSound } from './App';
+import { decideCardSound, playSound } from './App';
 import type { PileEvent } from './types';
 
 // A helper to build a pile of N cards; the last card's `missed` flag is
@@ -70,5 +70,90 @@ describe('decideCardSound (gamestateHandler audio gating)', () => {
     expect(
       decideCardSound({ pile: [], lastKnownPileLength: 0, isBackgroundSync: false, muted: false }),
     ).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// playSound — Web Audio API path
+// ---------------------------------------------------------------------------
+// The global AudioContext and fetch are stubbed in vitest.setup.ts.
+// Each test constructs its own AudioRefs using the global mock.
+
+import { vi, beforeEach as bE } from 'vitest';
+import type { AudioRefs } from './types';
+
+function makeRefs(overrides: Partial<AudioRefs> = {}): AudioRefs {
+  // Construct a fresh AudioContext from the global stub so tests get a
+  // clean mock instance (vi.clearAllMocks() resets its call counts each time).
+  return {
+    ctx: new AudioContext() as AudioContext,
+    ring: null,
+    buzz: null,
+    ...overrides,
+  };
+}
+
+// Stub global fetch to return an ArrayBuffer for every /audio/*.mp3 request.
+const fakeArrayBuffer = new ArrayBuffer(8);
+bE(() => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+    arrayBuffer: () => Promise.resolve(fakeArrayBuffer),
+  }));
+});
+
+describe('playSound (Web Audio API helper)', () => {
+  // 5.1 — playSound fetches, decodes, and starts a BufferSourceNode
+  it('fetches and decodes the mp3 on first call, then plays it', async () => {
+    const refs = makeRefs();
+    await playSound(refs, 'ring');
+
+    expect(fetch).toHaveBeenCalledWith('/audio/ring.mp3');
+    // decodeAudioData was called with the array buffer from fetch
+    expect(refs.ctx.decodeAudioData).toHaveBeenCalledWith(fakeArrayBuffer);
+    // A buffer source was created, connected, and started
+    const srcNode = (refs.ctx.createBufferSource as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    expect(srcNode.connect).toHaveBeenCalledWith(refs.ctx.destination);
+    expect(srcNode.start).toHaveBeenCalled();
+  });
+
+  // 5.1 — second call uses the cached AudioBuffer, no re-fetch
+  it('caches the decoded buffer and skips fetch on subsequent plays', async () => {
+    const fakeBuffer = {} as AudioBuffer;
+    const refs = makeRefs({ ring: fakeBuffer });
+    await playSound(refs, 'ring');
+
+    expect(fetch).not.toHaveBeenCalled();
+    expect(refs.ctx.decodeAudioData).not.toHaveBeenCalled();
+    const srcNode = (refs.ctx.createBufferSource as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    expect(srcNode.buffer).toBe(fakeBuffer);
+    expect(srcNode.start).toHaveBeenCalled();
+  });
+
+  // 5.2 — mute is enforced by the caller (decideCardSound), not by playSound
+  // itself. Verify the gating layer: decideCardSound returns null when muted,
+  // so playSound is never invoked.
+  it('is NOT called when decideCardSound returns null (muted)', () => {
+    const result = decideCardSound({
+      pile: pile(1),
+      lastKnownPileLength: 0,
+      isBackgroundSync: false,
+      muted: true,
+    });
+    expect(result).toBeNull();
+  });
+
+  // 5.3 — after game restart (open phase), context.resume() is called before
+  // play. Verify resume() can be called and playSound still completes.
+  it('plays correctly after ctx.resume() is called (game restart path)', async () => {
+    const refs = makeRefs();
+    // Simulate what gamestateHandler does when phase === 'open'
+    await refs.ctx.resume();
+    await playSound(refs, 'buzz');
+
+    expect(refs.ctx.resume).toHaveBeenCalled();
+    const srcNode = (refs.ctx.createBufferSource as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    expect(srcNode.start).toHaveBeenCalled();
+    // Buffer was stored on refs after first play
+    expect(refs.buzz).not.toBeNull();
   });
 });

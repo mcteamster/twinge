@@ -78,8 +78,9 @@ export interface ModalState {
 }
 
 export interface AudioRefs {
-  ring: HTMLAudioElement;
-  buzz: HTMLAudioElement;
+  ctx: AudioContext;
+  ring: AudioBuffer | null;
+  buzz: AudioBuffer | null;
 }
 
 // The composite state object passed as `state` prop throughout the app

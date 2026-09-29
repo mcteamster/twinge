@@ -17,8 +17,9 @@ afterEach(() => {
 
 function makeAudio(): AudioRefs {
   return {
-    ring: { play: vi.fn() } as unknown as HTMLAudioElement,
-    buzz: { play: vi.fn() } as unknown as HTMLAudioElement,
+    ctx: {} as AudioContext,
+    ring: null,
+    buzz: null,
   };
 }
 
@@ -37,8 +38,9 @@ describe('Latest — audio behaviour', () => {
       </AudioContext.Provider>,
     );
 
-    expect(audio.ring.play).not.toHaveBeenCalled();
-    expect(audio.buzz.play).not.toHaveBeenCalled();
+    // Latest never touches AudioRefs directly — buffers remain null (unloaded)
+    expect(audio.ring).toBeNull();
+    expect(audio.buzz).toBeNull();
   });
 
   it('a missed card event MUST NOT call buzz.play() or ring.play() (audio is owned by App.tsx)', () => {
@@ -51,8 +53,8 @@ describe('Latest — audio behaviour', () => {
       </AudioContext.Provider>,
     );
 
-    expect(audio.buzz.play).not.toHaveBeenCalled();
-    expect(audio.ring.play).not.toHaveBeenCalled();
+    expect(audio.buzz).toBeNull();
+    expect(audio.ring).toBeNull();
   });
 
   it('muted context: a card event MUST NOT call any play method', () => {
@@ -65,8 +67,8 @@ describe('Latest — audio behaviour', () => {
       </AudioContext.Provider>,
     );
 
-    expect(audio.ring.play).not.toHaveBeenCalled();
-    expect(audio.buzz.play).not.toHaveBeenCalled();
+    expect(audio.ring).toBeNull();
+    expect(audio.buzz).toBeNull();
   });
 
   it('re-render with a NEW array carrying a new card value MUST still be silent', () => {
@@ -84,7 +86,7 @@ describe('Latest — audio behaviour', () => {
       </AudioContext.Provider>,
     );
 
-    expect(audio.ring.play).not.toHaveBeenCalled();
-    expect(audio.buzz.play).not.toHaveBeenCalled();
+    expect(audio.ring).toBeNull();
+    expect(audio.buzz).toBeNull();
   });
 });
