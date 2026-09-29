@@ -1,5 +1,4 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { AudioContext } from '../context/AudioContext';
 import { LoadingContext } from '../context/LoadingContext';
 import { discordSdk } from '../constants/discord';
 import type { AppState, GamePlayer, PileEvent, AudioRefs } from '../types';
@@ -35,7 +34,6 @@ interface StatusProps {
 interface LatestProps {
   event: PileEvent[];
   round: number;
-  audio: AudioRefs;
 }
 
 interface PileProps {
@@ -217,23 +215,15 @@ function Status({ state }: StatusProps): React.ReactElement {
   </div>
 }
 
-function Latest({ event, round, audio }: LatestProps): React.ReactElement {
-  const audioContext = useContext(AudioContext);
+function Latest({ event, round }: LatestProps): React.ReactElement {
   const lastCardRef = useRef<number>(0);
 
   useEffect(() => {
-    if (event[0] && event[0].round === round) {
-      const card = event[0].card;
-      if (card !== lastCardRef.current) {
-        if (!audioContext.mute) {
-          if (event[0].missed) {
-            audio.buzz.play();
-          } else {
-            audio.ring.play();
-          }
-        }
-      }
-    }
+    // Audio for card-play events is owned exclusively by gamestateHandler in
+    // App.tsx (the authoritative delivery path). Latest is a display-only
+    // component and MUST NOT drive audio.
+    // lastCardRef is retained here for future use (e.g. dedup/visual logic)
+    // but is not currently read by anything downstream.
     lastCardRef.current = event[0]?.card || 0;
   }, [event]);
 

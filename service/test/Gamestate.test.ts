@@ -73,6 +73,49 @@ describe('Gamestate construction', () => {
     });
   });
 
+  describe('maxPlayers config', () => {
+    it('stores maxPlayers within range (10–100) as-is', () => {
+      const gs = new Gamestate({ config: { deckSize: 50, maxLives: 3, maxPlayers: 40 } });
+      expect(gs.config.maxPlayers).toBe(40);
+    });
+
+    it('accepts the range boundaries 10 and 100', () => {
+      expect(new Gamestate({ config: { deckSize: 50, maxLives: 3, maxPlayers: 10 } }).config.maxPlayers).toBe(10);
+      expect(new Gamestate({ config: { deckSize: 50, maxLives: 3, maxPlayers: 100 } }).config.maxPlayers).toBe(100);
+    });
+
+    it('defaults maxPlayers to 12 when absent', () => {
+      const gs = new Gamestate({ config: { deckSize: 50, maxLives: 3 } });
+      expect(gs.config.maxPlayers).toBe(12);
+    });
+
+    it('defaults maxPlayers to 12 when below minimum (< 10)', () => {
+      const gs = new Gamestate({ config: { deckSize: 50, maxLives: 3, maxPlayers: 5 } });
+      expect(gs.config.maxPlayers).toBe(12);
+    });
+
+    it('defaults maxPlayers to 12 when above maximum (> 100)', () => {
+      const gs = new Gamestate({ config: { deckSize: 50, maxLives: 3, maxPlayers: 500 } });
+      expect(gs.config.maxPlayers).toBe(12);
+    });
+
+    it('defaults maxPlayers to 12 with no config at all', () => {
+      const gs = new Gamestate({});
+      expect(gs.config.maxPlayers).toBe(12);
+    });
+
+    it('defaults maxPlayers to 12 when rehydrating a config that lacks it', () => {
+      const gs = new Gamestate({
+        config: { deckSize: 100, maxLives: 5 } as any,
+        meta: { phase: 'playing', round: 2 },
+        public: { pile: [], lives: 4, remaining: 80 },
+        players: [],
+        private: { deck: [1, 2, 3] },
+      });
+      expect(gs.config.maxPlayers).toBe(12);
+    });
+  });
+
   describe('rehydration of existing gamestate', () => {
     it('preserves meta phase and round', () => {
       const data = {
@@ -126,6 +169,46 @@ describe('Gamestate.addPlayer / findPlayer', () => {
     const found = await gs.findPlayer('nonexistent-id');
     expect(found).toBeUndefined();
   });
+
+  // 3.1: null playerId (cast as string) must not match any player
+  it('findPlayer returns undefined when called with null (cast as string)', async () => {
+    const p = new Player();
+    await gs.addPlayer(p);
+    const found = await gs.findPlayer(null as unknown as string);
+    expect(found).toBeUndefined();
+  });
+
+  // 3.2: undefined playerId (cast as string) must not match any player
+  it('findPlayer returns undefined when called with undefined (cast as string)', async () => {
+    const p = new Player();
+    await gs.addPlayer(p);
+    const found = await gs.findPlayer(undefined as unknown as string);
+    expect(found).toBeUndefined();
+  });
+});
+
+// ─── activePlayerCount getter ────────────────────────────────────────────────
+
+describe('Gamestate.activePlayerCount', () => {
+  it('counts only players whose strikes !== -1', () => {
+    const gs = new Gamestate({
+      config: { deckSize: 100, maxLives: 5, maxPlayers: 12 },
+      meta: { phase: 'open', round: 0 },
+      public: { pile: [], lives: 5, remaining: 100 },
+      players: [
+        { playerId: 'p1', connected: true, strikes: 0, name: 'A', hand: [], handSize: 0 },
+        { playerId: 'p2', connected: true, strikes: 2, name: 'B', hand: [], handSize: 0 },
+        { playerId: 's1', connected: true, strikes: -1, name: 'S', hand: [], handSize: 0 },
+      ],
+      private: { deck: [] },
+    });
+    expect(gs.activePlayerCount).toBe(2);
+  });
+
+  it('returns 0 for an empty roster', () => {
+    const gs = new Gamestate({});
+    expect(gs.activePlayerCount).toBe(0);
+  });
 });
 
 // ─── 3.4: kickPlayer ─────────────────────────────────────────────────────────
@@ -155,6 +238,15 @@ describe('Gamestate.kickPlayer', () => {
     await gs.kickPlayer('p1');
     const remaining = await gs.findPlayer('p2');
     expect(remaining).toBeDefined();
+  });
+
+  // 3.3: null playerId (cast as string) must not splice a real player
+  it('kickPlayer with a null playerId (cast as string) does not splice a real player', async () => {
+    await gs.kickPlayer(null as unknown as string);
+    // Both real players must still be present
+    expect(gs.players.length).toBe(2);
+    expect(await gs.findPlayer('p1')).toBeDefined();
+    expect(await gs.findPlayer('p2')).toBeDefined();
   });
 });
 

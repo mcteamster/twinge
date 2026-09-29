@@ -55,6 +55,16 @@ async function newGame(payload: Payload): Promise<void> {
 
 async function rejoinGame(payload: Payload): Promise<void> {
   let game: GameRecord | number | undefined;
+  // Resolve playerId from the connection record rather than trusting the
+  // client-supplied body value. A client who observed another player's UUID
+  // could otherwise impersonate them on rejoin (IDOR). If the connection has
+  // no stored playerId, fall back to the body value so a brand-new connection
+  // can still provide one on first rejoin; subsequent reconnects will always
+  // use the server-stored value.
+  const connectionRecord = await _deps.connections.readConnection(payload.connectionId);
+  if (typeof connectionRecord === 'object' && connectionRecord?.playerId && connectionRecord.playerId !== '-1') {
+    payload.playerId = connectionRecord.playerId;
+  }
   if (payload.gameId && payload.playerId) {
     game = await _deps.games.readGame(payload.gameId);
     if (isGameRecord(game)) {
@@ -92,8 +102,17 @@ async function joinGame(payload: Payload): Promise<void> {
   if (isGameRecord(game)) {
     // Rehydrate gamestate
     const gamestate = new _deps.Gamestate(game.gamestate);
-    // Join
-    if ((gamestate.meta.phase == 'open' || gamestate.meta.phase == 'playing') && (!payload.playerId || !(await gamestate.findPlayer(payload.playerId)))) {
+    // Join — always create a server-assigned player; any client-supplied
+    // playerId is discarded unconditionally to prevent identity impersonation
+    // (IDOR). Discard here, before any use, so it cannot be used even when
+    // the game is not in an open/playing phase.
+    payload.playerId = null;
+    if (gamestate.meta.phase == 'open' || gamestate.meta.phase == 'playing') {
+      // Enforce the active-player cap before adding a new player.
+      if (gamestate.activePlayerCount >= (gamestate.config.maxPlayers as number)) {
+        await _deps.messages.send(payload.connectionId, { code: 8, message: 'Game is full' });
+        return;
+      }
       payload.playerId = await gamestate.addPlayer(new _deps.Player());
     }
     if (await gamestate.findPlayer(payload.playerId as string)) {
@@ -148,16 +167,16 @@ async function kickPlayer(payload: Payload): Promise<void> {
               targetPlayer.strikes++;
               if (game.stateHash === payload.stateHash) {
                 const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+                await _deps.messages.broadcastGame(toRecord(game));
               } else {
                 await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
               }
-              await _deps.messages.broadcastGame(toRecord(game));
             } else {
               const newPayload = { ...payload };
               newPayload.playerId = targetPlayer.playerId;
               const connResult = await _deps.connections.findConnections('gameId', payload.gameId); const connectedPlayers = Array.isArray(connResult) ? connResult : [] as ConnectionRecord[];
               newPayload.connectionId = connectedPlayers.find((connectedPlayer) => {
-                if (connectedPlayer.playerId == targetPlayer.playerId) {
+                if (connectedPlayer.playerId === targetPlayer.playerId) {
                   return true;
                 }
               })?.connectionId;
@@ -174,10 +193,10 @@ async function kickPlayer(payload: Payload): Promise<void> {
             }
             if (game.stateHash === payload.stateHash) {
               const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+              await _deps.messages.broadcastGame(toRecord(game));
             } else {
               await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
             }
-            await _deps.messages.broadcastGame(toRecord(game));
           }
         } else {
           await _deps.messages.send(payload.connectionId, { code: 7, message: 'Target not found' });
@@ -206,10 +225,12 @@ async function leaveGame(payload: Payload): Promise<void> {
         if (gamestate.players.length > 0) {
           if (game.stateHash === payload.stateHash) {
             const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+            await _deps.messages.broadcastGame(toRecord(game));
           } else {
+            // Do not broadcast stale state — consistent with the same guard
+            // in kickPlayer and twinge (see commit 4171ffe).
             await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
           }
-          await _deps.messages.broadcastGame(toRecord(game));
         } else {
           await _deps.games.deleteGame(game.gameId);
         }
@@ -294,10 +315,12 @@ async function twinge(payload: Payload): Promise<void> {
           game = await _deps.games.readGame(payload.gameId);
           if (isGameRecord(game) && game.stateHash === payload.stateHash) {
             const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+            await _deps.messages.broadcastGame(toRecord(game));
           } else {
+            // Do not broadcast stale state — the client will receive the
+            // current game state on its next refresh or from another player's move.
             await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
           }
-          await _deps.messages.broadcastGame(toRecord(game));
         } else {
           await _deps.messages.send(payload.connectionId, { code: 4, message: 'Hand is empty' });
         }
@@ -395,6 +418,10 @@ async function endGame(payload: Payload): Promise<void> {
 
 type ActionFn = (payload: Payload) => Promise<void>;
 
+// Codes 8 and 9 are RESERVED for handler-level errors and MUST NOT be reused by
+// action functions: 8 = unexpected internal error (top-level catch),
+// 9 = unknown or missing action type (dispatch guard). Codes 1–7 remain the
+// per-action error semantics owned by the action functions above.
 const actionHandler: Record<string, ActionFn> = {
   new: newGame,
   join: joinGame,
@@ -411,32 +438,58 @@ const actionHandler: Record<string, ActionFn> = {
 };
 
 const handler = async (event: LambdaEvent): Promise<LambdaResult> => {
-  const body = JSON.parse(event.body as string) as {
-    actionType: string;
-    gameId?: string;
-    playerId?: string;
-    roomCode?: string;
-    stateHash?: string;
-    name?: string;
-    config?: GameConfig;
-    target?: number;
-  };
-  const actionType = body.actionType;
-  const payload: Payload = {
-    connectionId: event.requestContext.connectionId,
-    gameId: body.gameId,
-    playerId: body.playerId,
-    roomCode: body.roomCode,
-    stateHash: body.stateHash,
-    name: body.name,
-    config: body.config,
-    target: body.target,
-  };
-  await actionHandler[actionType](payload);
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ code: 0, message: 'ack' }),
-  };
+  let payload: Payload | undefined;
+  try {
+    const body = JSON.parse(event.body as string) as {
+      actionType: string;
+      gameId?: string;
+      playerId?: string;
+      roomCode?: string;
+      stateHash?: string;
+      name?: string;
+      config?: GameConfig;
+      target?: number;
+    };
+    const actionType = body.actionType;
+    payload = {
+      connectionId: event.requestContext.connectionId,
+      gameId: body.gameId,
+      playerId: body.playerId,
+      roomCode: body.roomCode,
+      stateHash: body.stateHash,
+      name: body.name,
+      config: body.config,
+      target: body.target,
+    };
+    // Guard against unknown or missing action types: calling
+    // actionHandler[actionType] when it is undefined throws a TypeError that
+    // would crash the Lambda invocation (see design.md).
+    // Object.hasOwn is used instead of `in` to avoid matching prototype-chain
+    // keys (e.g. 'constructor', '__proto__', 'valueOf') which pass an `in`
+    // check but are not ActionFn entries — those would silently misfire or
+    // throw a wrong-code error rather than returning code 9 as required.
+    if (!Object.hasOwn(actionHandler, actionType)) {
+      await _deps.messages.send(payload.connectionId, { code: 9, message: 'Unknown action type' });
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ code: 9, message: 'Unknown action type' }),
+      };
+    }
+    await actionHandler[actionType](payload);
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ code: 0, message: 'ack' }),
+    };
+  } catch (error) {
+    // Preserve the stack trace in CloudWatch, then return a structured error
+    // instead of letting the exception propagate to the Lambda runtime.
+    console.error(error);
+    await _deps.messages.send(payload?.connectionId ?? event.requestContext.connectionId, { code: 8, message: 'Internal server error' });
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ code: 8, message: 'Internal server error' }),
+    };
+  }
 };
 
 export = {
