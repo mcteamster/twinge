@@ -140,8 +140,12 @@ async function renamePlayer(payload: Payload): Promise<void> {
       if (gamestate.meta.phase == 'open' && payload.playerId) {
         const player = await gamestate.findPlayer(payload.playerId);
         await player!.rename(String(payload.name).toUpperCase());
-        const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
-        await _deps.messages.broadcastGame(toRecord(game));
+        if (game.stateHash === payload.stateHash) {
+          const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+          await _deps.messages.broadcastGame(toRecord(game));
+        } else {
+          await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
+        }
       } else {
         await _deps.messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
@@ -265,8 +269,12 @@ async function startGame(payload: Payload): Promise<void> {
       if (await gamestate.findPlayer(payload.playerId as string)) {
         gamestate.setupGame();
         gamestate.setupRound();
-        const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
-        await _deps.messages.broadcastGame(toRecord(game));
+        if (game.stateHash === payload.stateHash) {
+          const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+          await _deps.messages.broadcastGame(toRecord(game));
+        } else {
+          await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
+        }
       } else {
         await _deps.messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
@@ -347,8 +355,12 @@ async function nextRound(payload: Payload): Promise<void> {
         // Check for remaining cards
         if (gamestate.players.reduce((playerCards, player) => { return playerCards + player.hand.length }, 0) == 0) {
           gamestate.setupRound();
-          const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
-          await _deps.messages.broadcastGame(toRecord(game));
+          if (game.stateHash === payload.stateHash) {
+            const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+            await _deps.messages.broadcastGame(toRecord(game));
+          } else {
+            await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
+          }
         } else {
           await _deps.messages.send(payload.connectionId, { code: 6, message: 'Round in progress' });
         }
@@ -371,8 +383,12 @@ async function restartGame(payload: Payload): Promise<void> {
       const gamestate = new _deps.Gamestate(game.gamestate);
       if (await gamestate.findPlayer(payload.playerId as string)) {
         await gamestate.restartGame();
-        const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
-        await _deps.messages.broadcastGame(toRecord(game));
+        if (game.stateHash === payload.stateHash) {
+          const updatedGame = await _deps.games.updateGame(game.gameId, gamestate); game = updatedGame;
+          await _deps.messages.broadcastGame(toRecord(game));
+        } else {
+          await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
+        }
       } else {
         await _deps.messages.send(payload.connectionId, { code: 3, message: 'Player not found' });
       }
