@@ -168,14 +168,22 @@ export async function playAllCards(page: Page): Promise<void> {
     await playCard(page);
 
     // Wait for the pile to grow (card was accepted) or the hand to empty.
-    await expect.poll(
+    // If the play was rejected (stale state, code 5), the client receives a
+    // corrected gamestate — wait briefly then retry rather than timing out.
+    const accepted = await expect.poll(
       async () => {
         const pileNow = await page.locator('.Pile .Card').count();
         const handNow = await page.locator('.Hand .Card').count();
         return pileNow > pileBefore || handNow < cardCount;
       },
-      { timeout: 30000 },
-    ).toBeTruthy();
+      { timeout: 8000, intervals: [200, 500, 1000] },
+    ).toBeTruthy().then(() => true).catch(() => false);
+
+    if (!accepted) {
+      // Likely a stale-state rejection. Wait for the correction then retry.
+      await page.waitForTimeout(1500);
+      continue;
+    }
 
     // Small delay to let the stateHash propagate before the next play.
     await page.waitForTimeout(300);
