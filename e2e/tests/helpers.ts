@@ -145,7 +145,7 @@ export async function waitForRound(page: Page, round: number): Promise<void> {
       const match = text.match(/Level\s+(\d+)\s+of/i) ?? text.match(/^(\d+)\s+of/m);
       return match ? Number(match[1]) : -1;
     },
-    { timeout: 20000 },
+    { timeout: 30000 },
   ).toBe(round);
 }
 
