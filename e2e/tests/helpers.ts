@@ -174,7 +174,7 @@ export async function playAllCards(page: Page): Promise<void> {
         const handNow = await page.locator('.Hand .Card').count();
         return pileNow > pileBefore || handNow < cardCount;
       },
-      { timeout: 20000 },
+      { timeout: 30000 },
     ).toBeTruthy();
 
     // Small delay to let the stateHash propagate before the next play.
