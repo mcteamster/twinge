@@ -58,6 +58,9 @@ async function createGame(gameId: string, gamestate: GamestateData | object): Pr
       case 'us-west-2':
         serverCode = 'VW'; // Portland US 🇺🇸
         break;
+      case 'ap-southeast-4':
+        serverCode = 'XX'; // Test region (hidden from UI)
+        break;
       default:
         serverCode = 'XZ'; // Local or Fallback
     }
