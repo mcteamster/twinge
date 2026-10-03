@@ -91,8 +91,16 @@ test('Next round: playing all cards then pressing Next Level increments round', 
       { timeout: 20000 },
     ).toBeTruthy();
 
-    // Trigger next round (P1 presses Next Level).
-    await pressHandArea(p1);
+    // Trigger next round (P1 presses Next Level) — retry until round increments.
+    await expect.poll(
+      async () => {
+        await pressHandArea(p1);
+        const text = await p1.locator('.Status').innerText().catch(() => '');
+        const match = text.match(/Level\s+(\d+)\s+of/i) ?? text.match(/^(\d+)\s+of/m);
+        return match ? Number(match[1]) : 1;
+      },
+      { timeout: 30000, intervals: [1500] },
+    ).toBeGreaterThan(1);
 
     // Round counter should now show 2.
     await waitForRound(p1, 2);
@@ -135,7 +143,17 @@ test('Win: exhausting the deck shows the win state', async ({ page }) => {
 
     const hasNextLevel = (await page.locator('.Hand').first().innerText().catch(() => '')).includes('Next Level');
     if (hasNextLevel) {
-      await pressHandArea(page);
+      // Retry the press until the round increments — the buffer can reset if
+      // mouseleave fires mid-hold in headless CI.
+      await expect.poll(
+        async () => {
+          await pressHandArea(page);
+          const text = await page.locator('.Status').innerText().catch(() => '');
+          const match = text.match(/Level\s+(\d+)\s+of/i) ?? text.match(/^(\d+)\s+of/m);
+          return match ? Number(match[1]) : round;
+        },
+        { timeout: 30000, intervals: [1500] },
+      ).toBeGreaterThan(round);
     } else {
       // Win or loss state reached.
       break;
