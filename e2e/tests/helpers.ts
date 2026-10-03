@@ -72,7 +72,9 @@ export async function waitForPhase(page: Page, phase: 'open' | 'playing'): Promi
 export async function renamePlayer(page: Page, name: string): Promise<void> {
   const rename = page.locator('input#inputBox.Rename');
   await expect(rename).toBeVisible({ timeout: 20000 });
-  await rename.fill(name);
+  // Use pressSequentially (not fill) so React's onChange fires on each
+  // keystroke — fill() sets the value directly without dispatching input events.
+  await rename.pressSequentially(name, { delay: 50 });
   await expect(page.locator('.playerLobby .playerValue').first()).toContainText(name, {
     timeout: 20000,
   });
