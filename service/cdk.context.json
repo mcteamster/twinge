@@ -34,5 +34,9 @@
   "hosted-zone:account=417261512658:domainName=mcteamster.com:region=us-west-2": {
     "Id": "/hostedzone/Z0731695DOD6LN3SPCK2",
     "Name": "mcteamster.com."
+  },
+  "hosted-zone:account=417261512658:domainName=mcteamster.com:region=ap-southeast-4": {
+    "Id": "/hostedzone/Z0731695DOD6LN3SPCK2",
+    "Name": "mcteamster.com."
   }
 }
