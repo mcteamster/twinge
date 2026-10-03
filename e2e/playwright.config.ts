@@ -16,7 +16,7 @@ export default defineConfig({
   retries: 1,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: process.env.BASE_URL ?? 'https://au.twinge.mcteamster.com',
+    baseURL: process.env.BASE_URL ?? 'https://twinge.mcteamster.com',
     trace: 'on-first-retry',
   },
   projects: [

@@ -12,7 +12,7 @@ on:
       base_url:
         description: 'Base URL to test against'
         required: false
-        default: 'https://au.twinge.mcteamster.com'
+        default: 'https://twinge.mcteamster.com'
 
 jobs:
   e2e:
@@ -36,7 +36,7 @@ jobs:
       - name: Run E2E tests
         run: npm test --workspace e2e
         env:
-          BASE_URL: ${{ github.event.inputs.base_url || 'https://au.twinge.mcteamster.com' }}
+          BASE_URL: ${{ github.event.inputs.base_url || 'https://twinge.mcteamster.com' }}
 
       - name: Upload test results
         if: failure()
