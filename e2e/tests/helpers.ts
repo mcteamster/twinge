@@ -107,3 +107,96 @@ export async function playCard(page: Page): Promise<void> {
   await page.waitForTimeout(1000);
   await page.mouse.up();
 }
+
+/**
+ * Click the ✕ (exit/leave) button in the Header and wait for the home screen.
+ * The home screen is identified by the Create button becoming visible again.
+ */
+export async function leaveGame(page: Page): Promise<void> {
+  await page.locator('#exit').click();
+  // Home screen: Create button is rendered and the room code is gone.
+  await expect(page.locator('.Create')).toBeVisible({ timeout: 20000 });
+}
+
+/**
+ * Wait until the lives display shows exactly `count` filled hearts (❤️).
+ *
+ * The Status component renders lives as repeated ❤️ / 🤍 characters inside
+ * the `.Status` element. We count the ❤️ characters in the element's text.
+ */
+export async function waitForLives(page: Page, count: number): Promise<void> {
+  await expect.poll(
+    async () => {
+      const text = await page.locator('.Status').innerText();
+      return (text.match(/❤️/g) ?? []).length;
+    },
+    { timeout: 20000 },
+  ).toBe(count);
+}
+
+/**
+ * Wait until the Status component's Level display shows `round` as the
+ * current level number (the "Level X of Y" line).
+ */
+export async function waitForRound(page: Page, round: number): Promise<void> {
+  await expect.poll(
+    async () => {
+      const text = await page.locator('.Status').innerText();
+      const match = text.match(/Level\s+(\d+)\s+of/i) ?? text.match(/^(\d+)\s+of/m);
+      return match ? Number(match[1]) : -1;
+    },
+    { timeout: 20000 },
+  ).toBe(round);
+}
+
+/**
+ * Play every card in the current player's hand one at a time.
+ *
+ * Between each play we wait for the pile count to increase (or the hand
+ * container to change) so the stateHash has time to update before the next
+ * play attempt. Stops when `.Hand .Card` is no longer present (hand empty)
+ * or when the hand area shows the "Next Level" / end-game buttons.
+ */
+export async function playAllCards(page: Page): Promise<void> {
+  // Keep playing until there are no more Card elements in the Hand.
+  while (true) {
+    const cardCount = await page.locator('.Hand .Card').count();
+    if (cardCount === 0) break;
+
+    const pileBefore = await page.locator('.Pile .Card').count();
+
+    await playCard(page);
+
+    // Wait for the pile to grow (card was accepted) or the hand to empty.
+    await expect.poll(
+      async () => {
+        const pileNow = await page.locator('.Pile .Card').count();
+        const handNow = await page.locator('.Hand .Card').count();
+        return pileNow > pileBefore || handNow < cardCount;
+      },
+      { timeout: 20000 },
+    ).toBeTruthy();
+
+    // Small delay to let the stateHash propagate before the next play.
+    await page.waitForTimeout(300);
+  }
+}
+
+/**
+ * Perform a long-press gesture on a Playwright locator for `ms` milliseconds.
+ *
+ * Uses raw mouse events (mousedown → waitForTimeout → mouseup) so the buffer
+ * timing matches the real browser interaction.  The locator must already be
+ * visible before calling this helper.
+ */
+export async function longPress(page: Page, locator: ReturnType<Page['locator']>, ms: number): Promise<void> {
+  await expect(locator).toBeVisible({ timeout: 20000 });
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('longPress: element has no bounding box');
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.waitForTimeout(ms);
+  await page.mouse.up();
+}
