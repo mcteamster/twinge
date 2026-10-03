@@ -86,7 +86,7 @@ function Start({ state, sendMsg }: StartProps): React.ReactElement {
       const start = document.querySelector('.Start');
       if (start) start.classList.remove('clickedButton');
     }, 1000);
-    sendMsg({ action: 'play', actionType: 'start', gameId: state.gameId, playerId: state.playerId });
+    sendMsg({ action: 'play', actionType: 'start', gameId: state.gameId, playerId: state.playerId, stateHash: state.stateHash });
   }}>
     <div>Start</div>
   </div>
