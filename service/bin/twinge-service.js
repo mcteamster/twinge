@@ -144,6 +144,7 @@ const regions = [
   'sa-east-1', // Brazil
   'us-east-1', // US East
   'us-west-2', // US West
+  'ap-southeast-4', // Test
 ]
 regions.forEach((region) => {
   new TwingeServiceStack(app, `twinge-service-${stage}-${region}`, { env: {

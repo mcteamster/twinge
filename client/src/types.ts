@@ -12,7 +12,8 @@ export type Region =
   | 'BR'
   | 'EAST'
   | 'WEST'
-  | 'DEFAULT';
+  | 'DEFAULT'
+  | 'TEST';
 
 export interface GameConfig {
   deckSize: number;

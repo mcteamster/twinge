@@ -23,7 +23,8 @@ export const ENDPOINTS: Record<Region, string> = {
   'BR': 'wss://br.twinge.mcteamster.com',      // Sao Paulo BR 🇧🇷
   'EAST': 'wss://use.twinge.mcteamster.com', // Washington D.C. US 🇺🇸
   'WEST': 'wss://usw.twinge.mcteamster.com', // Portland US 🇺🇸
-  'DEFAULT': 'wss://eu.twinge.mcteamster.com' // Default to EU as the most central server
+  'DEFAULT': 'wss://eu.twinge.mcteamster.com', // Default to EU as the most central server
+  'TEST': 'wss://test.twinge.mcteamster.com'  // Test region (hidden from UI)
 }
 
 export const AWS_REGIONS: Record<string, Region> = {
@@ -36,6 +37,7 @@ export const AWS_REGIONS: Record<string, Region> = {
   'sa-east-1': 'BR',
   'us-east-1': 'EAST',
   'us-west-2': 'WEST',
+  'ap-southeast-4': 'TEST',
 }
 
 export const getRegionFromCode = (roomCode: string): Region => {
