@@ -144,9 +144,13 @@ test('Win: exhausting the deck shows the win state', async ({ page }) => {
     const hasNextLevel = (await page.locator('.Hand').first().innerText().catch(() => '')).includes('Next Level');
     if (hasNextLevel) {
       // Retry the press until the round increments — the buffer can reset if
-      // mouseleave fires mid-hold in headless CI.
+      // mouseleave fires mid-hold in headless CI. Stop if the game transitions
+      // to won/lost state before the press lands.
       await expect.poll(
         async () => {
+          const handText = await page.locator('.Hand').first().innerText().catch(() => '');
+          // Won/lost state reached — no more Next Level button, exit poll.
+          if (!handText.includes('Next Level')) return round + 1;
           await pressHandArea(page);
           const text = await page.locator('.Status').innerText().catch(() => '');
           const match = text.match(/Level\s+(\d+)\s+of/i) ?? text.match(/^(\d+)\s+of/m);
