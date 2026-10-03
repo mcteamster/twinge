@@ -32,6 +32,8 @@ jobs:
         run: npm run serve --workspace client &
         # vite preview (aliased as serve) runs on port 4173 by default
 
+      - name: Wait for dev server
+        run: until curl -sf http://localhost:4173 > /dev/null; do sleep 1; done
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
         working-directory: e2e
