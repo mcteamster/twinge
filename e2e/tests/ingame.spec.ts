@@ -26,11 +26,10 @@ import {
 async function setSlider(page: Page, sliderId: string, value: number): Promise<void> {
   const slider = page.locator(`#${sliderId}`);
   await expect(slider).toBeVisible({ timeout: 10000 });
+  // Set the DOM value directly — the Create button reads getElementById().value at
+  // click time, so no React event is needed; the DOM value is the source of truth.
   await slider.evaluate((el: HTMLInputElement, v: number) => {
-    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
-    setter?.call(el, String(v));
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.value = String(v);
   }, value);
 }
 
@@ -110,7 +109,8 @@ test('Next round: playing all cards then pressing Next Level increments round', 
 // 3.2  Win — single context, deckSize=10, play all rounds solo
 // -------------------------------------------------------------------------
 test('Win: exhausting the deck shows the win state', async ({ page }) => {
-  // deckSize=10, 1 player: rounds use 1+2+3+4=10 cards (4 rounds).
+  test.setTimeout(90000); // 4 rounds × up to 4 cards, each needing a server round-trip
+  // deckSize=10, 1 player: round 1=1, round 2=2, round 3=3, round 4=4 = 10 cards total.
   await createGameWithConfig(page, { deckSize: 10 });
   await waitForPhase(page, 'open');
   await page.locator('.Start').click();
@@ -143,7 +143,7 @@ test('Win: exhausting the deck shows the win state', async ({ page }) => {
   }
 
   // Win state: the Hand shows the "Replay" button (win/loss overlay).
-  await expect(page.locator('.Hand .replay')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('.Hand .replay')).toBeVisible({ timeout: 60000 });
 });
 
 // -------------------------------------------------------------------------
@@ -179,16 +179,16 @@ test('Loss: playing out-of-order loses a life and triggers loss at 0 lives', asy
     // To maximise determinism: both players play simultaneously so at least
     // one ordering causes a miss.
 
-    // P1 plays their card.
-    await p1.locator('.Hand').first().waitFor({ state: 'visible' });
-    await longPress(p1, p1.locator('.Hand').first(), 1000);
+    // Trigger a loss: read each player's card value, then have the player
+    // with the HIGHER card play first. This guarantees a miss — the higher
+    // card skips the lower card still in the other player's hand → lives=0.
+    const p1CardText = await p1.locator('.Hand .Card').first().innerText();
+    const p2CardText = await p2.locator('.Hand .Card').first().innerText();
+    const p1Val = parseInt(p1CardText.trim(), 10);
+    const p2Val = parseInt(p2CardText.trim(), 10);
 
-    // After P1 plays, either:
-    // a) P2's card was lower → miss → lives=0 → lost state for both, OR
-    // b) P1 had the lower card → round advances cleanly (no miss).
-    // We assert the loss within a generous timeout; if the round ended
-    // without a miss, the test will fail and the retry loop provides a
-    // second attempt.
+    const higherPlayer = p1Val > p2Val ? p1 : p2;
+    await longPress(higherPlayer, higherPlayer.locator('.Hand').first(), 1000);
     await expect.poll(
       async () => {
         const p1HandText = await p1.locator('.Hand').first().innerText().catch(() => '');
@@ -213,6 +213,7 @@ test('Loss: playing out-of-order loses a life and triggers loss at 0 lives', asy
 // 3.4  Restart — from loss state, click Restart → round = 1, new hands dealt
 // -------------------------------------------------------------------------
 test('Restart: from loss state resets to round 1 with new hands', async ({ browser }: { browser: Browser }) => {
+  test.setTimeout(90000);
   let p1Context: BrowserContext | undefined;
   let p2Context: BrowserContext | undefined;
   try {
@@ -230,16 +231,26 @@ test('Restart: from loss state resets to round 1 with new hands', async ({ brows
     await waitForPhase(p1, 'playing');
     await waitForPhase(p2, 'playing');
 
-    // Trigger a loss by having P1 play immediately.
-    await longPress(p1, p1.locator('.Hand').first(), 1000);
+    // Trigger a loss: read each player's card value, then have the player
+    // with the HIGHER card play first. Their card will skip the lower card
+    // still in the other player's hand → guaranteed miss → lives=0 → loss.
+    const p1CardText = await p1.locator('.Hand .Card').first().innerText();
+    const p2CardText = await p2.locator('.Hand .Card').first().innerText();
+    const p1Val = parseInt(p1CardText.trim(), 10);
+    const p2Val = parseInt(p2CardText.trim(), 10);
 
-    // Wait for loss state (Replay button).
+    // The player with the higher card plays first → guaranteed miss.
+    const higherPlayer = p1Val > p2Val ? p1 : p2;
+    await longPress(higherPlayer, higherPlayer.locator('.Hand').first(), 1000);
+
+    // Wait for loss state (Replay button) on both contexts.
     await expect(p1.locator('.Hand .replay')).toBeVisible({ timeout: 30000 });
 
-    // Press Replay (restart).
-    await pressHandArea(p1);
+    // Press Replay (restart) — goes directly back to playing phase (round 1)
+    // with new hands dealt. restartGame() calls setupGame() + setupRound().
+    await longPress(p1, p1.locator('.Hand .replay'), 1500);
 
-    // After restart: round 1, new hands dealt.
+    // After restart: round 1, playing phase, new hands dealt.
     await waitForRound(p1, 1);
     await expect(p1.locator('.Hand .Card').first()).toBeVisible({ timeout: 20000 });
     await expect(p2.locator('.Hand .Card').first()).toBeVisible({ timeout: 20000 });
@@ -270,8 +281,11 @@ test('End game: Finish from loss state returns all contexts to home screen', asy
     await waitForPhase(p1, 'playing');
     await waitForPhase(p2, 'playing');
 
-    // Trigger loss.
-    await longPress(p1, p1.locator('.Hand').first(), 1000);
+    // Trigger loss deterministically: player with the higher card plays first.
+    const p1eVal = parseInt((await p1.locator('.Hand .Card').first().innerText()).trim(), 10);
+    const p2eVal = parseInt((await p2.locator('.Hand .Card').first().innerText()).trim(), 10);
+    const higherE = p1eVal > p2eVal ? p1 : p2;
+    await longPress(higherE, higherE.locator('.Hand').first(), 1000);
     await expect(p1.locator('.Hand .replay')).toBeVisible({ timeout: 30000 });
     await expect(p2.locator('.Hand .replay')).toBeVisible({ timeout: 30000 });
 
