@@ -5,6 +5,7 @@ import {
   waitForPhase,
   leaveGame,
   longPress,
+  playCard,
 } from './helpers';
 
 /**
@@ -150,9 +151,10 @@ test.describe('Lobby Extended', () => {
       await expect(p2.locator('.Hand .Card')).toHaveCount(0, { timeout: 20000 });
 
       // P1 plays all cards to trigger next round — hold until Next Level appears.
-      // P1 plays their single round-1 card.
+      // P1 plays their single round-1 card so the hand empties and the
+      // "Next Level" prompt is rendered.
       await p1.locator('.Hand').first().waitFor({ state: 'visible' });
-      // Use playCard from helpers via direct long-press pattern (already imported indirectly).
+      await playCard(p1);
       // Trigger next round via the Hand area (Next Level button appears when all cards played).
       // Wait for the "Next Level" / "No Active Players" state on P1.
       await expect.poll(

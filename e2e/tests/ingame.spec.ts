@@ -178,9 +178,6 @@ test('Loss: playing out-of-order loses a life and triggers loss at 0 lives', asy
     //
     // To maximise determinism: both players play simultaneously so at least
     // one ordering causes a miss.
-    await Promise.all([
-      page.evaluate(() => {}).then(() => {}),  // noop to keep Promise.all tidy
-    ]);
 
     // P1 plays their card.
     await p1.locator('.Hand').first().waitFor({ state: 'visible' });
