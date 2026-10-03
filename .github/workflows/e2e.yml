@@ -1,18 +1,14 @@
 name: E2E
 
-# E2E tests run against the live AU deployment. There is no local server mode,
-# so these run after a push to main (by which point the AU stack reflects the
-# merged change) and can be pointed elsewhere via the BASE_URL env var.
+# E2E tests build the client locally and serve it via `vite preview`, then
+# run against http://localhost:4173. This ensures the test region constants
+# (TEST endpoint, globalSetup storageState) are always in the build under test
+# rather than whatever is currently deployed to prod.
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      base_url:
-        description: 'Base URL to test against'
-        required: false
-        default: 'https://twinge.mcteamster.com'
 
 jobs:
   e2e:
@@ -29,6 +25,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build client
+        run: npm run build --workspace client
+
+      - name: Start dev server
+        run: npm run serve --workspace client &
+        # vite preview (aliased as serve) runs on port 4173 by default
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
         working-directory: e2e
@@ -36,7 +39,7 @@ jobs:
       - name: Run E2E tests
         run: npm test --workspace e2e
         env:
-          BASE_URL: ${{ github.event.inputs.base_url || 'https://twinge.mcteamster.com' }}
+          BASE_URL: http://localhost:4173
 
       - name: Upload test results
         if: failure()

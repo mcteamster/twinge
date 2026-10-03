@@ -18,11 +18,16 @@ async function globalSetup(): Promise<void> {
 
   fs.mkdirSync(authDir, { recursive: true });
 
+  // Use the same origin as BASE_URL so the storageState is applied
+  // to the correct origin regardless of whether we're running locally
+  // (https://twinge.mcteamster.com) or in CI (http://localhost:4173).
+  const origin = process.env.BASE_URL ?? 'https://twinge.mcteamster.com';
+
   const storageState = {
     cookies: [],
     origins: [
       {
-        origin: 'https://twinge.mcteamster.com',
+        origin,
         localStorage: [
           {
             name: 'region',
