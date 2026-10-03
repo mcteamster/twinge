@@ -72,9 +72,16 @@ export async function waitForPhase(page: Page, phase: 'open' | 'playing'): Promi
 export async function renamePlayer(page: Page, name: string): Promise<void> {
   const rename = page.locator('input#inputBox.Rename');
   await expect(rename).toBeVisible({ timeout: 20000 });
-  // Use pressSequentially (not fill) so React's onChange fires on each
-  // keystroke — fill() sets the value directly without dispatching input events.
-  await rename.pressSequentially(name, { delay: 50 });
+  // Set value via React's internal setter so a single onChange fires with the
+  // full name. pressSequentially/type fire onChange per keystroke causing
+  // multiple renames with the same stateHash — all but the first are rejected
+  // as stale (code 5). fill() alone sets the DOM value but doesn't fire React's
+  // synthetic event.
+  await rename.evaluate((input: HTMLInputElement, value: string) => {
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+    nativeInputValueSetter?.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }, name);
   await expect(page.locator('.playerLobby .playerValue').first()).toContainText(name, {
     timeout: 20000,
   });
