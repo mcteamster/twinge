@@ -68,6 +68,7 @@ function Rename({ state, sendMsg }: RenameProps): React.ReactElement {
         name: (event.target.value.length > 0 ? event.target.value : 'ANON'),
         gameId: state.gameId,
         playerId: state.playerId,
+        stateHash: state.stateHash,
       });
     }}
     onKeyUp={(event: React.KeyboardEvent<HTMLInputElement>) => {
