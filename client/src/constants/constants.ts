@@ -62,6 +62,8 @@ export const getRegionFromCode = (roomCode: string): Region => {
     region = 'EAST'; // Washington D.C. US 🇺🇸
   } else if ('VW'.includes(lastLetter)) {
     region = 'WEST'; // Portland US 🇺🇸
+  } else if (lastLetter === 'X') {
+    region = 'TEST'; // Test region (hidden from UI)
   } else {
     region = 'DEFAULT';
   }
