@@ -1,4 +1,4 @@
-import { test, expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect, newContext, type Browser, type BrowserContext, type Page } from '../fixtures';
 import { createGame, joinGame, waitForPhase, longPress } from './helpers';
 
 /**
@@ -16,8 +16,8 @@ test('Stale state: concurrent plays produce exactly one new pile card', async ({
   let p1Context: BrowserContext | undefined;
   let p2Context: BrowserContext | undefined;
   try {
-    p1Context = await browser.newContext();
-    p2Context = await browser.newContext();
+    p1Context = await newContext(browser);
+    p2Context = await newContext(browser);
     const p1: Page = await p1Context.newPage();
     const p2: Page = await p2Context.newPage();
 
@@ -77,8 +77,8 @@ test('Auto-refresh: idle client matches active client after 12s', async ({ brows
   let p1Context: BrowserContext | undefined;
   let p2Context: BrowserContext | undefined;
   try {
-    p1Context = await browser.newContext();
-    p2Context = await browser.newContext();
+    p1Context = await newContext(browser);
+    p2Context = await newContext(browser);
     const p1: Page = await p1Context.newPage();
     const p2: Page = await p2Context.newPage();
 

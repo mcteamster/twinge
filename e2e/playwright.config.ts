@@ -6,13 +6,12 @@ import { defineConfig, devices } from '@playwright/test';
  * Tests run against the live AU deployment (there is no local server mode).
  * The target is configurable via the BASE_URL env var so a run can be pointed
  * at another region, defaulting to the stable AU reference endpoint.
+ *
+ * Route interception (blocking api.ohnomer.com) and region=TEST injection are
+ * applied per-context via fixtures.ts, replacing the old globalSetup approach.
  */
 export default defineConfig({
   testDir: './tests',
-  // Run globalSetup once before the suite to write the storageState file that
-  // seeds localStorage with region=TEST, routing all WebSocket connections to
-  // the isolated test endpoint instead of a production region.
-  globalSetup: './global-setup',
   // Generous timeout: tests depend on real AWS infrastructure (Lambda cold
   // starts, DynamoDB latency, WebSocket round-trips).
   timeout: 30000,
@@ -22,9 +21,6 @@ export default defineConfig({
   use: {
     baseURL: process.env.BASE_URL ?? 'https://twinge.mcteamster.com',
     trace: 'on-first-retry',
-    // Apply the storageState written by globalSetup so every context starts
-    // with region=TEST in localStorage before any page navigation.
-    storageState: '.auth/test-storage.json',
   },
   projects: [
     {

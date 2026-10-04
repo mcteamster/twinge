@@ -1,4 +1,4 @@
-import { test, expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect, newContext, type Browser, type BrowserContext, type Page } from '../fixtures';
 import {
   createGame,
   joinGame,
@@ -66,8 +66,8 @@ test('Next round: playing all cards then pressing Next Level increments round', 
   let p1Context: BrowserContext | undefined;
   let p2Context: BrowserContext | undefined;
   try {
-    p1Context = await browser.newContext();
-    p2Context = await browser.newContext();
+    p1Context = await newContext(browser);
+    p2Context = await newContext(browser);
     const p1: Page = await p1Context.newPage();
     const p2: Page = await p2Context.newPage();
 
@@ -175,8 +175,8 @@ test('Loss: playing out-of-order loses a life and triggers loss at 0 lives', asy
   let p1Context: BrowserContext | undefined;
   let p2Context: BrowserContext | undefined;
   try {
-    p1Context = await browser.newContext();
-    p2Context = await browser.newContext();
+    p1Context = await newContext(browser);
+    p2Context = await newContext(browser);
     const p1: Page = await p1Context.newPage();
     const p2: Page = await p2Context.newPage();
 
@@ -239,8 +239,8 @@ test('Restart: from loss state resets to round 1 with new hands', async ({ brows
   let p1Context: BrowserContext | undefined;
   let p2Context: BrowserContext | undefined;
   try {
-    p1Context = await browser.newContext();
-    p2Context = await browser.newContext();
+    p1Context = await newContext(browser);
+    p2Context = await newContext(browser);
     const p1: Page = await p1Context.newPage();
     const p2: Page = await p2Context.newPage();
 
@@ -289,8 +289,8 @@ test('End game: Finish from loss state returns all contexts to home screen', asy
   let p1Context: BrowserContext | undefined;
   let p2Context: BrowserContext | undefined;
   try {
-    p1Context = await browser.newContext();
-    p2Context = await browser.newContext();
+    p1Context = await newContext(browser);
+    p2Context = await newContext(browser);
     const p1: Page = await p1Context.newPage();
     const p2: Page = await p2Context.newPage();
 

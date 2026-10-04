@@ -1,4 +1,4 @@
-import { test, expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect, newContext, type Browser, type BrowserContext, type Page } from '../fixtures';
 import { createGame, joinGame, waitForPhase, playCard } from './helpers';
 
 /**
@@ -13,8 +13,8 @@ test.describe('Multiplayer', () => {
   let p2: Page;
 
   test.beforeEach(async ({ browser }: { browser: Browser }) => {
-    p1Context = await browser.newContext();
-    p2Context = await browser.newContext();
+    p1Context = await newContext(browser);
+    p2Context = await newContext(browser);
     p1 = await p1Context.newPage();
     p2 = await p2Context.newPage();
   });

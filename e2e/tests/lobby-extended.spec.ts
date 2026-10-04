@@ -1,4 +1,4 @@
-import { test, expect, type Browser, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect, newContext, type Browser, type BrowserContext, type Page } from '../fixtures';
 import {
   createGame,
   joinGame,
@@ -51,8 +51,8 @@ test.describe('Lobby Extended', () => {
     let p1Context: BrowserContext | undefined;
     let p2Context: BrowserContext | undefined;
     try {
-      p1Context = await browser.newContext();
-      p2Context = await browser.newContext();
+      p1Context = await newContext(browser);
+      p2Context = await newContext(browser);
       const p1: Page = await p1Context.newPage();
       const p2: Page = await p2Context.newPage();
 
@@ -83,8 +83,8 @@ test.describe('Lobby Extended', () => {
     let p1Context: BrowserContext | undefined;
     let p2Context: BrowserContext | undefined;
     try {
-      p1Context = await browser.newContext();
-      p2Context = await browser.newContext();
+      p1Context = await newContext(browser);
+      p2Context = await newContext(browser);
       const p1: Page = await p1Context.newPage();
       const p2: Page = await p2Context.newPage();
 
@@ -132,8 +132,8 @@ test.describe('Lobby Extended', () => {
     let p1Context: BrowserContext | undefined;
     let p2Context: BrowserContext | undefined;
     try {
-      p1Context = await browser.newContext();
-      p2Context = await browser.newContext();
+      p1Context = await newContext(browser);
+      p2Context = await newContext(browser);
       const p1: Page = await p1Context.newPage();
       const p2: Page = await p2Context.newPage();
 
