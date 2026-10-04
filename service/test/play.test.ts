@@ -64,6 +64,7 @@ describe('play handler', () => {
     vi.spyOn(_testDeps.messages, 'broadcastGame').mockResolvedValue(undefined);
     vi.spyOn(_testDeps.connections, 'updateConnection').mockResolvedValue({ Attributes: {} });
     vi.spyOn(_testDeps.connections, 'findConnections').mockResolvedValue([{ connectionId: 'conn-test', playerId: 'p1' }]);
+    vi.spyOn(_testDeps.analytics, 'writeAnalytics').mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -1179,4 +1180,142 @@ describe('play handler', () => {
       expect(_testDeps.messages.send).not.toHaveBeenCalledWith('conn-test', expect.objectContaining({ code: 5 }));
     });
   });
+
+  // ─── Analytics emit on terminal phase (twinge path) ──────────────────────
+
+  describe('"twinge" action — analytics emit', () => {
+    function setupTwinge(phaseAfterPlay: string) {
+      const spy = makeGamestateSpy({ meta: { phase: phaseAfterPlay, round: 3 } });
+      spy.findPlayer.mockResolvedValue({ playerId: 'p1', handSize: 1, hand: [5] });
+      _testDeps.Gamestate = function() { return spy; };
+      const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: { meta: { phase: 'playing' } } };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+      return spy;
+    }
+
+    it('calls writeAnalytics when phase is "won" after playing', async () => {
+      setupTwinge('won');
+      await handler(makeEvent('twinge', { stateHash: 'hash-abc' }));
+      expect(_testDeps.analytics.writeAnalytics).toHaveBeenCalledTimes(1);
+      expect(_testDeps.analytics.writeAnalytics).toHaveBeenCalledWith('game-1', expect.anything());
+    });
+
+    it('calls writeAnalytics when phase is "lost" after playing', async () => {
+      setupTwinge('lost');
+      await handler(makeEvent('twinge', { stateHash: 'hash-abc' }));
+      expect(_testDeps.analytics.writeAnalytics).toHaveBeenCalledTimes(1);
+    });
+
+    it('does NOT call writeAnalytics when phase is still "playing"', async () => {
+      setupTwinge('playing');
+      await handler(makeEvent('twinge', { stateHash: 'hash-abc' }));
+      expect(_testDeps.analytics.writeAnalytics).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Analytics emit on terminal phase (next path) ────────────────────────
+
+  describe('"next" action — analytics emit', () => {
+    function setupNext(phaseAfterRound: string) {
+      const spy = makeGamestateSpy({ meta: { phase: phaseAfterRound, round: 4 } });
+      spy.findPlayer.mockResolvedValue({ playerId: 'p1' });
+      spy.players = [{ playerId: 'p1', hand: [], handSize: 0 }];
+      _testDeps.Gamestate = function() { return spy; };
+      const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: { meta: { phase: 'playing' }, players: [{ hand: [] }] } };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+      return spy;
+    }
+
+    it('calls writeAnalytics when the round advance wins the game', async () => {
+      setupNext('won');
+      await handler(makeEvent('next'));
+      expect(_testDeps.analytics.writeAnalytics).toHaveBeenCalledTimes(1);
+      expect(_testDeps.analytics.writeAnalytics).toHaveBeenCalledWith('game-1', expect.anything());
+    });
+
+    it('calls writeAnalytics when the round advance loses the game', async () => {
+      setupNext('lost');
+      await handler(makeEvent('next'));
+      expect(_testDeps.analytics.writeAnalytics).toHaveBeenCalledTimes(1);
+    });
+
+    it('does NOT call writeAnalytics when the game is still "playing"', async () => {
+      setupNext('playing');
+      await handler(makeEvent('next'));
+      expect(_testDeps.analytics.writeAnalytics).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Analytics emit on leaveGame — abandoned (5.7) ───────────────────────
+
+  describe('"leave" action — analytics emit', () => {
+    it('calls writeAnalytics with outcome "abandoned" when last player leaves (5.7)', async () => {
+      const spy = makeGamestateSpy({ meta: { phase: 'playing', round: 2 } });
+      spy.findPlayer.mockResolvedValue({ playerId: 'p1' });
+      spy.players = [];  // no players remain after kick
+      _testDeps.Gamestate = function() { return spy; };
+      const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: spy };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'deleteGame').mockResolvedValue({ Attributes: {} });
+
+      await handler(makeEvent('leave', { gameId: 'game-1', playerId: 'p1', stateHash: 'hash-abc' }));
+
+      expect(_testDeps.analytics.writeAnalytics).toHaveBeenCalledTimes(1);
+      expect(_testDeps.analytics.writeAnalytics).toHaveBeenCalledWith('game-1', expect.anything(), 'abandoned');
+      expect(_testDeps.games.deleteGame).toHaveBeenCalledTimes(1);
+    });
+
+    it('does NOT call writeAnalytics when other players remain (5.7)', async () => {
+      const spy = makeGamestateSpy({ meta: { phase: 'playing', round: 2 } });
+      spy.findPlayer.mockResolvedValue({ playerId: 'p1' });
+      spy.players = [{ playerId: 'other' }];
+      _testDeps.Gamestate = function() { return spy; };
+      const game = { gameId: 'game-1', stateHash: 'hash-abc', gamestate: spy };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'updateGame').mockResolvedValue(game);
+
+      await handler(makeEvent('leave', { gameId: 'game-1', playerId: 'p1', stateHash: 'hash-abc' }));
+
+      expect(_testDeps.analytics.writeAnalytics).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Analytics emit on endGame — ended (5.8) ─────────────────────────────
+
+  describe('"end" action — analytics emit', () => {
+    it('calls writeAnalytics with outcome "ended" when host ends the game (5.8)', async () => {
+      const spy = makeGamestateSpy({ meta: { phase: 'playing', round: 3 } });
+      spy.findPlayer.mockResolvedValue({ playerId: 'p1' });
+      _testDeps.Gamestate = function() { return spy; };
+      const game = { gameId: 'game-1', gamestate: { meta: { phase: 'playing' } } };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'deleteGame').mockResolvedValue({ Attributes: {} });
+
+      await handler(makeEvent('end', { gameId: 'game-1', playerId: 'p1' }));
+
+      expect(_testDeps.analytics.writeAnalytics).toHaveBeenCalledTimes(1);
+      expect(_testDeps.analytics.writeAnalytics).toHaveBeenCalledWith('game-1', expect.anything(), 'ended');
+      expect(_testDeps.games.deleteGame).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls writeAnalytics with outcome "ended" when ending a won game (5.8)', async () => {
+      const spy = makeGamestateSpy({ meta: { phase: 'won', round: 5 } });
+      spy.findPlayer.mockResolvedValue({ playerId: 'p1' });
+      _testDeps.Gamestate = function() { return spy; };
+      const game = { gameId: 'game-1', gamestate: { meta: { phase: 'won' } } };
+      vi.spyOn(_testDeps.games, 'readGame').mockResolvedValue(game);
+      vi.spyOn(_testDeps.games, 'deleteGame').mockResolvedValue({ Attributes: {} });
+
+      await handler(makeEvent('end', { gameId: 'game-1', playerId: 'p1' }));
+
+      expect(_testDeps.analytics.writeAnalytics).toHaveBeenCalledWith('game-1', expect.anything(), 'ended');
+    });
+  });
+
+  // ─── Analytics helper — explicit outcome param (5.9) ─────────────────────
+  // (Tested at the analytics.ts unit level — see analytics.test.ts)
+  // The integration-level evidence is the spy assertions above where 'abandoned'
+  // and 'ended' are passed explicitly, while twinge/next omit the param.
 });
