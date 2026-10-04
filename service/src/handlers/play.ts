@@ -242,6 +242,7 @@ async function leaveGame(payload: Payload): Promise<void> {
             await _deps.messages.send(payload.connectionId, { code: 5, message: 'State is stale' });
           }
         } else {
+          await _deps.analytics.writeAnalytics(game.gameId, gamestate as unknown as GamestateData, 'abandoned');
           await _deps.games.deleteGame(game.gameId);
         }
         await _deps.messages.send(payload.connectionId, {
@@ -419,6 +420,7 @@ async function endGame(payload: Payload): Promise<void> {
     if (isGameRecord(game) && game.gamestate.meta.phase != 'open') {
       const gamestate = new _deps.Gamestate(game.gamestate);
       if (await gamestate.findPlayer(payload.playerId as string)) {
+        await _deps.analytics.writeAnalytics(game.gameId, gamestate as unknown as GamestateData, 'ended');
         await _deps.games.deleteGame(game.gameId);
         // Cleanse Game
         const closedGame: GameRecord = {

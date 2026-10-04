@@ -5,10 +5,13 @@ import type { GamestateData } from '../types';
 // container; targets eu-central-1 where the single analytics bucket lives.
 const s3Client = new S3({ region: 'eu-central-1' });
 
-/** A single game-outcome analytics record written to S3 on terminal phase. */
+/** All possible game outcome values. */
+export type GameOutcome = 'won' | 'lost' | 'abandoned' | 'ended';
+
+/** A single game-outcome analytics record written to S3. */
 interface AnalyticsRecord {
   gameId: string;
-  outcome: 'won' | 'lost';
+  outcome: GameOutcome;
   round: number;
   playerCount: number;
   deckSize: number;
@@ -24,8 +27,12 @@ interface AnalyticsRecord {
  * the Lambda stays alive until it settles, but any failure is logged and
  * swallowed so the player-facing path is never affected. If ANALYTICS_BUCKET
  * is unset, it logs a warning and returns without writing.
+ *
+ * @param outcome - Explicit outcome override. When omitted, derives from
+ *   gamestate.meta.phase ('won' or 'lost'). Pass explicitly for 'abandoned'
+ *   and 'ended' paths where phase alone is insufficient.
  */
-async function writeAnalytics(gameId: string, gamestate: GamestateData): Promise<void> {
+async function writeAnalytics(gameId: string, gamestate: GamestateData, outcome?: GameOutcome): Promise<void> {
   const bucket = process.env.ANALYTICS_BUCKET;
   if (!bucket) {
     console.warn('ANALYTICS_BUCKET is not set; skipping analytics write');
@@ -33,9 +40,11 @@ async function writeAnalytics(gameId: string, gamestate: GamestateData): Promise
   }
 
   const timestamp = new Date().toISOString();
+  const resolvedOutcome: GameOutcome = outcome ?? (gamestate.meta.phase === 'won' ? 'won' : 'lost');
+
   const record: AnalyticsRecord = {
     gameId,
-    outcome: gamestate.meta.phase === 'won' ? 'won' : 'lost',
+    outcome: resolvedOutcome,
     round: gamestate.meta.round,
     playerCount: gamestate.players.length,
     deckSize: gamestate.config.deckSize,

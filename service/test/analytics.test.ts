@@ -94,4 +94,19 @@ describe('analytics helper', () => {
     expect(spy).not.toHaveBeenCalled();
     expect(warnSpy).toHaveBeenCalled();
   });
+
+  it('uses the explicit outcome param instead of deriving from phase (5.9)', async () => {
+    const spy = vi.spyOn(client, 'putObject').mockResolvedValue({});
+    // Phase is 'playing' (not a terminal phase), but outcome is overridden explicitly.
+    await analytics.writeAnalytics('g', makeGamestate({ meta: { phase: 'playing', round: 2 } }), 'abandoned');
+    const record = JSON.parse((spy.mock.calls[0][0] as any).Body);
+    expect(record.outcome).toBe('abandoned');
+  });
+
+  it('uses "ended" outcome when passed explicitly (5.9)', async () => {
+    const spy = vi.spyOn(client, 'putObject').mockResolvedValue({});
+    await analytics.writeAnalytics('g', makeGamestate({ meta: { phase: 'playing', round: 2 } }), 'ended');
+    const record = JSON.parse((spy.mock.calls[0][0] as any).Body);
+    expect(record.outcome).toBe('ended');
+  });
 });
