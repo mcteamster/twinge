@@ -215,10 +215,12 @@ function App(): React.ReactElement {
     const path = window.location.pathname.slice(1);
     if (path.match(/^[A-Z]{4}$/i)) {
       setRegion(getRegionFromCode(path));
-    } else if (localStorage.getItem('region')) {
+    } else if (localStorage.getItem('region') && localStorage.getItem('region') !== 'TEST') {
       setRegion(localStorage.getItem('region')!);
     } else {
-      const { closestRegion } = Virgo2AWS.getClosestRegion({ regions: Object.keys(AWS_REGIONS) });
+      localStorage.removeItem('region'); // clear any stale TEST value
+      const virgoRegions = Object.keys(AWS_REGIONS).filter(r => AWS_REGIONS[r] !== 'TEST');
+      const { closestRegion } = Virgo2AWS.getClosestRegion({ regions: virgoRegions });
       console.info(`Approximate Closest AWS Region: ${closestRegion}`);
       setRegion(AWS_REGIONS[closestRegion] || 'DEFAULT');
     }
