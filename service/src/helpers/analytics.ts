@@ -6,7 +6,7 @@ import type { GamestateData } from '../types';
 const s3Client = new S3({ region: 'eu-central-1' });
 
 /** All possible game outcome values. */
-export type GameOutcome = 'won' | 'lost' | 'abandoned' | 'ended';
+type GameOutcome = 'won' | 'lost' | 'abandoned' | 'ended';
 
 /** A single game-outcome analytics record written to S3. */
 interface AnalyticsRecord {
